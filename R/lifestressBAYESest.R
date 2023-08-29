@@ -1,13 +1,14 @@
 # Bayesian Life-Stress Estimator
 # Developed by Dr. Reuel Smith, 2021-2022
 
-lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsamples,burnin){
+lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsamples,burnin,nchains=4){
   #Load pracma library for erf
   library(pracma)
   library(StanHeaders)
   library(rstan)
   library(ggplot2)
   library(shinystan)
+  library(cmdstanr)
   library(bayesplot)
 
   # Add input to this to include prior estimates for LS parameters.
@@ -328,20 +329,41 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
   block3 <- paste(c("model {",priors,loglik,"}"),collapse = " ")
   # NOT RUN {
   stanlscode <- paste(c(block1,block2,block3),collapse=" ")
+  stanlsfile <- write_stan_file(stanlscode)
+  print(stanlsfile)
+  # Generate initial list (one list per chain)
+  names(pt_est) <- paramsvec
+  pt_estlist <- as.list(pt_est)
+  init_pt_est <- vector("list",nchains)
+  for(i in 1:nchains){
+    init_pt_est[[i]] <- pt_estlist
+  }
   # Build or compile Stan code to C++
-  lsmod <- stan_model(model_code = stanlscode, verbose = TRUE)
-  fit <- sampling(lsmod, data = datablock, iter = nsamples, warmup = burnin, init = pt_est)
+  # return(list(stanlscode,stanlsfile))
+
+  # lsmod <- stan_model(model_code = stanlscode, verbose = TRUE)
+  lsmod <- cmdstan_model(stanlsfile)
+  # return(lsmod)
+  # fit <- sampling(lsmod, data = datablock, iter = nsamples, warmup = burnin, init = pt_est)
+  fit <- lsmod$sample(data = datablock, init = init_pt_est, chains = nchains, iter_warmup = burnin, iter_sampling = nsamples)
   # }
+  # return(fit)
   # Print results.  I need to get this as an output
-  stats <- print(fit, pars = paramsvec, probs=c((1-confid)/2,.5,1-(1-confid)/2))
-  dataout <- fit@.MISC[["summary"]][["msd"]]
-  quanout <- fit@.MISC[["summary"]][["quan"]]
+  # stats <- print(fit, pars = paramsvec, probs=c((1-confid)/2,.5,1-(1-confid)/2))
+  # dataout <- fit@.MISC[["summary"]][["msd"]]
+  stats <- fit$summary(variables = paramsvec)
+  dataout <- fit$draws(format = "df")
 
   # Trace the Markov Chains for each parameter
   # plot1_MCtrace <- traceplot(fit, pars = paramsvec, inc_warmup = TRUE, nrow = 3)
-  plot1_MCtrace <- mcmc_trace(as.matrix(fit),pars=paramsvec, facet_args = list(nrow = length(paramsvec), labeller = label_parsed))
-  plot2_hist <- stan_hist(fit)
-  plot3_density <- stan_dens(fit)
+  # plot1_MCtrace <- mcmc_trace(as.matrix(fit),pars=paramsvec, facet_args = list(nrow = length(paramsvec), labeller = label_parsed))
+  # plot2_hist <- stan_hist(fit)
+  # plot3_density <- stan_dens(fit)
+  plot1_MCtrace <- mcmc_trace(fit$draws(paramsvec))
+  plot2_hist <- mcmc_hist(fit$draws(paramsvec))
+  plot3_density <- mcmc_dens(fit$draws(paramsvec))
+  plot4_densityoverlay <- mcmc_dens_overlay(fit$draws(paramsvec))
 
-  return(list(fit,stats,dataout,quanout,plot1_MCtrace,plot2_hist,plot3_density))
+
+  return(list(fit,stats,dataout,plot1_MCtrace,plot2_hist,plot3_density,plot4_densityoverlay))
 }

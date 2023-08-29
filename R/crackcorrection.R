@@ -16,6 +16,9 @@ crack.correction <- function(dimensions,crackgeometry){
     x <- dimensions$r/(0.5*dimensions$W)
     fg <- 1.12 + 0.203*x - 1.197*(x^2) + 1.93*(x^3)
   }
+  if(crackgeometry == "edge_semi_circle_thick_body_1a" || crackgeometry == "corner_circle_thick_body_1a"){
+    fg <- 1.12
+  }
 
   return(fg)
 }

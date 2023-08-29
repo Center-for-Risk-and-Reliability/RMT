@@ -396,6 +396,29 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc,Sc,confid,sided){
     params_txt<-c("a","b","c","d")
   }
 
+  if (ls=="Eyring4") {
+    # lsparams[1] - parameter A, lsparams[2] - parameter b
+    # lsparams[3] - parameter Ea
+    # Temperature HAS to be in Kelvin for this to work
+    K<-8.617385e-5
+    lifeF <- function(theta) {
+      theta[ishift+1]*exp(theta[ishift+3]/(K*SF[,1]))*(SF[,2]^-theta[ishift+2])
+    }
+    loglifeF <- function(theta) {
+      log(theta[ishift+1]) + theta[ishift+3]/(K*SF[,1]) - theta[ishift+2]*log(SF[,2])
+    }
+    if(is.null(Tc)==FALSE){
+      lifeC <- function(theta) {
+        theta[ishift+1]*exp(theta[ishift+3]/(K*Sc[,1]))*(Sc[,2]^-theta[ishift+2])
+      }
+      loglifeC <- function(theta) {
+        log(theta[ishift+1]) + theta[ishift+3]/(K*Sc[,1]) - theta[ishift+2]*log(Sc[,2])
+      }
+    }
+    ls_txt<-"Eyring (Type 4)"
+    params_txt<-c("A","b","E_a")
+  }
+
   # Fit to log-likelihood distributions
   if (dist=="Weibull") {
     positivity_v[1]<-1
@@ -517,8 +540,11 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc,Sc,confid,sided){
     fulllimset[[i]]<-c(theta.hat[i],conflim[[i]])
   }
 
-  # Produce some output text that summariZes the results
+  AIC = 2*length(theta.hat) + 2*loglik(theta.hat)
+  BIC = 2*log(length(TTF)+length(Tc)) + 2*loglik(theta.hat)
+
+  # Produce some output text that summarizes the results
   cat(c("Maximum-Likelihood estimates for the ",ls_txt,"-",dist_txt," Life-Stress model.\n\n"),sep = "")
   print(matrix(unlist(fulllimset), nrow = length(unlist(fulllimset))/length(LSQest), ncol = length(LSQest), byrow = FALSE,dimnames = list(c("Life-Stress Parameters Mean",conflim_txt),params_txt)))
-  return(list(theta.hat,inv.fish,conflim))
+  return(list(theta.hat,inv.fish,conflim,AIC,BIC))
 }

@@ -17,10 +17,11 @@ plotposit.nelsonaalen <- function(xi, rc) {
   # Isolate the number of units remaining
   ni<-fail_and_cen[,4][which(fail_and_cen[,2] > 0)]
   # Nelson-Aalen plot for F(x) and R(x)
-  F<-1-exp(-cumsum(di/ni))
-  R<-1-F
-  H<- -log(R)
-  h<-c(H[1],diff(H))
-  matFR<-matrix(c(nx[[2]],F,R,h,H), nrow = length(nx[[2]]), ncol = 5)
+  F <- 1-exp(-cumsum(di/ni))
+  R <- 1-F
+  H <- -log(R)
+  h <- di/ni
+  f <- h*R
+  matFR<-matrix(c(nx[[2]],F,R,h,H,f), nrow = length(nx[[2]]), ncol = 6)
   return(matFR)
 }

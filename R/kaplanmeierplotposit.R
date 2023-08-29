@@ -17,10 +17,11 @@ plotposit.kaplanmeier <- function(xi, rc) {
   # Isolate the number of units remaining
   ni<-fail_and_cen[,4][which(fail_and_cen[,2] > 0)]
   # Kaplan-Meier plot for F(x) and R(x)
-  R<-cumprod((ni-di)/ni)
-  F<-1-R
-  H<- -log(R)
-  h<-c(H[1],diff(H))
-  matFR<-matrix(c(nx[[2]],F,R,h,H), nrow = length(nx[[2]]), ncol = 5)
+  R <- cumprod((ni-di)/ni)
+  F <- 1-R
+  H <- -log(R)
+  h <- -log((ni-di)/ni)
+  f <- h*R
+  matFR<-matrix(c(nx[[2]],F,R,h,H,f), nrow = length(nx[[2]]), ncol = 6)
   return(matFR)
 }

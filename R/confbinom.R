@@ -4,19 +4,26 @@
 conf.binomial <- function(alp,n,R) {
 
   # Compute
-  Rlow<-R-qt(1-alp/2, df=n-1)*sqrt(R*(1-R))
-  Rhi<-R+qt(1-alp/2, df=n-1)*sqrt(R*(1-R))
-  Hlow<- -log(R)-qt(1-alp/2, df=n-1)*sqrt((1-R)/R)
-  Hhi<- -log(R)+qt(1-alp/2, df=n-1)*sqrt((1-R)/R)
-  # Rounds highs and lows greater than 1 and less than 0 respectively
-  Rlow[which(Rlow<0)]<-0
-  Rlow[which(is.nan(Rlow))]<-0
-  Rhi[which(Rhi>1)]<-1
-  Rhi[which(is.nan(Rhi))]<-0
+  Fmean <- 1 - R
+  confid <- 1 - alp
+  Z <- qnorm(1-(1-confid)/2,0,1)
+  Fdiff <- Z*sqrt((R*(1-R))/n)
+  Fhi <- Fmean + Fdiff
+  Fhi[which(Fhi>0.9999)] <- 0.9999
+  Flow <- Fmean - Fdiff
+  Flow[which(Flow<0.0001)] <- 0.0001
 
+  Rlow<-1-Fhi
+  Rhi<-1-Flow
 
-  Flow<-1-Rhi
-  Fhi<-1-Rlow
+  Hlow<- -log(Rhi)
+  Hhi<- -log(Rlow)
+  # Hlow<- -log(R) + log(1 - Fdiff)
+  # Hhi<- -log(R) - log(1 - Fdiff)
+
+  # Hlow<- -log(R)-qt(1-alp/2, df=n-1)*sqrt((1-R)/R)
+  # Hhi<- -log(R)+qt(1-alp/2, df=n-1)*sqrt((1-R)/R)
+
 
   Hlow[which(Hlow<0)]<-0
 

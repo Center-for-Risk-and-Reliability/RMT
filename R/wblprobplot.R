@@ -1,13 +1,8 @@
 # Weibull Probability Plot
 # Developed by Dr. Reuel Smith, 2021-2022
 
-probplot.wbl <- function(data,pp,xlabel1) {
+probplot.wbl <- function(data,pp,xlabel1="X",confid=0.95) {
   library(ggplot2)
-
-  # Check if X is there
-  if(missing(xlabel1)) {
-    xlabel1<-"X"
-  }
 
   dcount<-checkdatacount(checkstress(data))
   # Error message to check if there is any plots for a life distribution estimate
@@ -49,6 +44,11 @@ probplot.wbl <- function(data,pp,xlabel1) {
     xiRFblock_list<- vector(mode = "list", length = length(databystress))
     XB_list<- vector(mode = "list", length = length(databystress))
     FB_list<- vector(mode = "list", length = length(databystress))
+    Xbound_list<- vector(mode = "list", length = length(databystress))
+    Xboundlow_list<- vector(mode = "list", length = length(databystress))
+    Fboundlow_list<- vector(mode = "list", length = length(databystress))
+    Xboundhigh_list<- vector(mode = "list", length = length(databystress))
+    Fboundhigh_list<- vector(mode = "list", length = length(databystress))
     ttfc_list<- vector(mode = "list", length = length(databystress))
     outputpp <- vector(mode = "list", length = 3*length(databystress)+1)
     ttfcrange<-c(1)
@@ -83,37 +83,31 @@ probplot.wbl <- function(data,pp,xlabel1) {
   Pticks1X[1] <- logtimes1[1]
   Pticks1Xlabel <- Pticks1X
 
+  # Calculate the upper and lower bounds
+  Fbound <- c(linspace(0.0001,0.0009,9),linspace(.001,.999,982),linspace(0.9991,0.9999,9))
+  FB_bound <- log(log(1/(1-Fbound)))
+  N <- dim(data)[1]
+  Z <- qnorm(1-(1-confid)/2,0,1)
+  Fdiff <- Z*sqrt((Fbound*(1-Fbound))/N)
+  F_high <- Fbound + Fdiff
+  F_high[which(F_high>0.9999)] <- 0.9999
+  FB_high <- log(log(1/(1-F_high)))
+  F_low <- Fbound - Fdiff
+  F_low[which(F_low<0.0001)] <- 0.0001
+  FB_low <- log(log(1/(1-F_low)))
+
+  for(i in 1:length(databystress)){
+    Xbound_list[[i]] <- exp((FB_bound+c(ttfc_list[[i]][[3]][2])*log(c(ttfc_list[[i]][[3]][1])))/c(ttfc_list[[i]][[3]][2]))
+    Fboundlow_list[[i]] <- FB_low
+    Xboundlow_list[[i]] <- Xbound_list[[i]]
+    Fboundhigh_list[[i]] <- FB_high
+    Xboundhigh_list[[i]] <- Xbound_list[[i]]
+  }
+
   for(i2 in 1:(length(signs1)-1)){
     Pticks1X[(9*i2-7):(9*(i2+1)-8)] <- logtimes1[i2]*c(2:10)
     Pticks1Xlabel[(9*i2-7):(9*(i2+1)-8)] <- c("","","","","","","","",logtimes1[i2+1])
   }
-
-  # ========================================================
-  # Old Plot
-  # ========================================================
-  # if (!is.null(dim(databystress))){
-  #   plot(XB, FB, log="x", col="blue",
-  #        xlab=xlabel1, ylab="Percent Failure", pch=16,
-  #        xlim=c(10^min(signs1), 10^max(signs1)), ylim=c(min(fcB), max(fcB)), axes=FALSE)
-  #   lines(ttfc[[1]], ttfc[[2]], col="blue")
-  # } else {
-  #   plot(XBfull, FBfull, log="x", col="blue",
-  #        xlab=xlabel1, ylab="Percent Failure", pch=16,
-  #        xlim=c(10^min(signs1), 10^max(signs1)), ylim=c(min(fcB), max(fcB)), axes=FALSE)
-  #   for(i in 1:length(databystress)){
-  #     lines(ttfc_list[[i]][[1]], ttfc_list[[i]][[2]], col="blue")
-  #   }
-  # }
-  # axis(1, at=Pticks1X,labels=Pticks1Xlabel, las=2, cex.axis=0.7)
-  # axis(2, at=Pticks,labels=Pticks1label, las=2, cex.axis=0.7)
-  #
-  # #Add horizontal and vertical grid
-  # abline(h = Pticks, lty = 2, col = "grey")
-  # abline(v = Pticks1X,  lty = 2, col = "grey")
-  #
-  # legend(10^signs1[1], log(log(1/(1-.99))), legend=c("Data", "Weibull best fit line"),
-  #        col=c("blue", "blue"), pch=c(16,-1), lty=c(0,1), cex=0.8,
-  #        text.font=4, bg='white')
 
   # ========================================================
   # New Plotting
@@ -130,22 +124,38 @@ probplot.wbl <- function(data,pp,xlabel1) {
       xlab(xlabel1) +
       ylab("Percent Failure")
     plotout <- plotout + geom_line(data=df2, aes(Xline,Fline, colour = best_fit), size = 0.9, linetype = "dashed")
-
   } else {
     # Multi-Stress
     data_legend <- logical(0)
     xlines <- rep(0,length(databystress)*2)
     Flines <- rep(0,length(databystress)*2)
+    xlinesconf <- rep(0,length(databystress)*2001)
+    xlinesconf_up <- rep(0,length(databystress)*1000)
+    xlinesconf_down <- rep(0,length(databystress)*1000)
+    Flinesconf <- rep(0,length(databystress)*2001)
+    Flinesconf_up <- rep(0,length(databystress)*1000)
+    Flinesconf_down <- rep(0,length(databystress)*1000)
     line_legend <- rep(0,length(databystress)*2)
+    conf_legend <- rep(0,length(databystress)*2001)
 
     for(i in 1:length(databystress)){
       xlines[((i*2) - 1):(i*2)] <- ttfc_list[[i]][[1]]
       Flines[((i*2) - 1):(i*2)] <- ttfc_list[[i]][[2]]
+      xlinesconf[((i*2001) - 2000):(i*2001)] <- c(Xboundlow_list[[i]],NA,Xboundhigh_list[[i]])
+      Flinesconf[((i*2001) - 2000):(i*2001)] <- c(Fboundlow_list[[i]],NA,Fboundhigh_list[[i]])
+      Flinesconf_up[((i*1000) - 999):(i*1000)] <- Fboundhigh_list[[i]]
+      Flinesconf_down[((i*1000) - 999):(i*1000)] <- Fboundlow_list[[i]]
+      xlinesconf_down[((i*1000) - 999):(i*1000)] <- Xboundlow_list[[i]]
+      xlinesconf_up[((i*1000) - 999):(i*1000)] <- Xboundhigh_list[[i]]
       data_legend<-c(data_legend,rep(paste(c("Data for stress level ",databystress[[i]][1,3:length(databystress[[i]][1,])]),collapse = " "),length(XB_list[[i]])))
       line_legend[((i*2) - 1):(i*2)] <- rep(paste(c("Best-fit for stress level ",databystress[[i]][1,3:length(databystress[[i]][1,])]),collapse = " "),2)
+      conf_legend[((i*2001) - 2000):(i*2001)] <- rep(paste(c(confid*100,"% Confidence for stress level ",databystress[[i]][1,3:length(databystress[[i]][1,])]),collapse = " "),2001)
     }
     df <- data.frame(XScale = XBfull, Fscale = FBfull, data = data_legend)
     df2 <- data.frame(Xline = xlines, Fline = Flines, best_fit = line_legend)
+    # df3 <- data.frame(Xline2 = xlinesconf, Fline2 = Flinesconf, confidence = conf_legend)
+    df3 <- data.frame(Xline2up = xlinesconf_up, Xline2down = xlinesconf_down, Fline2up = Flinesconf_up, Fline2down = Flinesconf_down)
+
 
     plotout<-ggplot() +
       geom_point(data=df, aes(XScale,Fscale, shape = data), colour = 'black', size = 2.2) +
@@ -154,8 +164,12 @@ probplot.wbl <- function(data,pp,xlabel1) {
       xlab(xlabel1) +
       ylab("Percent Failure")
 
-    plotout <- plotout + geom_line(data=df2, aes(Xline,Fline, colour = best_fit), size = 0.9, linetype = "dashed")
+    plotout <- plotout + geom_line(data=df2, aes(Xline,Fline, colour = best_fit), size = 0.9, linetype = "dashed") +
+      # geom_path(data=df3, aes(Xline2,Fline2, colour = confidence), size = 0.9, linetype = "dotted")
+      geom_ribbon(data=df3, aes(x=Xline2up, ymin=Fline2down, ymax=Fline2up), alpha=0.25, fill = "blue")
   }
+
+  # return(df3)
 
   # return(plotout)
   return(list(outputpp, prob_plot = plotout))

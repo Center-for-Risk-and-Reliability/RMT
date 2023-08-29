@@ -1,22 +1,39 @@
 # Least-Squares Life-Stress Estimator
-# Developed by Dr. Reuel Smith, 2021-2022
+# Developed by Dr. Reuel Smith, 2021-2023
 
-lifestress.LSQest <- function(ls,dist,pp,therm) {
+lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1) {
   #Load pracma library for pseudoinverse
   library(pracma)
 
+  # Compute probability plotting output first based on input
+  if (dist=="Weibull") {
+    ppoutput <- probplot.wbl(data,pp,xlabel1)[[1]]
+  }
+  if (dist=="Lognormal") {
+    ppoutput <- probplot.logn(data,pp,xlabel1)[[1]]
+  }
+  if (dist=="Normal") {
+    ppoutput <- probplot.nor(data,pp,xlabel1)[[1]]
+  }
+  if (dist=="Exponential") {
+    ppoutput <- probplot.exp(data,pp,xlabel1)[[1]]
+  }
+  if (dist=="2PExponential") {
+    ppoutput <- probplot.exp2P(data,pp,xlabel1)[[1]]
+  }
+
   # First check and see that there are multiple stress levels
-  if(length(pp)<3) {
+  if(length(ppoutput)<3) {
     stop('Need more than one stress level to generate estimates')
   }
   # Then check and see if there are single entry data
-  if(length(pp)%%3==0){
+  if(length(ppoutput)%%3==0){
     singledat<-0 # FALSE Single data does not exist
   } else{
     singledat<-1 # TRUE Single data exists
   }
 
-  if(length(pp[[1]]==2)){
+  if(length(ppoutput[[1]]==2)){
     if(missing(therm)){
       therm<-1
       alttherm<-2
@@ -33,98 +50,98 @@ lifestress.LSQest <- function(ls,dist,pp,therm) {
   # Setup vectors (for cases with and without single point data)
   if(singledat==0){
     # Sets up existing probability plot curve life and stress vectors
-    L<-rep(0,length(pp)/3)
-    if (length(pp[[1]])<2){
-      S<-rep(0,length(pp)/3)
+    L<-rep(0,length(ppoutput)/3)
+    if (length(ppoutput[[1]])<2){
+      S<-rep(0,length(ppoutput)/3)
     } else {
-      S<-matrix(rep(0,(length(pp)/3)*length(pp[[1]])),nrow=length(pp)/3,ncol=length(pp[[1]]),byrow = TRUE)
+      S<-matrix(rep(0,(length(ppoutput)/3)*length(ppoutput[[1]])),nrow=length(ppoutput)/3,ncol=length(ppoutput[[1]]),byrow = TRUE)
     }
-    distparams<-rep(0,length(pp)/3)
+    distparams<-rep(0,length(ppoutput)/3)
   } else if(singledat==1){
     # Sets up probability plot curve and single entry L-S life and stress vectors
-    L<-rep(0,(length(pp)-1)/3 + length(tail(pp,n=1)[[1]]))
-    if (length(pp[[1]])<2){
-      S<-rep(0,(length(pp)-1)/3 + length(tail(pp,n=1)[[1]]))
+    L<-rep(0,(length(ppoutput)-1)/3 + length(tail(ppoutput,n=1)[[1]]))
+    if (length(ppoutput[[1]])<2){
+      S<-rep(0,(length(ppoutput)-1)/3 + length(tail(ppoutput,n=1)[[1]]))
     } else {
       # NOTE TEST THIS UNDER APPROPRIATE CIRCUMSTANCES
-      S<-matrix(rep(0,((length(pp)-1)/3 + length(tail(pp,n=1)[[1]]))*length(pp[[1]])),nrow=(length(pp)-1)/3 + length(tail(pp,n=1)[[1]]),ncol=length(pp[[1]]),byrow = TRUE)
+      S<-matrix(rep(0,((length(ppoutput)-1)/3 + length(tail(ppoutput,n=1)[[1]]))*length(ppoutput[[1]])),nrow=(length(ppoutput)-1)/3 + length(tail(ppoutput,n=1)[[1]]),ncol=length(ppoutput[[1]]),byrow = TRUE)
     }
     # Distribution parameter pulls ONLY apply to the probability plots
-    distparams<-rep(0,(length(pp)-1)/3)
+    distparams<-rep(0,(length(ppoutput)-1)/3)
   }
 
   # Fill in Stress and Life Vectors
   if(singledat==0){
-    for(i2 in 1:(length(pp)/3)){
+    for(i2 in 1:(length(ppoutput)/3)){
       # Stress Levels
-      if (length(pp[[1]])<2){
-        S[i2]<-pp[[i2*3-2]]
+      if (length(ppoutput[[1]])<2){
+        S[i2]<-ppoutput[[i2*3-2]]
       } else {
-        for(j in 1:length(pp[[1]])){
-          S[i2,j] <- pp[[i2*3-2]][[j]]
+        for(j in 1:length(ppoutput[[1]])){
+          S[i2,j] <- ppoutput[[i2*3-2]][[j]]
         }
       }
 
       # Life Estimates
       if (dist=="Weibull") {
-        L[i2]<-pp[[i2*3-1]][,1]
-        distparams[i2]<-pp[[i2*3-1]][2]
+        L[i2]<-ppoutput[[i2*3-1]][,1]
+        distparams[i2]<-ppoutput[[i2*3-1]][2]
       }
       if (dist=="Lognormal") {
-        L[i2]<-exp(pp[[i2*3-1]][,1])
-        distparams[i2]<-pp[[i2*3-1]][2]
+        L[i2]<-exp(ppoutput[[i2*3-1]][,1])
+        distparams[i2]<-ppoutput[[i2*3-1]][2]
       }
       if (dist=="Normal") {
-        L[i2]<-pp[[i2*3-1]][,1]
-        distparams[i2]<-pp[[i2*3-1]][2]
+        L[i2]<-ppoutput[[i2*3-1]][,1]
+        distparams[i2]<-ppoutput[[i2*3-1]][2]
       }
       if (dist=="Exponential") {
-        L[i2]<-1/pp[[i2*3-1]][,1]
+        L[i2]<-1/ppoutput[[i2*3-1]][,1]
       }
       if (dist=="2PExponential") {
-        L[i2]<-pp[[i2*3-1]][,1]+pp[[i2*3-1]][,2]
-        distparams[i2]<-pp[[i2*3-1]][2]
+        L[i2]<-ppoutput[[i2*3-1]][,1]+ppoutput[[i2*3-1]][,2]
+        distparams[i2]<-ppoutput[[i2*3-1]][2]
       }
     }
   } else if(singledat==1){
     # First Tabulate Probability Plot S and L data
-    for(i2 in 1:((length(pp)-1)/3)){
+    for(i2 in 1:((length(ppoutput)-1)/3)){
       # Stress Levels
-      if (length(pp[[1]])<2){
-        S[i2]<-pp[[i2*3-2]]
+      if (length(ppoutput[[1]])<2){
+        S[i2]<-ppoutput[[i2*3-2]]
       } else {
-        for(j in 1:length(pp[[1]])){
-          S[i2,j] <- pp[[i2*3-2]][[j]]
+        for(j in 1:length(ppoutput[[1]])){
+          S[i2,j] <- ppoutput[[i2*3-2]][[j]]
         }
       }
 
       # Life Estimates
       if (dist=="Weibull") {
-        L[i2]<-pp[[i2*3-1]][,1]
-        distparams[i2]<-pp[[i2*3-1]][2]
+        L[i2]<-ppoutput[[i2*3-1]][,1]
+        distparams[i2]<-ppoutput[[i2*3-1]][2]
       }
       if (dist=="Lognormal") {
-        L[i2]<-exp(pp[[i2*3-1]][,1])
-        distparams[i2]<-pp[[i2*3-1]][2]
+        L[i2]<-exp(ppoutput[[i2*3-1]][,1])
+        distparams[i2]<-ppoutput[[i2*3-1]][2]
       }
       if (dist=="Normal") {
-        L[i2]<-pp[[i2*3-1]][,1]
-        distparams[i2]<-pp[[i2*3-1]][2]
+        L[i2]<-ppoutput[[i2*3-1]][,1]
+        distparams[i2]<-ppoutput[[i2*3-1]][2]
       }
       if (dist=="Exponential") {
-        L[i2]<-1/pp[[i2*3-1]][,1]
+        L[i2]<-1/ppoutput[[i2*3-1]][,1]
       }
       if (dist=="2PExponential") {
-        L[i2]<-pp[[i2*3-1]][,1]+pp[[i2*3-1]][,2]
-        distparams[i2]<-pp[[i2*3-1]][2]
+        L[i2]<-ppoutput[[i2*3-1]][,1]+ppoutput[[i2*3-1]][,2]
+        distparams[i2]<-ppoutput[[i2*3-1]][2]
       }
     }
     # Next tabulate the single point data
-    for(i2 in 1:length(tail(pp,n=1)[[1]])){
-      # S[i2+(length(pp)-1)/3]<-tail(pp,n=1)[[1]][[i2]][,3]
-      # L[i2+(length(pp)-1)/3]<-tail(pp,n=1)[[1]][[i2]][,1]
-      S[i2+(length(pp)-1)/3]<-tail(pp,n=1)[[1]][[i2]][[3]]
-      L[i2+(length(pp)-1)/3]<-tail(pp,n=1)[[1]][[i2]][[1]]
+    for(i2 in 1:length(tail(ppoutput,n=1)[[1]])){
+      # S[i2+(length(ppoutput)-1)/3]<-tail(ppoutput,n=1)[[1]][[i2]][,3]
+      # L[i2+(length(ppoutput)-1)/3]<-tail(ppoutput,n=1)[[1]][[i2]][,1]
+      S[i2+(length(ppoutput)-1)/3]<-tail(ppoutput,n=1)[[1]][[i2]][[3]]
+      L[i2+(length(ppoutput)-1)/3]<-tail(ppoutput,n=1)[[1]][[i2]][[1]]
     }
   }
   # return(list(S,L))
@@ -188,8 +205,8 @@ lifestress.LSQest <- function(ls,dist,pp,therm) {
     params_txt<-c("E_a","b")
     # Writeup for the output text
     ls_txt<-ls
-    life_txt2<-"b*exp(Ea/(K*S))"
-    loglife_txt<-"(log(b) + (Ea/(K*S)))"
+    life_txt2<-"b*exp(E_a/(K*S))"
+    loglife_txt<-"(log(b) + (E_a/(K*S)))"
   }
   if (ls=="Eyring"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
@@ -250,11 +267,11 @@ lifestress.LSQest <- function(ls,dist,pp,therm) {
   }
   if (ls=="MultiStress"){
     # lsparams - c(ao,a1,...,an), S - c(1,S1,...,Sn)
-    if(length(pp[[1]])<2) {
+    if(length(ppoutput[[1]])<2) {
       stop('Select a data set with more than one stress type.')
     }
     Lvals<-log(L)
-    Svals<-matrix(c(rep(1,length(S[,1])),S),nrow=length(pp)/3,ncol=1+length(pp[[1]]),byrow=FALSE)
+    Svals<-matrix(c(rep(1,length(S[,1])),S),nrow=length(ppoutput)/3,ncol=1+length(ppoutput[[1]]),byrow=FALSE)
     params  <- pinv(Svals)%*%Lvals
     lsparams <- c(params)
     lnLmodel <- Svals%*%lsparams
@@ -267,11 +284,11 @@ lifestress.LSQest <- function(ls,dist,pp,therm) {
   }
   if (ls=="TempHumidity"){
     # lsparams[1] - parameter A, lsparams[2] - parameter a, lsparams[3] - parameter b
-    if(length(pp[[1]])<2) {
+    if(length(ppoutput[[1]])<2) {
       stop('Select a data set with more than one stress type.')
     }
     Lvals<-log(L)
-    Svals<-matrix(c(rep(1,length(S[,1])),1/S[,therm],1/S[,alttherm]),nrow=length(pp)/3,ncol=3,byrow=FALSE)
+    Svals<-matrix(c(rep(1,length(S[,1])),1/S[,therm],1/S[,alttherm]),nrow=length(ppoutput)/3,ncol=3,byrow=FALSE)
     params  <- pinv(Svals)%*%Lvals
     params[1]<-exp(params[1])
     lsparams <- c(params)
@@ -286,11 +303,11 @@ lifestress.LSQest <- function(ls,dist,pp,therm) {
   }
   if (ls=="TempNonthermal"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - parameter c
-    if(length(pp[[1]])<2) {
+    if(length(ppoutput[[1]])<2) {
       stop('Select a data set with more than one stress type.')
     }
     Lvals<-log(L)
-    Svals<-matrix(c(1/S[,therm],-log(S[,alttherm]),rep(1,length(S[,1]))),nrow=length(pp)/3,ncol=3,byrow=FALSE)
+    Svals<-matrix(c(1/S[,therm],-log(S[,alttherm]),rep(1,length(S[,1]))),nrow=length(ppoutput)/3,ncol=3,byrow=FALSE)
     params  <- pinv(Svals)%*%Lvals
     params[3]<-exp(params[3])
     lsparams <- c(params)
@@ -305,11 +322,11 @@ lifestress.LSQest <- function(ls,dist,pp,therm) {
   if (ls=="Eyring3"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b
     # lsparams[3] - parameter c, lsparams[4] - parameter d
-    if(length(pp[[1]])<2) {
+    if(length(ppoutput[[1]])<2) {
       stop('Select a data set with more than one stress type.')
     }
     Lvals<-log(L)+log(S[,therm])
-    Svals<-matrix(c(rep(1,length(S[,1])),1/S[,therm],S[,alttherm],S[,alttherm]/S[,therm]),nrow=length(pp)/3,ncol=4,byrow=FALSE)
+    Svals<-matrix(c(rep(1,length(S[,1])),1/S[,therm],S[,alttherm],S[,alttherm]/S[,therm]),nrow=length(ppoutput)/3,ncol=4,byrow=FALSE)
     params  <- pinv(Svals)%*%Lvals
     lsparams <- c(params)
     lnLmodel <- -log(S[,therm]) + lsparams[1] + lsparams[2]/S[,therm] + lsparams[3]*S[,alttherm] + lsparams[4]*(S[,alttherm]/S[,therm])
@@ -319,6 +336,28 @@ lifestress.LSQest <- function(ls,dist,pp,therm) {
     ls_txt<-"Eyring (Type 3)"
     life_txt2<-"(1/S) exp((a + (b/S)) + (c + (d/S)) U)"
     loglife_txt<-"-ln(S) + (a + (b/S)) + (c + (d/S)) U"
+  }
+  if (ls=="Eyring4"){
+    # lsparams[1] - parameter A, lsparams[2] - parameter b
+    # lsparams[3] - parameter Ea
+    # Temperature HAS to be in Kelvin for this to work
+    K<-8.617385e-5
+    if(length(ppoutput[[1]])<2) {
+      stop('Select a data set with more than one stress type.')
+    }
+    Lvals<-log(L)
+    Svals<-matrix(c(rep(1,length(S[,1])),-log(S[,alttherm]),1/S[,therm]),nrow=length(ppoutput)/3,ncol=3,byrow=FALSE)
+    params  <- pinv(Svals)%*%Lvals
+    lsparams <- c(params)
+    lsparams[1]<-exp(lsparams[1])
+    lsparams[3]<-K*lsparams[3]
+    lnLmodel <- log(lsparams[1]) - lsparams[2]*log(S[,alttherm]) + (lsparams[3]/K)*(1/S[,therm])
+    R2 <- 1 - sum((log(L) - lnLmodel)^2)/sum((log(L) - mean(log(L)))^2)
+    params_txt<-c("A","b","E_a")
+    # Writeup for the output text
+    ls_txt<-"Eyring (Type 3)"
+    life_txt2<-"A exp(E_a/(K*S)) U^-b"
+    loglife_txt<-"ln(A) + (E_a/(K*S)) - b ln(U)"
   }
 
 
@@ -367,10 +406,10 @@ lifestress.LSQest <- function(ls,dist,pp,therm) {
   cat(c("Least-Squares estimates for the ",ls_txt,"-",dist_txt," Life-Stress model.\n\nf(t,S) = ",pdf_txt,"\n\n"),sep = "")
   print(matrix(c(LSQ), nrow = 1, ncol = length(LSQ), byrow = TRUE,dimnames = list(c("Life-Stress Parameters"),params_txt)))
   cat("\n")
-  if(length(pp[[1]])<2){
+  if(length(ppoutput[[1]])<2){
     print(matrix(c(S,L), nrow = 2, ncol = length(S), byrow = TRUE, dimnames = list(c("Stress",life_txt))))
   } else{
-    print(matrix(c(unlist(S),L), nrow = 1+length(pp[[1]]), ncol = length(pp)/3, byrow = TRUE, dimnames = list(c(names(pp[[1]]),life_txt))))
+    print(matrix(c(unlist(S),L), nrow = 1+length(ppoutput[[1]]), ncol = length(ppoutput)/3, byrow = TRUE, dimnames = list(c(names(ppoutput[[1]]),life_txt))))
   }
   cat(c("\nCoefficient of Determination R^2 - ",R2))
   cat("\n")
