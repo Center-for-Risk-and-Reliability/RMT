@@ -17,23 +17,23 @@ library(devtools)
 ```
 * *If Rtools is installed, build from source:*
 ```
-devtools::install_github("ReuS009/reliabilitytk", INSTALL_opts = "--install-tests")
+devtools::install_github("Center-for-Risk-and-Reliability/RMT", INSTALL_opts = "--install-tests")
 ```
 * *Otherwise, use the following:*
 ```
-devtools::install_github("ReuS009/reliabilitytk", build = FALSE, INSTALL_opts = "--install-tests")
+devtools::install_github("Center-for-Risk-and-Reliability/RMT", build = FALSE, INSTALL_opts = "--install-tests")
 ```
-Running Unit tests for Reliabilitytk:
+Running Unit tests for RMT:
 ```
 install.packages("testthat")
 library(testthat)
-library(reliabilitytk)
-test_package("reliabilitytk")
+library(RMT)
+test_package("RMT")
 ```
 ### Source Repository
 
-Reliabilitytk's source code repository is hosted here on GitHub.
+The Reliability Modeling Toolkit's (RMT) source code repository is hosted here on GitHub.
 
 ### Licensing
 
-Reliabilitytk is licensed under GPLv3.
+The Reliability Modeling Toolkit (RMT) is licensed under GPLv3.
