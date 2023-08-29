@@ -1,7 +1,6 @@
 # The Reliability Modeling Toolkit (RMT)
 
-**Reliabilitytk** is an R library for reliability engineering computations.
-The Reliability Modeling Toolkit (RMT) is an R-based library of educational tools specifically designed to execute computationally involved and challenging reliability modeling and analytical calculations.
+The Reliability Modeling Toolkit (**RMT**) is an R-based library of educational tools specifically designed to execute computationally involved and challenging reliability modeling and analytical calculations.
 
 ### Documentation
 
