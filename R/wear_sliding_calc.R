@@ -13,13 +13,13 @@ wear.sliding <- function(data,matproperties = list(k = 0, mat1 = "MildSteel", ma
 
   # Check units and set up axis labels
   if(units == 1){
-    # For metric units, input must be: wear length (mm), stress (MPa), force (N), DK_th (MPa sqrt(m))
+    # For metric units, input must be: wear length (mm), stress (MPa), force (N),
     velocitylabel <- " mm\U00B3/sec"
     wearlabel <- " mm\U00B3"
     velcorr <- 1000^2
   }
   if(units == 2){
-    # For English units, input must be: crack length (inches), stress (ksi), force (kips), DK_th (ksi sqrt(in))
+    # For English units, input must be: wear length (inches), stress (ksi), force (kips)
     velocitylabel <- " in\U00B3/sec"
     wearlabel <- " in\U00B3"
     velcorr <-  1
