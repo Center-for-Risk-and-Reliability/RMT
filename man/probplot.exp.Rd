@@ -53,7 +53,7 @@ Lists the stress level based on the grouped data.  These will always be the firs
   The least squares estimates for the exponential rate parameter \eqn{\lambda}.  These will always be the second of each group of three on the output list (i.e. [[2]], [[5]], [[8]], etc.).
 }
 \item{R2}{
-  Coeefficient of determination \eqn{R^2}.  These will always be the third of each group of three on the output list (i.e. [[3]], [[6]], [[9]], etc.).
+  Coefficient of determination \eqn{R^2}.  These will always be the third of each group of three on the output list (i.e. [[3]], [[6]], [[9]], etc.).
 }
 }
 \references{

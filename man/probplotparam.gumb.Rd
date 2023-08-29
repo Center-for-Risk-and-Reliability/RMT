@@ -1,14 +1,14 @@
-\name{probplotparam.wbl3P}
-\alias{probplotparam.wbl3P}
+\name{probplotparam.gumb}
+\alias{probplotparam.gumb}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Three Parameter Weibull Probability Plot Parameters
+Gumbel Probability Plot Parameters
 }
 \description{
-Computes least-squares parameter estimates for three-parameter Weibull probability distribution for preparation for three-parameter Weibull probability plotting.
+Computes least-squares parameter estimates for Gumbel probability distribution for preparation for Gumbel probability plotting.
 }
 \usage{
-probplotparam.wbl3P(xi, R)
+probplotparam.gumb(xi, R)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -19,27 +19,29 @@ probplotparam.wbl3P(xi, R)
   A vector of non-parametric estimates for reliability \eqn{R} at data \code{xi}.
   }
 }
+
 \details{
-  Three-parameter Weibull distribution is positively bounded (\eqn{x \geq 0}) consisting of a Weibull scale parameter \eqn{\alpha}, a Weibull shape parameter \eqn{\beta}, and a Weibull location parameter \eqn{\gamma}.
+The Gumbel distribution is unbounded (\eqn{-\infty < x < \infty}) consisting of a Gumbel location parameter \eqn{\mu} and a Gumbel scale parameter \eqn{\sigma}.
 
   PDF:
-  \deqn{f(x) = (\frac{\beta}{\alpha}) (\frac{x - \gamma}{\alpha})^{\beta - 1} \exp[-(\frac{x - \gamma}{\alpha})^\beta]}
+  \deqn{f(x) = \frac{1}{\sigma}\exp[\frac{x - \mu}{\sigma} - \exp(\frac{x - \mu}{\sigma})]}
 
   CDF:
 
-  \deqn{F(x) = 1 - \exp[-(\frac{x - \gamma}{\alpha})^\beta]}
+  \deqn{F(x) = 1 - \exp[-\exp(\frac{x - \mu}{\sigma})]}
 }
+
 \value{
 Returns several parameters for a single probability plot from a set of data \code{xi}.
 
 \item{x_p at (0.1\% and 99.9\%)}{
-  Returns the \eqn{x_{p\;at\;0.1\%}} and \eqn{x_{p\;at\;99.9\%}} based on a Weibull distribution.  \code{probplot.wbl} uses this output to plot the best-fit line on the Weibull probability plots.
+  Returns the \eqn{x_{p\;at\;0.1\%}} and \eqn{x_{p\;at\;99.9\%}} based on a Gumbel distribution.  \code{probplot.gumb} uses this output to plot the best-fit line on the Gumbel probability plots.
 }
 \item{fcB}{
-Returns the transformed y-axis parameter for probabilities \eqn{0.1}\% and \eqn{99.9}\%.  For the Weibull plot the y-axis is \eqn{ln[ln(1/R)]}.  \code{probplot.wbl} uses this output to plot the best-fit line on the Weibull probability plots.
+Returns the transformed y-axis parameter for probabilities \eqn{0.1}\% and \eqn{99.9}\%.  For the Gumbel plot the y-axis is \eqn{\ln[-\ln(R)]}.  \code{probplot.gumb} uses this output to plot the best-fit line on the Gumbel probability plots.
 }
-\item{wblresults}{
-  The least squares estimates for the Weibull scale parameter \eqn{\alpha}, the Weibull shape parameter \eqn{\beta}, and the Weibull location parameter \eqn{\gamma}.
+\item{gumbresults}{
+  The least squares estimates for the Gumbel location parameter \eqn{\mu} and the Gumbel scale parameter \eqn{\sigma}.
 }
 \item{R2}{
   Coefficient of determination \eqn{R^2}.
@@ -49,7 +51,7 @@ Returns the transformed y-axis parameter for probabilities \eqn{0.1}\% and \eqn{
 Modarres, M., Amiri, M., Jackson, C.  (2017)  Probabilistic Physics of Failure Approach to Reliability: Modeling, Accelerated Testing, Prognosis and Reliability Assessment.  Center for Risk and Reliability
 }
 \author{
-Dr. Reuel Smith (2021-2022)
+Dr. Reuel Smith (2023)
 }
 \note{
 %%  ~~further notes~~
@@ -65,8 +67,7 @@ Dr. Reuel Smith (2021-2022)
 Xi1 <- c(70,71,75,78,89)
 Rc1 <- c(80,80,84)
 x_R <- plotposit.blom(i = rankcalc(xi = Xi1, rc = Rc1), xi = Xi1, rc = Rc1)
-probplotparam.wbl3P(x_R[,1], x_R[,3])
-
+probplotparam.gumb(x_R[,1], x_R[,3])
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory (show via RShowDoc("KEYWORDS")):

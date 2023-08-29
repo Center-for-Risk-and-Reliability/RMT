@@ -42,7 +42,7 @@ Returns the transformed y-axis parameter for probabilities \eqn{0.1}\% and \eqn{
   The least squares estimates for the two-parameter exponential rate parameter \eqn{\sigma} and the two-parameter exponential location parameter \eqn{\theta}.
 }
 \item{R2}{
-  Coeefficient of determination \eqn{R^2}.
+  Coefficient of determination \eqn{R^2}.
 }
 }
 \references{

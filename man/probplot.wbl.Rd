@@ -34,7 +34,7 @@ Label for the x-axis for the plot.  If left blank, the default label is "X".
 }
 }
 \details{
-  Weibull distribution is positively bounded (\eqn{x \geq 0}) consisting of a Weibull scale parameter \eqn{\alpha} and a Weibull shape parameter \eqn{\beta}.
+  The Weibull distribution is positively bounded (\eqn{x \geq 0}) and consists of a Weibull scale parameter \eqn{\alpha} and a Weibull shape parameter \eqn{\beta}.
 
   PDF:
   \deqn{f(x) = (\frac{\beta}{\alpha}) (\frac{x}{\alpha})^{\beta - 1} \exp[-(\frac{x}{\alpha})^\beta]}
@@ -53,7 +53,7 @@ Lists the stress level based on the grouped data.  These will always be the firs
   The least squares estimates for the Weibull scale parameter \eqn{\alpha} and the Weibull shape parameter \eqn{\beta}.  These will always be the second of each group of three on the output list (i.e. [[2]], [[5]], [[8]], etc.).
 }
 \item{R2}{
-  Coeefficient of determination \eqn{R^2}.  These will always be the third of each group of three on the output list (i.e. [[3]], [[6]], [[9]], etc.).
+  Coefficient of determination \eqn{R^2}.  These will always be the third of each group of three on the output list (i.e. [[3]], [[6]], [[9]], etc.).
 }
 }
 \references{

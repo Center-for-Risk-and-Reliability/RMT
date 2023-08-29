@@ -27,6 +27,10 @@ The life-stress model definition for analysis.  Choose from the list of life-mod
   \item \strong{Two Parameter Exponential} (Enter as "2PExponential".  See more on \code{\link{probplot.exp2P}}.)
   \item \strong{Normal} (Enter as "Normal".  See more on \code{\link{probplot.nor}}.)
   \item \strong{Lognormal} (Enter as "Lognormal".  See more on \code{\link{probplot.logn}}.)
+  \item \strong{Gamma} (Enter as "Gamma".  See more on \code{\link{probplot.gam}}.)
+  \item \strong{Logistic} (Enter as "Logistic".  See more on \code{\link{probplot.logist}}.)
+  \item \strong{Log-logistic} (Enter as "Loglogistic".  See more on \code{\link{probplot.loglogist}}.)
+  \item \strong{Gumbel} (Enter as "Gumbel".  See more on \code{\link{probplot.gumb}}.)
   }
 }
   \item{TTF}{
@@ -98,11 +102,7 @@ Modarres, M., Amiri, M., Jackson, C.  (2017)  Probabilistic Physics of Failure A
 Dr. Reuel Smith (2021-2022)
 }
 \note{
-%%  ~~further notes~~
-}
-
-\section{Warning }{
-RStan is currently unable to compile stan code for R and Rtools versions 4.2 and higher.  Stan developers are working on this but suggest downloading older versions of Rtools for now (\link{https://blog.mc-stan.org/2022/04/26/stan-r-4-2-on-windows/}).  Meanwhile with regard to the development of this toolkit, a temporary workaround is being developed.
+As of version 1.2.6, this tool is operational.
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~

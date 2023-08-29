@@ -42,7 +42,7 @@ Returns the transformed y-axis parameter for probabilities \eqn{0.1}\% and \eqn{
   The least squares estimates for the exponential rate parameter \eqn{\lambda}.
 }
 \item{R2}{
-  Coeefficient of determination \eqn{R^2}.
+  Coefficient of determination \eqn{R^2}.
 }
 }
 \references{

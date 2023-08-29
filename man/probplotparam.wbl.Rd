@@ -37,13 +37,13 @@ Returns several parameters for a single probability plot from a set of data \cod
   Returns the \eqn{x_{p\;at\;0.1\%}} and \eqn{x_{p\;at\;99.9\%}} based on a Weibull distribution.  \code{probplot.wbl} uses this output to plot the best-fit line on the Weibull probability plots.
 }
 \item{fcB}{
-Returns the transformed y-axis parameter for probabilities \eqn{0.1}\% and \eqn{99.9}\%.  For the Weibull plot the y-axis is \eqn{ln[ln(1/R)]}.  \code{probplot.wbl} uses this output to plot the best-fit line on the Weibull probability plots.
+Returns the transformed y-axis parameter for probabilities \eqn{0.1}\% and \eqn{99.9}\%.  For the Weibull plot the y-axis is \eqn{\ln[\ln(\frac{1}{R})]}.  \code{probplot.wbl} uses this output to plot the best-fit line on the Weibull probability plots.
 }
 \item{wblresults}{
   The least squares estimates for the Weibull scale parameter \eqn{\alpha} and the Weibull shape parameter \eqn{\beta}.
 }
 \item{R2}{
-  Coeefficient of determination \eqn{R^2}.
+  Coefficient of determination \eqn{R^2}.
 }
 }
 \references{

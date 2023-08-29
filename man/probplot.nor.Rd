@@ -34,7 +34,7 @@ Label for the x-axis for the plot.  If left blank, the default label is "X".
 }
 }
 \details{
-Normal distribution is unbounded (\eqn{-\infty < x < \infty}) consisting of a normal mean parameter \eqn{\mu} and a normal standard deviation parameter \eqn{\sigma}.
+The normal distribution is unbounded (\eqn{-\infty < x < \infty}) and consists of a normal location (mean) parameter \eqn{\mu} and a normal scale (standard deviation) parameter \eqn{\sigma}.
 
   PDF:
   \deqn{f(x) = \frac{1}{\sigma \sqrt{2 \pi}} \exp[-\frac{1}{2} (\frac{x - \mu}{\sigma})^2]}
@@ -45,16 +45,16 @@ Normal distribution is unbounded (\eqn{-\infty < x < \infty}) consisting of a no
   }
 }
 \value{
-The output, in addition to the Weibull probability plot, includes the following for each stress group outlined in the \code{data} input:
+The output, in addition to the Normal probability plot, includes the following for each stress group outlined in the \code{data} input:
 
 \item{Stress Group}{
 Lists the stress level based on the grouped data.  These will always be the first of each group of three on the output list (i.e. [[1]], [[4]], [[7]], etc.).
   }
   \item{normresults}{
-  The least squares estimates for the normal mean parameter \eqn{\mu} and the normal standard deviation parameter \eqn{\sigma}.  These will always be the second of each group of three on the output list (i.e. [[2]], [[5]], [[8]], etc.).
+  The least squares estimates for the normal location (mean) parameter \eqn{\mu} and the normal scale (standard deviation) parameter \eqn{\sigma}.  These will always be the second of each group of three on the output list (i.e. [[2]], [[5]], [[8]], etc.).
 }
 \item{R2}{
-  Coeefficient of determination \eqn{R^2}.  These will always be the third of each group of three on the output list (i.e. [[3]], [[6]], [[9]], etc.).
+  Coefficient of determination \eqn{R^2}.  These will always be the third of each group of three on the output list (i.e. [[3]], [[6]], [[9]], etc.).
 }
 }
 \references{

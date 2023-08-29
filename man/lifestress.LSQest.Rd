@@ -24,10 +24,14 @@ The life-stress model definition for analysis.  Choose from the list of life-mod
   \item \strong{Two Parameter Exponential} (Enter as "2PExponential".  See more on \code{\link{probplot.exp2P}}.)
   \item \strong{Normal} (Enter as "Normal".  See more on \code{\link{probplot.nor}}.)
   \item \strong{Lognormal} (Enter as "Lognormal".  See more on \code{\link{probplot.logn}}.)
+  \item \strong{Gamma} (Enter as "Gamma".  See more on \code{\link{probplot.gam}}.)
+  \item \strong{Logistic} (Enter as "Logistic".  See more on \code{\link{probplot.logist}}.)
+  \item \strong{Log-logistic} (Enter as "Loglogistic".  See more on \code{\link{probplot.loglogist}}.)
+  \item \strong{Gumbel} (Enter as "Gumbel".  See more on \code{\link{probplot.gumb}}.)
   }
 }
   \item{pp}{
-The full probability plot output list from any one of the functions available: (1) \code{\link{probplot.wbl}}, (2) \code{\link{probplot.wbl3P}}, (3) \code{\link{probplot.exp}}, (4) \code{\link{probplot.exp2P}}, (5) \code{\link{probplot.nor}}, and (6) \code{\link{probplot.logn}}.
+The full probability plot output list from any one of the functions available: (1) \code{\link{probplot.wbl}}, (2) \code{\link{probplot.wbl3P}}, (3) \code{\link{probplot.exp}}, (4) \code{\link{probplot.exp2P}}, (5) \code{\link{probplot.nor}}, (6) \code{\link{probplot.logn}}, (7) \code{\link{probplot.gam}}, (8) \code{\link{probplot.logist}}, (9) \code{\link{probplot.loglogist}}, and (10) \code{\link{probplot.gumb}}.
 }
   \item{therm}{
 Designation of the primary thermal stress in the original data.  If it is the first column after the censored column then the value is 1 and the alternate is 2 (this is set to default).  If it is the second column after the censored column then the value is 2 and the alternate is 1.  Only necessary to input for dual-stress life-stress models.
