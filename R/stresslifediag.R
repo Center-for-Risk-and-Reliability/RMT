@@ -49,7 +49,8 @@ SN.diagram <- function(input_type,dat,stressunits,options){
 
   # Check units and set up axis labels
   Xlab <- paste(c("Life to Failure, N (Cycles)"),collapse="", sep = "_")
-  Ylab <- paste(c("Alternating Stress, S_a (",stressunits,")"),collapse="", sep = "_")
+  # Ylab <- bquote(.(c("Alternating Stress, S[a]", "(",stressunits,")")))
+  Ylab <- paste(c("Alternating Stress, S (",stressunits,")"),collapse="", sep = "_")
 
   # ==================================
   # Calculation Type 1 - Data Points

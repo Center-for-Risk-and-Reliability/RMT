@@ -1,7 +1,7 @@
 # Variable Amplitude Loading Modeling with Damage
 # Developed by Reuel Smith, 2022
 
-var.amp.loadingdamage.model <- function(dat,stressunits){
+var.amp.loadingdamage.model <- function(dat,damagerule="Miner",stressunits){
   # dat is entered as a list made up of Nf, ni, Di, stress blocks,
   # corr_rel (correction relationship), reversals at stress blocks, sig_f, and/or b
   library(pracma)
@@ -22,14 +22,9 @@ var.amp.loadingdamage.model <- function(dat,stressunits){
     stressunits <- c("ksi")
   }
 
-  # Check damage rule (damagerule) conditions (1 for linear, 2 for non-linear)
+  # Check damage rule (damagerule) conditions (1 for linear: Palmgren-Miner,
+  # 2 for non-linear: Kwofie & Rahbar, 3 for non-linear: Corten-Dolan)
   # Add conditions for non-linear at a later date and add it back into the input as well
-  # if(missing(damagerule)){
-  #   damagerule <- 1
-  # } else{
-  #   damagerule <- damagerule
-  # }
-  damagerule <- 1
 
   # Computation 1: Operation cycles (ni) from cycles to failure (Nfi) and damage percentage (Dfi)
   if(length(dat$Nf) > 1 && length(dat$Df) > 1 && length(dat$Nf) != length(dat$Df)){
@@ -40,12 +35,17 @@ var.amp.loadingdamage.model <- function(dat,stressunits){
     if(sum(dat$Df) != 1){
       stop('Make sure the sum of your damage is equal to 1.')
     }
-    if(damagerule == 1){
+    if(damagerule == "Miner"){
       # Calculate total operation cycles
       n <- 1/sum(dat$Df/dat$Nf)
       ni <- n*dat$Df
-      return(list(opercyclesbyblock = ni, totalopercycles = n))
     }
+    if(damagerule == "KwofieRahbar"){
+      # Calculate total operation cycles
+      n <- 1/sum((dat$Df/dat$Nf)*(log(dat$Nf)/log(dat$Nf[1])))
+      ni <- n*dat$Df
+    }
+    return(list(opercyclesbyblock = ni, totalopercycles = n))
   }
 
   # Computation 2: Blocks and damage percentage from operation cycles (ni) and cycles to failure (Nfi).
@@ -53,13 +53,19 @@ var.amp.loadingdamage.model <- function(dat,stressunits){
     stop('Check to see that your cycle to failure vector (Nf) and operation cycles vector (ni) are the same length')
   }
   if(length(dat$Nf) > 1 && length(dat$ni) > 1 && length(dat$Nf) == length(dat$ni)){
-    if(damagerule == 1){
+    if(damagerule == "Miner"){
       # Calculate total operation damage and blocks to failure
       Bfi <- dat$ni/dat$Nf
       Bf <- 1/sum(dat$ni/dat$Nf)
       Di <- Bf*(dat$ni/dat$Nf)
-      return(list(damagebyblock = Di, repetitionstofailure = Bf))
     }
+    if(damagerule == "KwofieRahbar"){
+      # Calculate total operation damage and blocks to failure
+      Bfi <- (dat$ni/dat$Nf)*(log(dat$Nf)/log(Nf[1]))
+      Bf <- 1/sum((dat$ni/dat$Nf)*(log(dat$Nf)/log(dat$Nf[1])))
+      Di <- Bf*((dat$ni/dat$Nf)*(log(dat$Nf)/log(dat$Nf[1])))
+    }
+    return(list(damagebyblock = Di, repetitionstofailure = Bf))
   }
 
   # Computation 3: Operation cycles (ni) from sig_f, b, stress ranges (sranges), and damage percentage (Dfi)
@@ -121,12 +127,17 @@ var.amp.loadingdamage.model <- function(dat,stressunits){
       rev <- findzeros(stresstrace, 10, 10^9)
       Nf[i] <- rev/2
     }
-    if(damagerule == 1){
+    if(damagerule == "Miner"){
       # Calculate total operation cycles
       n <- 1/sum(dat$Df/Nf)
       ni <- n*dat$Df
-      return(list(opercyclesbyblock = ni, cyclestofailurebyblock = Nf, reversalstofailurebyblock = 2*Nf, totalopercycles = n))
     }
+    if(damagerule == "KwofieRahbar"){
+      # Calculate total operation cycles
+      n <- 1/sum((dat$Df/Nf)*(log(dat$Nf)/log(Nf[1])))
+      ni <- n*dat$Df
+    }
+    return(list(opercyclesbyblock = ni, cyclestofailurebyblock = Nf, reversalstofailurebyblock = 2*Nf, totalopercycles = n))
   }
   # Computation 4: Blocks and damage percentage from sig_f, b, stress ranges (sranges), and operation cycles (ni).
   if(length(dat$sranges) > 1 && length(dat$ni) > 1 && length(dat$sig_f) == 1 && length(dat$b) == 1 && length(dat$sranges) != length(dat$ni)){
@@ -184,12 +195,18 @@ var.amp.loadingdamage.model <- function(dat,stressunits){
     Sar_m[i]<-Sar
   }
   if(length(dat$sranges) > 1 && length(dat$ni) > 1 && length(dat$sig_f) == 1 && length(dat$b) == 1 && length(dat$sranges) == length(dat$ni)){
-    if(damagerule == 1){
+    if(damagerule == "Miner"){
       # Calculate total operation damage and blocks to failure
       Bfi <- dat$ni/Nf
       Bf <- 1/sum(dat$ni/Nf)
       Di <- Bf*(dat$ni/Nf)
-      return(list(damagebyblock = Di, cyclestofailurebyblock = Nf, reversalstofailurebyblock = 2*Nf, repetitionstofailure = Bf))
     }
+    if(damagerule == "KwofieRahbar"){
+      # Calculate total operation damage and blocks to failure
+      Bfi <- (dat$ni/Nf)*(log(Nf)/log(Nf[1]))
+      Bf <- 1/sum((dat$ni/Nf)*(log(Nf)/log(Nf[1])))
+      Di <- Bf*(dat$ni/Nf)*(log(Nf)/log(Nf[1]))
+    }
+    return(list(damagebyblock = Di, cyclestofailurebyblock = Nf, reversalstofailurebyblock = 2*Nf, repetitionstofailure = Bf))
   }
 }
