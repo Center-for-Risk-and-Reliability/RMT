@@ -6,6 +6,17 @@ The Reliability Modeling Toolkit (**RMT**) is an R-based library of educational 
 
 * Documentation is included as standard R help files
 
+### Key Applications and Functions
+
+* Probabilitsic physics-of-failure analysis
+* Stress-Life, Strain-Life, Variable Amplitude Loading
+* Fracture mechanics, wear, creep, and corrosion analysis
+* Reliability Modeling: Probability plotting, least squares estimation of probability parameters, maximum likelihood estimation, Bayesian parameter updating
+* Accelerated Life Testing
+* Step-Stress Accelerated Life Testing
+* Accelerated Degradation Testing
+* Test Driven Development
+
 ### Getting Started
 
 Installation instructions from source for the RMT:
