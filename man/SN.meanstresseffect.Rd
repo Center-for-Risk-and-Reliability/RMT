@@ -16,17 +16,17 @@ SN.meanstresseffect(relationship, Sa, Sm, altvar)
 The mean stress correction relationship between equivalent stress amplitude \eqn{S_{ar}} for a non-zero mean stress amplitude \eqn{S_a}.
 \enumerate{
     \item \strong{Soderberg relationship} - (enter as "Soderberg")
-    \deqn{S_a/S_{ar} + S_m/S_y = 1} (\emph{NOTE}: \eqn{S_y} yield stress to be entered in list of \code{altvar})
-    \item \strong{Modified Goodman relationship} - (enter as "ModifiedGoodman")
-    \deqn{S_a/S_{ar} + S_m/S_u = 1} (\emph{NOTE}: \eqn{S_u} ultimate stress to be entered in list of \code{altvar})
+    \deqn{\frac{S_a}{S_{ar}} + \frac{S_m}{S_y} = 1} (\emph{NOTE}: \eqn{S_y} (\code{Sy}) yield stress to be entered in list of \code{altvar})
+    \item \strong{Modified Goodman relationship} - (enter as "ModGoodman")
+    \deqn{\frac{S_a}{S_{ar}} + \frac{S_m}{S_u} = 1} (\emph{NOTE}: \eqn{S_u} (\code{Su}) ultimate strength to be entered in list of \code{altvar})
     \item \strong{Morrow relationship} - (enter as "Morrow")
-    \deqn{S_a/S_{ar} + S_m/sig_f = 1} (\emph{NOTE}: \eqn{sigf} true fracture strength to be entered in list of \code{altvar})
+    \deqn{\frac{S_a}{S_{ar}} + \frac{S_m}{\sigma_f} = 1} (\emph{NOTE}: \eqn{\sigma_f} (\code{sigf}) true fracture strength to be entered in list of \code{altvar})
     \item \strong{Gerber relationship} - (enter as "Gerber")
-    \deqn{S_a/S_{ar} + (S_m/S_u)^2 = 1} (\emph{NOTE}: \eqn{S_u} ultimate stress to be entered in list of \code{altvar})
+    \deqn{\frac{S_a}{S_{ar}} + (\frac{S_m}{S_u})^2 = 1}(\emph{NOTE}: \eqn{S_u} (\code{Su}) ultimate strength to be entered in list of \code{altvar})
     \item \strong{Smith-Watson-Topper relationship} - (enter as "SWT")
-    \deqn{S_a/S_{ar} = ((1 - R)/2)^{0.5}} (\emph{NOTE}: \eqn{R} load ratio to be entered in list of \code{altvar})
+    \deqn{\frac{S_a}{S_{ar}} = (\frac{1 - R}{2})^{0.5}}(\emph{NOTE}: \eqn{R} (\code{R}) load ratio to be entered in list of \code{altvar})
     \item \strong{Walker relationship} - (enter as "Walker")
-    \deqn{S_a/S_{ar} = ((1 - R)/2)^{(1 - gam)}} (\emph{NOTE}: \eqn{R} load ratio  and \eqn{gam} the fitting constant to be entered in list of \code{altvar})
+    \deqn{\frac{S_a}{S_{ar}} = (\frac{1 - R}{2})^{1 - \gamma}} (\emph{NOTE}: \eqn{R} (\code{R}) load ratio and \eqn{\gamma} (\code{gam}) the fitting constant to be entered in list of \code{altvar})
   }
 }
   \item{Sa}{
@@ -61,10 +61,16 @@ Reuel Smith, (2022)
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+# Example: Consider a steel component subjected to a maximum stress of 760 MPa and a minimum stress of 70 MPa.  We also know the ultimate strength to be 1030 MPa.  From the description we can calculate stress amplitude as 345 MPa, the mean stress as 415 MPa, and the load ratio as 0.09210526.  Find the equivalent stress amplitude assuming (a) the Modified Goodman relationship, (b) the Gerber relationship, and (c) the SWT relationship.
 
+# Output (a)
+SN.meanstresseffect("ModGoodman",Sa = 345,Sm = 415, list(Su =  1030))
+
+# Output (b)
+SN.meanstresseffect("Gerber",Sa = 345,Sm = 415, list(Su =  1030))
+
+# Output (c)
+SN.meanstresseffect("SWT",Sa = 345,Sm = 415, list(R =  0.09210526))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory (show via RShowDoc("KEYWORDS")):

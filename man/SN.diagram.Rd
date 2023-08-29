@@ -2,7 +2,7 @@
 \alias{SN.diagram}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-S-N Diagram
+Stress-Life (S-N) Diagram
 }
 \description{
 Generates the stress-life (or S-N) diagram based on various stress and fatigue life input data.
@@ -24,25 +24,25 @@ Defines the units for the stress amplitude: \code{1} for \emph{'MPa'} and \code{
 \item{options}{
 Optional input vector made up of information known about the material primarily.  This heading may be left blank if data is provided, in which case an estimate of \eqn{Su} and endurance limit \eqn{Se} based on the given data.  Options include:
   \itemize{
-  \item \strong{A} - Life-stress parameter of S-N equation \eqn{S = A x (N_f^b)}
-  \item \strong{b} - Life-stress parameter of S-N equation \eqn{S = A x (N_f^b)}
+  \item \strong{A} - Life-stress parameter of S-N equation \eqn{S = A (N_f^b)}
+  \item \strong{b} - Life-stress parameter of S-N equation \eqn{S = A (N_f^b)}
   \item \strong{Su} - Ultimate strength
   \item \strong{Se} - Endurance limit
   \item \strong{BHN} - The Brinnell Hardness Number
-  \item \strong{corr_rel} - The correlation relationship between mean stress \eqn{Sm} and stress amplitude \eqn{Sa} and equivalent stress amplitude \eqn{Sar} for non-zero mean stress (or non-fully reversed loading conditions).
+  \item \strong{corr_rel} - The correlation relationship between mean stress \eqn{S_m} and stress amplitude \eqn{S_a} and equivalent stress amplitude \eqn{S{ar}} for non-zero mean stress (or non-fully reversed loading conditions).
   \enumerate{
     \item \strong{Soderberg relationship} - (enter as "Soderberg")
-    \deqn{Sa/Sar + Sm/Sy = 1} (\emph{NOTE}: \eqn{Sy} yield stress to be entered in list of \code{options})
+    \deqn{\frac{S_a}{S_{ar}} + \frac{S_m}{S_y} = 1} (\emph{NOTE}: \eqn{S_y} yield stress to be entered in list of \code{options})
     \item \strong{Modified Goodman relationship} - (enter as "ModifiedGoodman")
-    \deqn{Sa/Sar + Sm/Su = 1}
+    \deqn{\frac{S_a}{S_{ar}} + \frac{S_m}{S_u} = 1}
     \item \strong{Morrow relationship} - (enter as "Morrow")
-    \deqn{Sa/Sar + Sm/sigf = 1} (\emph{NOTE}: \eqn{sigf} true fracture strength to be entered in list of \code{options})
+    \deqn{\frac{S_a}{S_{ar}} + \frac{S_m}{\sigma_f} = 1} (\emph{NOTE}: \eqn{\sigma_f} (\code{sigf}) true fracture strength to be entered in list of \code{options})
     \item \strong{Gerber relationship} - (enter as "Gerber")
-    \deqn{Sa/Sar + (Sm/Su)^2 = 1}
+    \deqn{\frac{S_a}{S_{ar}} + (\frac{S_m}{S_u})^2 = 1}
     \item \strong{Smith-Watson-Topper relationship} - (enter as "SWT")
-    \deqn{Sa/Sar = ((1 - R)/2)^0.5}
+    \deqn{\frac{S_a}{S_{ar}} = (\frac{1 - R}{2})^{0.5}}
     \item \strong{Walker relationship} - (enter as "Walker")
-    \deqn{Sa/Sar = ((1 - R)/2)^(1 - gam)} (\emph{NOTE}: \eqn{gam} the fitting constant to be entered in list of \code{options})
+    \deqn{\frac{S_a}{S_{ar}} = (\frac{1 - R}{2})^{1 - \gamma}} (\emph{NOTE}: \eqn{\gamma} (\code{gam}) the fitting constant to be entered in list of \code{options})
   }
   \item \strong{Srange} - Axial cyclical loading stress range vector made up of a maximum and minimum stress under non-fully reversed conditions (ex. \code{c(max stress,min stress)}).
   \item \strong{Srange (normal stress multi-axial)} - In the case of multi-axial loading stress, enter the multi-axial forms of \strong{Srange}: \emph{Srangex}, \emph{Srangey}, and \emph{Srangez}.  Alternatively, if the multi-axial normal amplitudes and mean stresses are already known, enter instead: \emph{sig_xa}, \emph{sig_ya}, \emph{sig_za}, \emph{sig_xm}, \emph{sig_ym}, and/or \emph{sig_zm}.
@@ -76,7 +76,7 @@ The code will produce the S-N diagram with a 95\% confidence bound about the mea
   The given value for the stress for which a life estimate is required.  When \code{input_type} is \code{2} or \code{3}, this value defaults to the equivalent stress amplitude \eqn{Sar} for non-zero mean stress.
 }
 \item{Nequiv}{
-  The estimated value of life in cycles at \code{Strace} or \code{Sar}.
+  The estimated value of life in cycles at \code{Strace} or \eqn{S_{ar}} \code{Sar}.
 }
 \item{Ntrace}{
   The given value for the fatigue life cycle for which an alternating stress estimate is required.
@@ -86,6 +86,8 @@ The code will produce the S-N diagram with a 95\% confidence bound about the mea
 }
 }
 \references{
+Modarres, M., Amiri, M., Jackson, C.  (2017)  Probabilistic Physics of Failure Approach to Reliability: Modeling, Accelerated Testing, Prognosis and Reliability Assessment.  Center for Risk and Reliability
+
 Banantine, J., Corner, J., & Handrock, J. (1990). Fundamentals of Metal Fatigue Analysis. Prentice Hall
 }
 \author{
