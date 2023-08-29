@@ -670,5 +670,6 @@ crack.propagation <- function(data,dimensions,geometry,loadconditions,notcheffec
 
   # return(list(crackpropplot = plotout1,growthratecurve = plotout2,fg, a_i, a_f, modelparams,Nf,Smax,DK_RI,DK_RII,DK_RIII,dadN_RI,dadN_RII,dadN_RIII))
   # return(list(crackpropplot = plotout1,fg, a_i, a_f, modelparams,Smax,Nf,DKth,DKset,dadNset))
-  return(list(crackpropplot = plotout1,growthratecurve = plotout2,fg, Smax, Smin, a_i, a_f, modelparams,Nf,DKth,DK_RII,dadN_RII))
+  # return(list(crackpropplot = plotout1,growthratecurve = plotout2,fg, Smax, Smin, a_i, a_f, modelparams,Nf,DKth,DK_RII,dadN_RII))
+  return(list(crackpropplot = plotout1,growthratecurve = plotout2,fg, a_i, a_f, modelparams,Nf))
 }
