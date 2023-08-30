@@ -1,5 +1,5 @@
 # Creep Analyzer
-# Developed by Dr. Reuel Smith, 2022
+# Developed by Dr. Reuel Smith, 2022-2023
 
 creep.analysis <- function(data,model=1,creepproperties = list(C = 20), units=1) {
   library(ggplot2)
@@ -148,7 +148,13 @@ creep.analysis <- function(data,model=1,creepproperties = list(C = 20), units=1)
   if(model == 3){
     Strace <- creepproperties$Strace
     # Pull Activation Energy
-    Q <- creepproperties$Q
+    if(length(creepproperties$Q)>0){
+      Q <- creepproperties$Q
+    }
+    if(length(creepproperties$Ea)>0){
+      Ea <- creepproperties$Ea
+    }
+
     # Convert temperature as necessary
     if(units == 1){
       temp_v_SherbyDorn <- temp_v + 273.15
@@ -157,6 +163,7 @@ creep.analysis <- function(data,model=1,creepproperties = list(C = 20), units=1)
       temp_v_SherbyDorn <- (temp_v + 459.67)*(5/9)
     }
     R <- 8.314
+    k_B <- 8.617e-5
 
     for(i in 1:length(temp_v)){
       # Set time and stress vectors for fitting
@@ -180,10 +187,20 @@ creep.analysis <- function(data,model=1,creepproperties = list(C = 20), units=1)
 
       # Compute Sherby-Dorn coefficients
       if(length(which(stress_fit==Strace)) == 0){
-        P[i] <- log10(exp((Strace - A[i])/b[i])) - 0.43*(Q/(R*temp_v_SherbyDorn[i]))
+        if(length(creepproperties$Q)>0){
+          P[i] <- log10(exp((Strace - A[i])/b[i])) - 0.43*(Q/(R*temp_v_SherbyDorn[i]))
+        }
+        if(length(creepproperties$Ea)>0){
+          P[i] <- log10(exp((Strace - A[i])/b[i])) - 0.43*(Ea/(k_B*temp_v_SherbyDorn[i]))
+        }
       }
       if(length(which(stress_fit==Strace)) == 1){
-        P[i] <- log10(time_fit[which(stress_fit == Strace)]) - 0.43*(Q/(R*temp_v_SherbyDorn[i]))
+        if(length(creepproperties$Q)>0){
+          P[i] <- log10(time_fit[which(stress_fit == Strace)]) - 0.43*(Q/(R*temp_v_SherbyDorn[i]))
+        }
+        if(length(creepproperties$Ea)>0){
+          P[i] <- log10(time_fit[which(stress_fit == Strace)]) - 0.43*(Ea/(k_B*temp_v_SherbyDorn[i]))
+        }
       }
     }
     # Isolate reference temperature if any exist to label primary Larson-Miller parameter to compute equivalent test time
@@ -195,8 +212,14 @@ creep.analysis <- function(data,model=1,creepproperties = list(C = 20), units=1)
         Tref_SherbyDorn <- (creepproperties$Tref + 459.67)*(5/9)
       }
       Pref <- P[which(temp_v == creepproperties$Tref)]
-      time_test <- 10^(Pref + 0.43*(Q/(R*Tref_SherbyDorn)))
-      time_test_v <- 10^(Pref + 0.43*(Q/(R*temp_v_SherbyDorn)))
+      if(length(creepproperties$Q)>0){
+        time_test <- 10^(Pref + 0.43*(Q/(R*Tref_SherbyDorn)))
+        time_test_v <- 10^(Pref + 0.43*(Q/(R*temp_v_SherbyDorn)))
+      }
+      if(length(creepproperties$Ea)>0){
+        time_test <- 10^(Pref + 0.43*(Ea/(k_B*Tref_SherbyDorn)))
+        time_test_v <- 10^(Pref + 0.43*(Ea/(k_B*temp_v_SherbyDorn)))
+      }
     }
   }
   df <- data.frame(time = data[,3], stress = data[,2], Temperature = templabel)
@@ -210,9 +233,9 @@ creep.analysis <- function(data,model=1,creepproperties = list(C = 20), units=1)
   plotout <- plotout + geom_path(data=df2, aes(time2,stress2, colour = Best_Fit), size = 0.9, linetype = "solid")
 
   if(length(creepproperties$Tref)==1){
-    return(list(plotout,temp_v,Pref,time_test_v))
+    return(list(CreepPlot=plotout,TestTemp=temp_v,RefCreepModelParam=Pref,RuptureTimeatRefCreepModelParam=time_test_v))
   } else{
-    return(list(plotout,temp_v,P))
+    return(list(CreepPlot=plotout,TestTemp=temp_v,CreepModelParam=P))
   }
 
 }
