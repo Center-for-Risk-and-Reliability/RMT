@@ -1,12 +1,12 @@
-Package: reliabilitytk
+Package: RMT
 Type: Package
 Title: Reliability Modeling Toolkit
-Version: 1.2.5
+Version: 1.2.6
 Authors: Reuel Smith, Mohammad Modarres
 Maintainer: Reuel Smith <smithrc@umd.edu>
 Description: The performs a series of reliability engineering-based operations relating to life, life-stress, and step-stress models.  Designed specifically to execute several computationally involved and challenging reliability modeling calculations learned throughout the course Probabilistic Physics of Failure and Accelerated Testing (ENRE-641).
 Note: - 
-License: TBD
+License: GNU GPL-3.0-or-later
 Imports:
   bayesplot,
   dplyr,
