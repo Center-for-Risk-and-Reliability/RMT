@@ -37,8 +37,8 @@ Running Unit tests for RMT:
 ```
 install.packages("testthat")
 library(testthat)
-library(RMT)
-test_package("RMT")
+library(reliabilityRMT)
+test_package("reliabilityRMT")
 ```
 ### Source Repository
 
