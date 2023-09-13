@@ -25,6 +25,10 @@ Installation instructions from source for the RMT:
 install.packages("devtools")
 library(devtools)
 ```
+* * The cmdstanr library is required for installation and may not be available on CRAN so it will need to be installed manually first.
+```
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+```
 * *If Rtools is installed, build from source:*
 ```
 devtools::install_github("Center-for-Risk-and-Reliability/RMT", INSTALL_opts = "--install-tests")
