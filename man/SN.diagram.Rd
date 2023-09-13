@@ -101,26 +101,43 @@ Reuel Smith (2022)
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-# Example 1: List amplitude stress (in MPa) and cycles to failure
+# Example 1: Consider a set of stress/life steel test data, where these test data are all fully-reversed:
+# Failure Stress (MPa): 340,300,290,275,260,255,250,235,230,220,215,210
+# Failure Cycles: 15e3,24e3,36e3,80e3,177e3,162e3,301e3,290e3,361e3,881e3,1.3e6,2.5e6
+# Runoff Stress (MPa): 210,210,205,205,205
+# Runoff Cycles: 1e7,1e7,1e7,1e7,1e7
+# List amplitude stress (in MPa) and cycles to failure.
 datSN1 <- list(c(340,300,290,275,260,255,250,235,230,220,215,210),c(15e3,24e3,36e3,80e3,177e3,162e3,301e3,290e3,361e3,881e3,1.3e6,2.5e6),c(210,210,205,205,205),c(1e7,1e7,1e7,1e7,1e7))
 SN.diagram(1,datSN1,1)
 
-# Example 2: List amplitude stress (in ksi) and cycles to failure.  Also includes known ultimate strength and BHN.
+# Example 2: (Problem 1.2a in Bannantine et. al.) Consider a set of stress/life steel test data, where these test data are all fully-reversed:
+# Failure Stress (ksi): 32.3,30.3,27.9,25.9,25.4,24.4
+# Failure Cycles: 4.5e4,2.4e5,8e5,1.5e6,2.7e6,7.8e6
+# Runoff Stress (ksi): 24.4,24,23.6,23.5
+# Runoff Cycles: 1e7,2.6e7,1.2e7,2.2e7
+# List amplitude stress (in ksi) and cycles to failure.  Also includes known ultimate strength of 42 ksi and BHN of 69.
 datSN_MatA <- list(c(32.3,30.3,27.9,25.9,25.4,24.4),c(4.5e4,2.4e5,8e5,1.5e6,2.7e6,7.8e6),c(24.4,24,23.6,23.5),c(1e7,2.6e7,1.2e7,2.2e7))
 Su_MatA <- 42
 BHN_MatA <- 69
 SN.diagram(1,datSN_MatA,2,list(Su = Su_MatA, BHN = BHN_MatA))
 
-# Example 3: List amplitude stress (in ksi) and cycles to failure.  Also includes known ultimate strength and BHN.
+# Example 3: (Problem 1.2c in Bannantine et. al.) Consider a set of stress/life steel test data, where these test data are all fully-reversed:
+# Failure Stress (ksi): 110,105,100,98,95
+# Failure Cycles: 2.4e4,3.1e4,4.5e4,8.7e4,1.5e5
+# Runoff Stress (ksi): 92,90
+# Runoff Cycles: 1e8,1e8
+# List amplitude stress (in ksi) and cycles to failure.  Also includes known ultimate strength of 180 ksi and BHN of 370.  Find the stress amplitude at 10^5 cycles and the cycles to failure when stress amplitude is 115 ksi.
 datSN_MatB <- list(c(110,105,100,98,95),c(2.4e4,3.1e4,4.5e4,8.7e4,1.5e5),c(92,90),c(1e8,1e8))
 Su_MatB <- 180
 BHN_MatB <- 370
 SN.diagram(1,datSN_MatB,2,list(Su = Su_MatB, BHN = BHN_MatB, Ntrace = 10^5, Strace = 115))
 
-# Example 4: Example 2.1 in "Probabilistic Physics of Failure Approach to Reliability: Modeling, Accelerated Testing, Prognosis and Reliability Assessment."
+# Example 4: (Example 2.1 in "Probabilistic Physics of Failure Approach to Reliability: Modeling, Accelerated Testing, Prognosis and Reliability Assessment.")
+# Consider a steel component that is subjected to a cyclic load where maximum stress is 760 MPa and minimum stress is 70 MPa.  The steel component has an ultimate stress of 1030 MPa and an endurance limit of 410 MPa.  A fully reversed stress of 760 MPa at 1000 cycles is applied.  If we assume that the Modified Goodman relationship is used for mean stress correction, find the S-N diagram.
 SN.diagram(2,list(760,1000),1,list(Su = 1030, Se = 410, Srange = c(760,70), corr_rel = "ModifiedGoodman"))
 
-# Example 5: Example 2.2 in "Probabilistic Physics of Failure Approach to Reliability: Modeling, Accelerated Testing, Prognosis and Reliability Assessment" an application of multi-axial stress loading.
+# Example 5: (Example 2.2 in "Probabilistic Physics of Failure Approach to Reliability: Modeling, Accelerated Testing, Prognosis and Reliability Assessment" an application of multi-axial stress loading.)
+# "A pressure vessel with a 1.4 m diameter and 3.6 m length has a wall thickness of 16 mm made of  AISI 1040 HR steel (Sy=227 MPa and Su=415 MPa).  The vessel is subjected to fluctuation of 30 cycles per minute.  In each cycle, the pressure fluctuates between 1 and 5 MPa.  The life of the vessel (i.e number of cycles to rupture) needs to be estimated (assuming the vessel is thin-walled).  The values of A and B for life-stress formulation are 886 and -0.14, respectively."
 SN.diagram(3,list(886*(c(1000,10^6)^-0.14),c(1000,10^6),886*(c(10^6,10^6)^-0.14),c(10^7,10^7)),1,list(Su = 415, Sy = 227, sig_xa = 43.8, sig_ya = 87.5, sig_xm = 65.6, sig_ym = 131.3, corr_rel = "ModifiedGoodman"))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
