@@ -5,7 +5,7 @@
 Bernard Bos-Levenbach Non-Parametric Output Tabulation
 }
 \description{
-Tabulation of nonparametric computations based on Benard and Bos-Levenbach Plotting Position (failure probability or unreliability, reliability, hazard, cumulative hazard).
+Tabulation of nonparametric computations based on Benard and Bos-Levenbach Plotting Position (failure probability or unreliability, reliability, hazard, cumulative hazard, and probability density).
 }
 \usage{
 plotposit.bernbos(i, xi, rc)
@@ -25,15 +25,24 @@ Rank of the failure data set \code{xi}.
 \details{
 Definition of \emph{Benard and Bos-Levenbach} plotting position equation for failure probability (or unreliability) \eqn{F(x)}:
 \deqn{F_i(x_i) = \frac{i - 0.3}{n + 0.2}}
+For survival probability (or reliability) \eqn{R(x)}:
+\deqn{R_i(x_i) = \frac{n - i + 0.5}{n + 0.2}}
+For cumulative hazard \eqn{H(x)}:
+\deqn{H_i(x_i) = -\ln\left(\frac{n - i + 0.5}{n + 0.2}\right)}
+\deqn{\text{or }H_i(x_i) = \ln\left(n + 0.2\right) - \ln\left(n - i + 0.5\right)}
+For hazard rate \eqn{h(x)}:
+\deqn{h_i(x_i) = \frac{1}{(n - i + 0.5)(x_{i+1}-x_i)}}
+For probability density \eqn{f(x)}:
+\deqn{f_i(x_i) = \frac{1}{(n + 0.2)(x_{i+1}-x_i)}}
 }
 \value{
-Returns a matrix of nonparameter estimates for each failure data xi: Column 2 is the \emph{failure probability}, Column 3 is the \emph{reliability}, Column 4 is the \emph{hazard rate}, and Column 5 is the \emph{cumulative hazard}.
+Returns a matrix of nonparameter estimates for each failure data xi: Column 2 is the \emph{failure probability}, Column 3 is the \emph{reliability}, Column 4 is the \emph{hazard rate}, Column 5 is the \emph{cumulative hazard}, and Column 6 is the \emph{probability density}.
 }
 \references{
 Benard, A. and Bos-Levenbach, E.C. (1953). The Plotting of Observations on Probability. Statististica Neerlandica. Vol. 7 : pp. 163-173.
 }
 \author{
-Dr. Reuel Smith (2020-2022)
+Dr. Reuel Smith (2020-2023)
 }
 \note{
 %%  ~~further notes~~

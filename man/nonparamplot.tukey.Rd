@@ -5,7 +5,7 @@
 Tukey Non-Parametric Plot
 }
 \description{
-Nonparametric plot based on Tukey Plottng Position of either failure probability or unreliability, reliability, hazard function, or cumulative hazard
+Nonparametric plot based on Tukey Plottng Position of either failure probability or unreliability, reliability, hazard function, cumulative hazard, or probability density.
 }
 \usage{
 nonparamplot.tukey(xi, rc, relfcn, confbnd, xlabel)
@@ -19,7 +19,7 @@ nonparamplot.tukey(xi, rc, relfcn, confbnd, xlabel)
   A vector consisting of the right censored data of a given set of data.  Data must consist of real and finite numbers.
   }
   \item{relfcn}{
-Name of the non-parametric curve to plot.  For (1) \emph{failure probability} or \emph{unreliability} \eqn{F(x)} enter \strong{"unreliability"}.  For (2) \emph{reliability} \eqn{R(x)} enter \strong{"reliability"}.  For (3) \emph{hazard function} \eqn{h(x)} enter \strong{"hazard"}.  Finally for (4) \emph{cumulative hazard function} \eqn{H(x)} enter \strong{"cumulativehazard"}.
+Name of the non-parametric curve to plot.  For (1) \emph{failure probability} or \emph{unreliability} \eqn{F(x)} enter \strong{"unreliability"}.  For (2) \emph{reliability} \eqn{R(x)} enter \strong{"reliability"}.  For (3) \emph{hazard function} \eqn{h(x)} enter \strong{"hazard"}.  For (4) \emph{cumulative hazard function} \eqn{H(x)} enter \strong{"cumulativehazard"}.  Finally for (5) \emph{probability density function} \eqn{f(x)} enter \strong{"probabilitydensity"}.
 }
   \item{confbnd}{
 Confidence interval set to the nonparametric output (enter \eqn{95 \%} confidence interval as "95")
@@ -31,15 +31,24 @@ Label for the x-axis for the plot.  If left blank, the default label is "X".
 \details{
 Definition of \emph{Tukey} plotting position equation for failure probability (or unreliability) \eqn{F(x)}:
 \deqn{F_i(x_i) = \frac{i - \frac{1}{3}}{n + \frac{1}{3}}}
+For survival probability (or reliability) \eqn{R(x)}:
+\deqn{R_i(x_i) = \frac{n - i + \frac{2}{3}}{n + \frac{1}{3}}}
+For cumulative hazard \eqn{H(x)}:
+\deqn{H_i(x_i) = -\ln\left(\frac{n - i + \frac{2}{3}}{n + \frac{1}{3}}\right)}
+\deqn{\text{or }H_i(x_i) = \ln\left(n + \frac{1}{3}\right) - \ln\left(n - i + \frac{2}{3}\right)}
+For hazard rate \eqn{h(x)}:
+\deqn{h_i(x_i) = \frac{1}{(n - i + \frac{2}{3})(x_{i+1}-x_i)}}
+For probability density \eqn{f(x)}:
+\deqn{f_i(x_i) = \frac{1}{(n + \frac{1}{3})(x_{i+1}-x_i)}}
 }
 \value{
-Outputs the matrix of non-parametric mean point estimates and upper and lower confidence limits of unreliability, reliability, hazard function, and cumulative hazard function versus the random variable \eqn{x}.  Output also includes the nonparametric plot stated by \code{relfcn} input.
+Outputs the matrix of non-parametric mean point estimates of probability density, unreliability, reliability, hazard function, and cumulative hazard function versus the random variable \eqn{x} (he upper and lower confidence limits are also included for the unreliability, reliability, and cumulative hazard function). Output also includes the nonparametric plot stated by \code{relfcn} input.
 }
 \references{
 Tukey, J.W. (1962). The Future of Data Analysis. Annals of Mathematical Statistics. vol. 33(1), pp. 21--24.
 }
 \author{
-Dr. Reuel Smith (2020-2022)
+Dr. Reuel Smith (2020-2023)
 }
 \note{
 %%  ~~further notes~~
