@@ -36,7 +36,7 @@ stress_strain.params(dat, E, stressunits, options)
         \item \strong{Modified Morrow mean-stress correction} - (enter as "ModifiedMorrow")
             \deqn{\epsilon_a = \frac{\sigma_f' - \sigma_m}{E} (2 N_f)^b + \epsilon_f' \left(\frac{\sigma_f' - \sigma_m}{\sigma_f'}\right)^{c/b} (2 N_f)^c}
         \item \strong{Smith-Watson-Topper mean-stress correction} - (enter as "SWT")
-            \deqn{\sigma_max \epsilon_a = \left(\sigma_a + \sigma_m\right) \epsilon_a = \frac{\sigma_f'^2}{E} (2 N_f)^{2b} + \sigma_f'\epsilon_f' (2 N_f)^{b+c}}
+            \deqn{\sigma_{max} \epsilon_a = \left(\sigma_a + \sigma_m\right) \epsilon_a = \frac{\sigma_f'^2}{E} (2 N_f)^{2b} + \sigma_f'\epsilon_f' (2 N_f)^{b+c}}
         \item \strong{Walker mean-stress correction} - (enter as "Walker")
             \deqn{\epsilon_a = \frac{\sigma_f'}{E} \left(\frac{1 - R}{2}\right)^{1-\gamma} (2 N_f)^b + \epsilon_f' \left(\frac{1 - R}{2}\right)^{(c/b)(1-\gamma)} (2 N_f)^c}
     }
