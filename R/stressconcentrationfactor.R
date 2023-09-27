@@ -115,16 +115,16 @@ stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
   # RB4. Rectangular Bar with Opposite Edge U-Notches (input width W, radius r, and U depth d)
   # Chart 2.4, 2.25 in Peterson's Stress Concentration Factors
   if(geometry == "rect_2U_edge" && length(dimensions$W) == 1 && length(dimensions$r) == 1 && length(dimensions$d) == 1){
-    if(dimensions$d/dimensions$W >= 0.3 || dimensions$d/dimensions$r < 0.5 || dimensions$d/dimensions$r > 20) {
-      stop('d/W must be less than 0.3 and and 0.5 < d/r < 20 for this geometry.')
+    if(dimensions$d/dimensions$W > 0.25 || dimensions$d/dimensions$W < 0.02 || dimensions$d/dimensions$r < 0.1 || dimensions$d/dimensions$r > 50) {
+      stop('0.02 < d/W < 0.25 and 0.1 < d/r < 50 for this geometry.')
     }
     x <- (2*dimensions$d)/dimensions$W
     y <- dimensions$d/dimensions$r
 
     if(loadtype == 1){
       # Tension
-      if(dimensions$d/dimensions$W >= 0.3 || y < 0.5 || y > 20) {
-        stop('d/W must be less than 0.3 and and 0.5 < d/r < 20 for this geometry.')
+      if(dimensions$d/dimensions$W > 0.25 || dimensions$d/dimensions$W < 0.02 || y < 0.1 || y > 50) {
+        stop('0.02 < d/W < 0.25 and 0.1 < d/r < 50 for this geometryy.')
       }
       if(y == 1){
         C1 <- 3.065
@@ -147,8 +147,8 @@ stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
     }
     if(loadtype == 2){
       # Bending
-      if(dimensions$d/dimensions$W >= 0.3 || y < 0.1 || y > 50) {
-        stop('d/W must be less than 0.3 and and 0.1 < d/r < 50 for this geometry.')
+      if(dimensions$d/dimensions$W > 0.25 || dimensions$d/dimensions$W < 0.02 || y < 0.1 || y > 50) {
+        stop('0.02 < d/W < 0.25 and 0.1 < d/r < 50 for this geometryy.')
       }
       if(y == 1){
         C1 <- 3.065
