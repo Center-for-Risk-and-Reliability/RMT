@@ -32,7 +32,7 @@ Definition of the sample geometry from which a stress concentration factor is so
 
       \figure{RB3.png}{options: alt="RB3 - Rectangular Bar with a U-Notch"}
 
-      \item \strong{RB4. Rectangular Bar with Opposite Edge U-Notches} - Enter as \code{"rect_2U_edge"} with dimensions width \code{W}, radius \code{r}, and U-depth \code{d}.   Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}).   (\emph{CONSTRAINT}: \eqn{d/w \leq 0.3} and \eqn{0.5 < d/r < 20})
+      \item \strong{RB4. Rectangular Bar with Opposite Edge U-Notches} - Enter as \code{"rect_2U_edge"} with dimensions width \code{W}, radius \code{r}, and U-depth \code{d}.   Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}).   (\emph{CONSTRAINT}: \eqn{0.02 \leq d/w \leq 0.25} and \eqn{0.1 \leq d/r \leq 50})
 
       \figure{RB4.png}{options: alt="RB4 - Rectangular Bar with Opposite Edge U-Notches"}
 
