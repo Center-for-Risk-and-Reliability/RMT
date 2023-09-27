@@ -20,15 +20,15 @@ Definition of the sample geometry from which a stress concentration factor is so
 
 \strong{Rectangular Bar or Plate options}
   \itemize{
-      \item \strong{RB1. Rectangular Bar with a Semi-circle Edge Notch} - Enter as \code{"rect_1semicirc_edge"} with dimensions width \code{W} and radius \code{r}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}). (\emph{CONSTRAINT}: \eqn{r/w < 0.3})
+      \item \strong{RB1. Rectangular Bar with a Semi-circle Edge Notch} - Enter as \code{"rect_1semicirc_edge"} with dimensions width \code{W} and radius \code{r}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}). (\emph{CONSTRAINT}: \eqn{r/W < 0.3})
 
       \figure{RB1.png}{options: alt="RB1 - Rectangular Bar with a Semi-circle Edge Notch"}
 
-      \item \strong{RB2. Rectangular Bar with Opposite Semi-circle Edge Notches} - Enter as \code{"rect_2semicirc_edge"} with dimensions width \code{W} and radius \code{r}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}).
+      \item \strong{RB2. Rectangular Bar with Opposite Semi-circle Edge Notches} - Enter as \code{"rect_2semicirc_edge"} with dimensions width \code{W} and radius \code{r}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}). (\emph{CONSTRAINT}: \eqn{r/W < 0.5})
 
       \figure{RB2.png}{options: alt="RB2 - Rectangular Bar with Opposite Semi-circle Edge Notches"}
 
-      \item \strong{RB3. Rectangular Bar with a U-Notch} - Enter as \code{"rect_1U_edge"} with dimensions width \code{W}, radius \code{r}, and U-depth \code{d}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}).  (\emph{CONSTRAINT}: \eqn{d/w \leq 0.3} and \eqn{0.5 < d/r < 20})
+      \item \strong{RB3. Rectangular Bar with a U-Notch} - Enter as \code{"rect_1U_edge"} with dimensions width \code{W}, radius \code{r}, and U-depth \code{d}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}).  (\emph{CONSTRAINT}: \eqn{0.5 < d/r < 20})
 
       \figure{RB3.png}{options: alt="RB3 - Rectangular Bar with a U-Notch"}
 
