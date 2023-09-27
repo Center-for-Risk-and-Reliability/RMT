@@ -10,8 +10,8 @@ stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
   # RB1. Rectangular Bar with a Semi-circle Edge Notch (input width W and radius r)
   # Chart 2.9, 2.30a in Peterson's Stress Concentration Factors
   if(geometry == "rect_1semicirc_edge" && length(dimensions$W) == 1 && length(dimensions$r) == 1){
-    if(dimensions$r/dimensions$W >= 0.25){
-      stop('r/W must be less than 0.25 for this geometry.')
+    if(dimensions$r/dimensions$W >= 0.3){
+      stop('r/W must be less than 0.3 for this geometry.')
     }
     x <- dimensions$r/dimensions$W
 
@@ -34,17 +34,14 @@ stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
     if(2*dimensions$r >= dimensions$W){
       stop('Radius exceeds the width of this geometry.')
     }
+    if(dimensions$r > 0.25*dimensions$W){
+      stop('r/W must be less than 0.5 for this geometry.')
+    }
 
     if(loadtype == 1){
       # Tension
-      if(dimensions$r/dimensions$W >= 0.25){
-        x <- dimensions$r/(dimensions$W-2*dimensions$r)
-        Kt <- 1.110*(x^-0.417)
-      }
-      if(dimensions$r/dimensions$W < 0.25){
-        x <- (2*dimensions$r)/dimensions$W
-        Kt <- 3.065 - 3.472*x + 1.009*(x^2) + 0.405*(x^3)
-      }
+      x <- (2*dimensions$r)/dimensions$W
+      Kt <- 3.065 - 3.472*x + 1.009*(x^2) + 0.405*(x^3)
     }
     if(loadtype == 2){
       # Bending
@@ -62,7 +59,7 @@ stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
     x <- dimensions$d/dimensions$W
     y <- dimensions$d/dimensions$r
     if(dimensions$d/dimensions$W >= 0.3 || dimensions$d/dimensions$r < 0.5 || dimensions$d/dimensions$r > 20) {
-      stop('d/W must be less than 0.3 for this geometry and 0.5 < d/r < 20.')
+      stop(' 0.5 < d/r < 20 for this geometry.')
     }
     if(loadtype == 1){
       # Tension
