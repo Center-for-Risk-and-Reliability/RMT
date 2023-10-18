@@ -267,6 +267,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     }
     params <- paste(c(distparam,lsparams),collapse = " ")
     paramsvec <- c("beta",lsparamsvec)
+    outputparamset <- c("\U03B2",lsparamsvec)
     priors <- paste(c(distpriors,lspriors),collapse = " ")
   }
   if (dist=="Lognormal") {
@@ -280,6 +281,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     }
     params <- paste(c(distparam,lsparams),collapse = " ")
     paramsvec <- c("sigma_t",lsparamsvec)
+    outputparamset <- c("\U03C3_t",lsparamsvec)
     priors <- paste(c(distpriors,lspriors),collapse = " ")
   }
   if (dist=="Normal") {
@@ -292,6 +294,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     }
     params <- paste(c(distparam,lsparams),collapse = " ")
     paramsvec <- c("sigma",lsparamsvec)
+    outputparamset <- c("\U03C3",lsparamsvec)
     priors <- paste(c(distpriors,lspriors),collapse = " ")
   }
   if (dist=="Exponential") {
@@ -301,7 +304,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
       loglik <- paste(c("target += exponential_lpdf(TTF | 1/(",lifeF,")) + exponential_lccdf(TTS 1/(",lifeC,"));"),collapse = "")
     }
     params <- lsparams
-    paramsvec <- sparamsvec
+    paramsvec <- lsparamsvec
+    outputparamset <- lsparamsvec
     priors <- lspriors
   }
   if (dist=="2PExponential") {
@@ -314,6 +318,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     }
     params <- paste(c(distparam,lsparams),collapse = " ")
     paramsvec <- c("sigma",lsparamsvec)
+    outputparamset <- c("\U03C3",lsparamsvec)
     priors <- paste(c(distpriors,lspriors),collapse = " ")
   }
 
@@ -353,6 +358,9 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
   # dataout <- fit@.MISC[["summary"]][["msd"]]
   stats <- fit$summary(variables = paramsvec)
   dataout <- fit$draws(format = "df")
+  confidbounds <- mcmc_intervals_data(fit$draws(variables = paramsvec),prob_outer = confid)
+  outputtable <- matrix(c(stats[[2]],stats[[4]],confidbounds[[5]],stats[[3]],confidbounds[[9]],stats[[8]]), nrow = length(outputparamset), ncol = 6, byrow = FALSE,dimnames = list(outputparamset,c("Mean","Standard Deviation",conflim_txt[1],"Median",conflim_txt[2],"R\U005E")))
+
 
   # Trace the Markov Chains for each parameter
   # plot1_MCtrace <- traceplot(fit, pars = paramsvec, inc_warmup = TRUE, nrow = 3)
@@ -363,6 +371,11 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
   plot2_hist <- mcmc_hist(fit$draws(paramsvec))
   plot3_density <- mcmc_dens(fit$draws(paramsvec))
   plot4_densityoverlay <- mcmc_dens_overlay(fit$draws(paramsvec))
+
+  # Produce some output text that summarizes the results
+  cat(c("Posterior estimates for Bayesian Analysis.\n\n"),sep = "")
+  print(outputtable)
+  cat(c("\n"),sep = "")
 
 
   return(list(fit,stats,dataout,plot1_MCtrace,plot2_hist,plot3_density,plot4_densityoverlay))

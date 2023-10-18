@@ -49,6 +49,7 @@ distribution.BAYESest <- function(pt_est,dist,TTF,Tc=NULL,confid=0.95,priors,nsa
     }
     params <- paste(c(distparam),collapse = " ")
     paramsvec <- c("alpha","beta")
+    outputparamset <- c("\U03B1 (Scale)","\U03B2 (Shape)")
     priors <- paste(c(distpriors),collapse = " ")
   }
   if (dist=="Lognormal") {
@@ -62,6 +63,7 @@ distribution.BAYESest <- function(pt_est,dist,TTF,Tc=NULL,confid=0.95,priors,nsa
     }
     params <- paste(c(distparam),collapse = " ")
     paramsvec <- c("mu_t","sigma_t")
+    outputparamset <- c("\U03BC_x (Scale)","\U03C3_X (Shape)")
     priors <- paste(c(distpriors),collapse = " ")
   }
   if (dist=="Normal") {
@@ -74,6 +76,7 @@ distribution.BAYESest <- function(pt_est,dist,TTF,Tc=NULL,confid=0.95,priors,nsa
     }
     params <- paste(c(distparam),collapse = " ")
     paramsvec <- c("mu","sigma")
+    outputparamset <- c("\U03BC (Location)","\U03C3 (Scale)")
     priors <- paste(c(distpriors),collapse = " ")
   }
   if (dist=="Exponential") {
@@ -86,6 +89,7 @@ distribution.BAYESest <- function(pt_est,dist,TTF,Tc=NULL,confid=0.95,priors,nsa
     }
     params <- paste(c(distparam),collapse = " ")
     paramsvec <- c("lambda")
+    outputparamset <- c("\U03BB (Rate)")
     priors <- paste(c(distpriors),collapse = " ")
   }
   if (dist=="2PExponential") {
@@ -98,6 +102,7 @@ distribution.BAYESest <- function(pt_est,dist,TTF,Tc=NULL,confid=0.95,priors,nsa
     }
     params <- paste(c(distparam),collapse = " ")
     paramsvec <- c("theta","sigma")
+    outputparamset <- c("\U03B8 (Location)","\U03C3 (Scale)")
     priors <- paste(c(distpriors),collapse = " ")
   }
 
@@ -137,6 +142,8 @@ distribution.BAYESest <- function(pt_est,dist,TTF,Tc=NULL,confid=0.95,priors,nsa
   # dataout <- fit@.MISC[["summary"]][["msd"]]
   stats <- fit$summary(variables = paramsvec)
   dataout <- fit$draws(format = "df")
+  confidbounds <- mcmc_intervals_data(fit$draws(variables = paramsvec),prob_outer = confid)
+  outputtable <- matrix(c(stats[[2]],stats[[4]],confidbounds[[5]],stats[[3]],confidbounds[[9]],stats[[8]]), nrow = length(outputparamset), ncol = 6, byrow = FALSE,dimnames = list(outputparamset,c("Mean","Standard Deviation",conflim_txt[1],"Median",conflim_txt[2],"R\U005E")))
 
   # Trace the Markov Chains for each parameter
   # plot1_MCtrace <- traceplot(fit, pars = paramsvec, inc_warmup = TRUE, nrow = 3)
@@ -147,6 +154,11 @@ distribution.BAYESest <- function(pt_est,dist,TTF,Tc=NULL,confid=0.95,priors,nsa
   plot2_hist <- mcmc_hist(fit$draws(paramsvec))
   plot3_density <- mcmc_dens(fit$draws(paramsvec))
   plot4_densityoverlay <- mcmc_dens_overlay(fit$draws(paramsvec))
+
+  # Produce some output text that summarizes the results
+  cat(c("Posterior estimates for Bayesian Analysis.\n\n"),sep = "")
+  print(outputtable)
+  cat(c("\n"),sep = "")
 
 
   return(list(fit,stats,dataout,plot1_MCtrace,plot2_hist,plot3_density,plot4_densityoverlay))
