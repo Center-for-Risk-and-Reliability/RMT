@@ -5,7 +5,7 @@
 Log-logistic Probability Plot Parameters
 }
 \description{
-Computes least-squares parameter estimates for log-logistic probability distribution for preparation for logistic  probability plotting.
+Computes least-squares parameter estimates for log-logistic probability distribution for preparation for log-logistic  probability plotting.
 }
 \usage{
 probplotparam.loglogist(xi,F)
@@ -20,7 +20,7 @@ probplotparam.loglogist(xi,F)
   }
 }
 \details{
-The Log-logistic distribution is positively bounded (\eqn{x \geq 0}) and consists of a log-logistic location parameter \eqn{\mu} and a log-logistic scale parameter \eqn{\sigma}.
+The Log-logistic distribution is positively bounded (\eqn{x \geq 0}) and consists of a log-logistic scale parameter \eqn{\mu} and a log-logistic shape parameter \eqn{\sigma}.
 
   PDF:
   \deqn{f(x) = \frac{\exp(\frac{\ln(x) - \mu}{\sigma})}{\sigma x [1+\exp(\frac{\ln(x) - \mu}{\sigma})]^2}}
@@ -39,7 +39,7 @@ Returns several parameters for a single probability plot from a set of data \cod
 Returns the transformed y-axis parameter for probabilities \eqn{0.1}\% and \eqn{99.9}\%.  For the log-logistic plot the y-axis is \eqn{\ln (\frac{1}{F} - 1)}.  \code{probplot.loglogist} uses this output to plot the best-fit line on the log-logistic probability plots.
 }
 \item{logistresults}{
-  The least squares estimates for the log-logistic location parameter \eqn{\mu} and a log-logistic scale parameter \eqn{\sigma}.
+  The least squares estimates for the log-logistic scale parameter \eqn{\mu} and a log-logistic shape parameter \eqn{\sigma}.
 }
 \item{R2}{
   Coefficient of determination \eqn{R^2}.
