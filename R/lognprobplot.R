@@ -192,5 +192,7 @@ probplot.logn <- function(data,pp,xlabel1,confid=0.95) {
   }
   # return(df3)
   # return(plotout)
-  return(list(outputpp, Xbound_list, Fboundlow_list, Fboundhigh_list, prob_plot = plotout))
+  return(list(outputpp, prob_plot = plotout))
+
+  # return(list(outputpp, Xbound_list, Fboundlow_list, Fboundhigh_list, prob_plot = plotout))
 }
