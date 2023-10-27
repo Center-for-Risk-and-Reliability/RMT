@@ -86,7 +86,7 @@ Definition of the sample geometry from which a stress concentration factor is so
 
   \strong{Infinite/Semi-Infinite Plate Options}
   \itemize{
-      \item \strong{ISI2. SInfinite Plate with Two Circular Holes} - Enter as \code{"inf_plate_two_circ_holes"} with dimensions distance between two holes \code{a} and radius \code{r}.  Available \code{loadtype}: Parallel Tension to Holes (\code{1}) and Perpendicular Tension to Holes (\code{2}).  (\emph{CONSTRAINT}: \eqn{0 \leq \frac{2r}{a} < 10})
+      \item \strong{ISI2. Infinite Plate with Two Circular Holes} - Enter as \code{"inf_plate_two_circ_holes"} with dimensions distance between two holes \code{a} and radius \code{r}.  Available \code{loadtype}: Parallel Tension to Holes (\code{1}) and Perpendicular Tension to Holes (\code{2}).  (\emph{CONSTRAINT}: \eqn{0 \leq \frac{2r}{a} < 10})
 
       \figure{ISI2.png}{options: alt="ISI2 - Infinite Plate with Two Circular Holes"}
 

@@ -2,7 +2,7 @@
 \alias{notch.lifestrain.life.trace}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Life from Life Strain Properties with Notch Effect
+Life from Life-Strain Properties with Notch Effect
 }
 \description{
 Computes the strain-life (in fatigue cycles \eqn{N_f} and reversals) for a given set of strain-life parameters and conditions with consideration for notch effect.
@@ -43,10 +43,10 @@ Definition of the sample geometry from which a stress concentration factor is so
       Defines the units for the stress amplitude: \code{1} for \emph{'MPa'} and \code{2} for \emph{'ksi'}.  \emph{'MPa'} will be used as default if this heading is left empty.
 }
   \item{loadconditions}{
-      A list of load conditions and/or material properties that may be required to compute notch effects.  Includes: (1) \code{Su} the ultimate strength \eqn{S_u}, (2) \code{Se} the fatigue limit \eqn{S_e}, (3) \code{Sa} the stress amplitude \eqn{S_a}, and/or (4) \code{a} the material constant needed to compute the notch sensitivity factor \eqn{q} in either inches or mm.
+      A list of load conditions and/or material properties that may be required to compute notch effects.  Includes: (1) \code{Su} the ultimate strength \eqn{S_u}, (2) \code{Sy} the yield strength \eqn{S_y}, (3) \code{Sa} the stress amplitude \eqn{S_a} (\eqn{F} in the figures), and/or (4) \code{a} the material constant needed to compute the notch sensitivity factor \eqn{q} in either inches or mm.
 }
   \item{options}{
-      A list made up of the \emph{mean stress correction} entered as \code{mean_stress_corr} (see \code{\link{stress_strain.params}} for complete list and input).
+      A list made up of the fatigue stress concentration factor \eqn{K_f} (if known) entered as \code{Kf} the \emph{mean stress correction} entered as \code{mean_stress_corr} (see \code{\link{stress_strain.params}} for complete list and input).
 }
 }
 \details{
