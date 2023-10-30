@@ -20,23 +20,23 @@ Definition of the sample geometry from which a stress concentration factor is so
 
 \strong{Rectangular Bar or Plate options}
   \itemize{
-      \item \strong{RB1. Rectangular Bar with a Semi-circle Edge Notch} - Enter as \code{"rect_1semicirc_edge"} with dimensions width \code{W} and radius \code{r}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}). (\emph{CONSTRAINT}: \eqn{r/W < 0.3})
+      \item \strong{RB1. Rectangular Bar with a Semi-circle Edge Notch} - Enter as \code{"rect_1semicirc_edge"} with dimensions width \code{W} and radius \code{r}.  If given \eqn{W-r} enter as \code{W_m_r}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}). (\emph{CONSTRAINT}: \eqn{r/W < 0.3})
 
       \figure{RB1.png}{options: alt="RB1 - Rectangular Bar with a Semi-circle Edge Notch"}
 
-      \item \strong{RB2. Rectangular Bar with Opposite Semi-circle Edge Notches} - Enter as \code{"rect_2semicirc_edge"} with dimensions width \code{W} and radius \code{r}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}). (\emph{CONSTRAINT}: \eqn{r/W < 0.5})
+      \item \strong{RB2. Rectangular Bar with Opposite Semi-circle Edge Notches} - Enter as \code{"rect_2semicirc_edge"} with dimensions width \code{W} and radius \code{r}.  If given \eqn{W-2r} enter as \code{W_m_2r}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}). (\emph{CONSTRAINT}: \eqn{r/W < 0.5})
 
       \figure{RB2.png}{options: alt="RB2 - Rectangular Bar with Opposite Semi-circle Edge Notches"}
 
-      \item \strong{RB3. Rectangular Bar with a U-Notch} - Enter as \code{"rect_1U_edge"} with dimensions width \code{W}, radius \code{r}, and U-depth \code{d}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}).  (\emph{CONSTRAINT}: \eqn{0.5 < d/r < 20})
+      \item \strong{RB3. Rectangular Bar with a U-Notch} - Enter as \code{"rect_1U_edge"} with dimensions width \code{W}, radius \code{r}, and U-depth \code{d}.  If given \eqn{W-d} enter as \code{W_m_d}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}).  (\emph{CONSTRAINT}: \eqn{0.5 < d/r < 20})
 
       \figure{RB3.png}{options: alt="RB3 - Rectangular Bar with a U-Notch"}
 
-      \item \strong{RB4. Rectangular Bar with Opposite Edge U-Notches} - Enter as \code{"rect_2U_edge"} with dimensions width \code{W}, radius \code{r}, and U-depth \code{d}.   Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}).   (\emph{CONSTRAINT}: \eqn{0.02 \leq d/w \leq 0.25} and \eqn{0.1 \leq d/r \leq 50})
+      \item \strong{RB4. Rectangular Bar with Opposite Edge U-Notches} - Enter as \code{"rect_2U_edge"} with dimensions width \code{W}, radius \code{r}, and U-depth \code{d}.   If given \eqn{W-2d} enter as \code{W_m_2d}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}).   (\emph{CONSTRAINT}: \eqn{0.02 \leq d/w \leq 0.25} and \eqn{0.1 \leq d/r \leq 50})
 
       \figure{RB4.png}{options: alt="RB4 - Rectangular Bar with Opposite Edge U-Notches"}
 
-      \item \strong{RB6. Rectangular Bar with Opposite Edge V-Notches} - Enter as \code{"rect_2V_edge"} with dimensions width \code{W}, radius \code{r}, V-depth \code{d}, and V-angle \code{alp}.  Available \code{loadtype}: Tension (\code{1}).  (\emph{CONSTRAINT}: When \eqn{2d/W = 0.398}, \eqn{90^\circ \leq \alpha \leq 150^\circ} and When \eqn{2d/W = 0.667}, \eqn{60^\circ \leq \alpha \leq 150^\circ})
+      \item \strong{RB6. Rectangular Bar with Opposite Edge V-Notches} - Enter as \code{"rect_2V_edge"} with dimensions width \code{W}, radius \code{r}, V-depth \code{d}, and V-angle \code{alp}.   If given \eqn{W-2d} enter as \code{W_m_2d}.   Available \code{loadtype}: Tension (\code{1}).  (\emph{CONSTRAINT}: When \eqn{2d/W = 0.398}, \eqn{90^\circ \leq \alpha \leq 150^\circ} and When \eqn{2d/W = 0.667}, \eqn{60^\circ \leq \alpha \leq 150^\circ})
 
       \figure{RB6.png}{options: alt="RB6 - Rectangular Bar with Opposite Edge V-Notches"}
 
@@ -44,19 +44,19 @@ Definition of the sample geometry from which a stress concentration factor is so
 
       \figure{RB7.png}{options: alt="RB7 - Plate with a Circular Symmetric Hole"}
 
-      \item \strong{RB8. Plate with a Elliptical Symmetric Hole} - Enter as \code{"rect_ellips_symm_hole"} with dimensions width \code{W}, short diameter \code{a}, and long diameter \code{d}.  Available \code{loadtype}: Tension (\code{1}).  (\emph{CONSTRAINT}: \eqn{1 < d/a < 8})
+      \item \strong{RB8. Plate with a Elliptical Symmetric Hole} - Enter as \code{"rect_ellips_symm_hole"} with dimensions width \code{W}, short diameter \code{a}, and long diameter \code{d}.   If given \eqn{W-d} enter as \code{W_m_d}.   Available \code{loadtype}: Tension (\code{1}).  (\emph{CONSTRAINT}: \eqn{1 < d/a < 8})
 
       \figure{RB8.png}{options: alt="RB8 - Plate with a Elliptical Symmetric Hole"}
 
-      \item \strong{RB10. Plate with a Circular Offset Hole} - Enter as \code{"plate_circ_offset_hole"} with dimensions width \code{W}, radius \code{r}, and edge-to-hole center distance  \code{a}.  Available \code{loadtype}: Tension (\code{1}).  (\emph{CONSTRAINT}: \eqn{0 < r/a < 0.8})
+      \item \strong{RB10. Plate with a Circular Offset Hole} - Enter as \code{"plate_circ_offset_hole"} with dimensions width \code{W}, radius \code{r}, and edge-to-hole center distance  \code{a}.   If given \eqn{W-d} enter as \code{W_m_d}.   Available \code{loadtype}: Tension (\code{1}).  (\emph{CONSTRAINT}: \eqn{0 < r/a < 0.8})
 
       \figure{RB10.png}{options: alt="RB10 - Plate with a Circular Offset Hole"}
 
-      \item \strong{RB13. Rectangular Bar with Infinite Rows of Semicircular Notches} - Enter as \code{"rect_inf_semicirc_edge"} with dimensions width \code{W}, radius \code{r}, and semi-circle spacing \code{b}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}).  (\emph{CONSTRAINT}: \eqn{2r/W \leq 0.4} and \eqn{0 \leq 2r/b \leq 1})
+      \item \strong{RB13. Rectangular Bar with Infinite Rows of Semicircular Notches} - Enter as \code{"rect_inf_semicirc_edge"} with dimensions width \code{W}, radius \code{r}, and semi-circle spacing \code{b}.   If given \eqn{W-2r} enter as \code{W_m_2r}.   Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}).  (\emph{CONSTRAINT}: \eqn{2r/W \leq 0.4} and \eqn{0 \leq 2r/b \leq 1})
 
       \figure{RB13.png}{options: alt="RB13 - Rectangular Bar with Infinite Rows of Semicircular Notches"}
 
-      \item \strong{RB15. Rectangular Bar with Double Fillets} - Enter as \code{"rect_double_fillet"} with dimensions width \code{W}, fillet spacing \code{L}, inner width \code{d}, and radius \code{r}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}).  (\emph{CONSTRAINT}: \eqn{0.1 \leq (W-d)/2r \leq 20.0})
+      \item \strong{RB15. Rectangular Bar with Double Fillets} - Enter as \code{"rect_double_fillet"} with dimensions width \code{W}, fillet spacing \code{L}, inner width \code{d}, and radius \code{r}.   Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}).  (\emph{CONSTRAINT}: \eqn{0.1 \leq (W-d)/2r \leq 20.0})
 
       \figure{RB15.png}{options: alt="RB15 - Rectangular Bar with Double Fillets"}
   }
