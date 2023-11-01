@@ -213,7 +213,9 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1) {
     Lvals<-log(L)
     params  <- nls(Lvals ~ log(b) -log(S) + (a/S),start = list(a = 1,b = 3))
     lsparams <- c(summary(params)$coefficients[1,1],summary(params)$coefficients[2,1])
-    R2 <- summary(params)$r.squared
+    SST <- sum((Lvals - mean(Lvals))^2)
+    SSE <- deviance(params)
+    R2 <- 1 - (SSE/SST)
     params_txt<-c("a","b")
     # Writeup for the output text
     ls_txt<-ls
@@ -225,7 +227,9 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1) {
     Lvals<-log(L)
     params  <- nls(Lvals ~ -log(S) + (b/S) - a,start = list(a = 1,b = 3))
     lsparams <- c(summary(params)$coefficients[1,1],summary(params)$coefficients[2,1])
-    R2 <- summary(params)$r.squared
+    SST <- sum((Lvals - mean(Lvals))^2)
+    SSE <- deviance(params)
+    R2 <- 1 - (SSE/SST)
     params_txt<-c("a","b")
     # Writeup for the output text
     ls_txt<-"Eyring (Type-2)"
