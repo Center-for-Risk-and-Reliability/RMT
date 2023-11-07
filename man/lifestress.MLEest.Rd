@@ -89,7 +89,7 @@ time <- c(52, 80, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 20, 28, 35, 
 cens <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0)
 temp <- c(175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 250, 250, 250, 250, 250, 250, 250) + 273.15
 mat1 <- matrix(c(time, cens, temp), nrow = length(time), ncol = 3, byrow = FALSE,dimnames = list(NULL,c("time (hrs)","cens","temp")))
-est1 <- lifestress.LSQest("Arrhenius","Weibull",probplot.wbl(mat1,"Blom","hours")[[1]])[[3]]
+est1 <- lifestress.LSQest(mat1,"Arrhenius","Weibull","Blom")[[3]]
 ttf1 <- sort.xircstressdata(mat1)[[1]]
 ttrc1 <- sort.xircstressdata(mat1)[[2]]
 Sf1 <- sort.xircstressdata(mat1)[[3]]
@@ -102,7 +102,7 @@ cens <- c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
 temp <- c(393, 393, 393, 393, 393, 353, 353, 353, 353, 353, 353, 353, 353, 353, 353)
 RH <- c(0.6, 0.6, 0.6, 0.6, 0.6, 0.85, 0.85, 0.85, 0.85, 0.85, 0.6, 0.6, 0.6, 0.6, 0.6)
 mat2 <- matrix(c(time, cens, temp, RH), nrow = length(time), ncol = 4, byrow = FALSE,dimnames = list(NULL,c("time (hrs)","cens","temp","Relative humidity")))
-est2 <- lifestress.LSQest("TempHumidity","Weibull",probplot.wbl(mat2,"Blom","hours")[[1]])[[3]]
+est2 <- lifestress.LSQest(mat2,"TempHumidity","Weibull","Blom")[[3]]
 ttf2 <- sort.xircstressdata(mat2)[[1]]
 ttrc2 <- sort.xircstressdata(mat2)[[2]]
 Sf2 <- sort.xircstressdata(mat2)[[3]]

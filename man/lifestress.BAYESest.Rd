@@ -117,7 +117,7 @@ time_prior <- c(45000, 240000, 800000, 1500000, 2700000, 7800000, 10000000, 2600
 cens_prior <- c(1, 1, 1, 1, 1, 1, 1, 0, 0, 0)
 stress_prior <- c(78.9, 74.02, 68.16, 63.27, 62.05, 59.61, 59.61, 58.63, 57.65, 57.41)
 mat1 <- matrix(c(time_prior, cens_prior, stress_prior), nrow = length(time_prior), ncol = 3, byrow = FALSE,dimnames = list(NULL,c("cycles to failure","cens","stress amplitude")))
-est1 <- lifestress.LSQest("InversePower","Lognormal",probplot.logn(mat1,"Blom","cycles to failure")[[1]])[[3]]
+est1 <- lifestress.LSQest(mat1,"InversePower","Lognormal","Blom")[[3]]
 # Update data for Bayesian analysis
 ttf1 <- c(1400000, 9000000)
 ttrc1 <- c(10000000, 10000000, 10000000)
