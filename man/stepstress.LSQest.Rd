@@ -127,8 +127,8 @@ Dr. Reuel Smith (2021-2022)
 ## first table is made up of the step-stress data made up of 11 units tested from voltages 2V to
 ## 7V and the failures that occur on each step.  While the second table is the step description
 ## based on voltage and test time for each step.  This is based on Table 4.8 in the text.
-datStepStress1 <- read.csv("https://raw.githubusercontent.com/ReuS009/reliabilitytk/main/CSVExampleData/Step_Stress_Data_1_by_Voltage_V_step_based_time_Example_Table_4_8_and_Example_4_17.csv")
-tableStepStress1 <- read.csv("https://raw.githubusercontent.com/ReuS009/reliabilitytk/main/CSVExampleData/Step_Stress_Table_1_by_Voltage_V_step_based_time_Example_Table_4_8_and_Example_4_17.csv")
+datStepStress1 <- read.csv("https://raw.githubusercontent.com/Center-for-Risk-and-Reliability/RMT/main/CSVExampleData/Step_Stress_Data_1_by_Voltage_V_step_based_time_Example_Table_4_8_and_Example_4_17.csv")
+tableStepStress1 <- read.csv("https://raw.githubusercontent.com/Center-for-Risk-and-Reliability/RMT/main/CSVExampleData/Step_Stress_Table_1_by_Voltage_V_step_based_time_Example_Table_4_8_and_Example_4_17.csv")
 stepstress.LSQest(datStepStress1,tableStepStress1, "InversePower", "Weibull", "Blom")
 
 ## Example 2: Dual Stress Step-Stress
@@ -137,8 +137,8 @@ stepstress.LSQest(datStepStress1,tableStepStress1, "InversePower", "Weibull", "B
 ## humidity 70\% to 90\% and temperature 525K to 555K.  While the second table is the step
 ## description based on relative humidity and temperature and test time for each step.  This is
 ## based on Table 4.18 and Example 4.16 in the text.
-datStepStress2 <- read.csv("https://raw.githubusercontent.com/ReuS009/reliabilitytk/main/CSVExampleData/Step_Stress_Data_3_by_temperature_Kelvin_and_relative_humidity_percent_step_based_time_Example_4_16.csv")
-tableStepStress2 <- read.csv("https://raw.githubusercontent.com/ReuS009/reliabilitytk/main/CSVExampleData/Step_Stress_Table_3_by_temperature_Kelvin_and_relative_humidity_percent_step_based_time_Example_4_16.csv")
+datStepStress2 <- read.csv("https://raw.githubusercontent.com/Center-for-Risk-and-Reliability/RMT/main/CSVExampleData/Step_Stress_Data_3_by_temperature_Kelvin_and_relative_humidity_percent_step_based_time_Example_4_16.csv")
+tableStepStress2 <- read.csv("https://raw.githubusercontent.com/Center-for-Risk-and-Reliability/RMT/main/CSVExampleData/Step_Stress_Table_3_by_temperature_Kelvin_and_relative_humidity_percent_step_based_time_Example_4_16.csv")
 stepstress.LSQest(datStepStress2,tableStepStress2, "TempHumidity", "Weibull", "Blom")
 
 }

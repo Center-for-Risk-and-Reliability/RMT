@@ -52,6 +52,10 @@ The life-stress model definition for analysis.  Choose from the list of life-mod
   \item \strong{Two Parameter Exponential} (Enter as "2PExponential".  See more on \code{\link{probplot.exp2P}}.)
   \item \strong{Normal} (Enter as "Normal".  See more on \code{\link{probplot.nor}}.)
   \item \strong{Lognormal} (Enter as "Lognormal".  See more on \code{\link{probplot.logn}}.)
+  \item \strong{Gamma} (Enter as "Gamma".  See more on \code{\link{probplot.gam}}.)
+  \item \strong{Logistic} (Enter as "Logistic".  See more on \code{\link{probplot.logist}}.)
+  \item \strong{Log-logistic} (Enter as "Loglogistic".  See more on \code{\link{probplot.loglogist}}.)
+  \item \strong{Gumbel} (Enter as "Gumbel".  See more on \code{\link{probplot.gumb}}.)
   }
 }
   \item{confid}{
@@ -111,11 +115,11 @@ Modarres, M., Amiri, M., Jackson, C.  (2017)  Probabilistic Physics of Failure A
 Dr. Reuel Smith (2021-2022)
 }
 \note{
-%%  ~~further notes~~
+As of version 1.2.6, this tool is operational.
 }
 
 \section{Warning }{
-RStan is currently unable to compile stan code for R and Rtools versions 4.2 and higher.  Stan developers are working on this but suggest downloading older versions of Rtools for now (\link{https://blog.mc-stan.org/2022/04/26/stan-r-4-2-on-windows/}).  Meanwhile with regard to the development of this toolkit, a temporary workaround is being developed.
+%% post warnings
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
@@ -129,8 +133,8 @@ RStan is currently unable to compile stan code for R and Rtools versions 4.2 and
 ## first table is made up of the step-stress data made up of 11 units tested from voltages 2V to
 ## 7V and the failures that occur on each step.  While the second table is the step description
 ## based on voltage and test time for each step.  This is based on Table 4.8 in the text.
-datStepStress1 <- read.csv("https://raw.githubusercontent.com/ReuS009/reliabilitytk/main/CSVExampleData/Step_Stress_Data_1_by_Voltage_V_step_based_time_Example_Table_4_8_and_Example_4_17.csv")
-tableStepStress1 <- read.csv("https://raw.githubusercontent.com/ReuS009/reliabilitytk/main/CSVExampleData/Step_Stress_Table_1_by_Voltage_V_step_based_time_Example_Table_4_8_and_Example_4_17.csv")
+datStepStress1 <- read.csv("https://raw.githubusercontent.com/Center-for-Risk-and-Reliability/RMT/main/CSVExampleData/Step_Stress_Data_1_by_Voltage_V_step_based_time_Example_Table_4_8_and_Example_4_17.csv")
+tableStepStress1 <- read.csv("https://raw.githubusercontent.com/Center-for-Risk-and-Reliability/RMT/main/CSVExampleData/Step_Stress_Table_1_by_Voltage_V_step_based_time_Example_Table_4_8_and_Example_4_17.csv")
 est1<-stepstress.LSQest(datStepStress1,tableStepStress1, "InversePower", "Weibull", "Blom")[[2]]
 MLEest1<-stepstress.MLEest(est1,datStepStress1,tableStepStress1,"InversePower","Weibull",0.95)[[1]]
 stepstress.BAYESest(MLEest1,datStepStress1,tableStepStress1,"InversePower","Weibull",0.95,c("uniform(1,100)","uniform(1,100)","uniform(1,100000)"),20000,100)
@@ -141,8 +145,8 @@ stepstress.BAYESest(MLEest1,datStepStress1,tableStepStress1,"InversePower","Weib
 ## humidity 70\% to 90\% and temperature 525K to 555K.  While the second table is the step
 ## description based on relative humidity and temperature and test time for each step.  This is
 ## based on Table 4.18 and Example 4.16 in the text.
-datStepStress2 <- read.csv("https://raw.githubusercontent.com/ReuS009/reliabilitytk/main/CSVExampleData/Step_Stress_Data_3_by_temperature_Kelvin_and_relative_humidity_percent_step_based_time_Example_4_16.csv")
-tableStepStress2 <- read.csv("https://raw.githubusercontent.com/ReuS009/reliabilitytk/main/CSVExampleData/Step_Stress_Table_3_by_temperature_Kelvin_and_relative_humidity_percent_step_based_time_Example_4_16.csv")
+datStepStress2 <- read.csv("https://raw.githubusercontent.com/Center-for-Risk-and-Reliability/RMT/main/CSVExampleData/Step_Stress_Data_3_by_temperature_Kelvin_and_relative_humidity_percent_step_based_time_Example_4_16.csv")
+tableStepStress2 <- read.csv("https://raw.githubusercontent.com/Center-for-Risk-and-Reliability/RMT/main/CSVExampleData/Step_Stress_Table_3_by_temperature_Kelvin_and_relative_humidity_percent_step_based_time_Example_4_16.csv")
 est2<-stepstress.LSQest(datStepStress2,tableStepStress2, "TempHumidity", "Weibull", "Blom")[[2]]
 MLEest2<-stepstress.MLEest(est2,datStepStress2,tableStepStress2,"TempHumidity","Weibull",0.95)[[1]]
 stepstress.BAYESest(MLEest2,datStepStress2,tableStepStress2,"TempHumidity","Weibull",0.95,c("uniform(1,100),uniform(1,100),uniform(1,100000)"),20000,100)
