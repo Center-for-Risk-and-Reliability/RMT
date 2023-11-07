@@ -6,20 +6,26 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1) {
   library(pracma)
 
   # Compute probability plotting output first based on input
+  # UPDATE (11/7/2023) - Now includes the probability plot for the stress levels
   if (dist=="Weibull") {
     ppoutput <- probplot.wbl(data,pp,xlabel1)[[1]]
+    plotoutput <- probplot.wbl(data,pp,xlabel1)$prob_plot
   }
   if (dist=="Lognormal") {
     ppoutput <- probplot.logn(data,pp,xlabel1)[[1]]
+    plotoutput <- probplot.logn(data,pp,xlabel1)$prob_plot
   }
   if (dist=="Normal") {
     ppoutput <- probplot.nor(data,pp,xlabel1)[[1]]
+    plotoutput <- probplot.nor(data,pp,xlabel1)$prob_plot
   }
   if (dist=="Exponential") {
     ppoutput <- probplot.exp(data,pp,xlabel1)[[1]]
+    plotoutput <- probplot.exp(data,pp,xlabel1)$prob_plot
   }
   if (dist=="2PExponential") {
     ppoutput <- probplot.exp2P(data,pp,xlabel1)[[1]]
+    plotoutput <- probplot.exp2P(data,pp,xlabel1)$prob_plot
   }
 
   # First check and see that there are multiple stress levels
@@ -419,5 +425,5 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1) {
   cat("\n")
 
   # Return parameter list
-  return(list(S,L,LSQ,R2))
+  return(list(S,L,LSQ,R2,plotoutput=plotoutput))
 }

@@ -1,14 +1,10 @@
 # Life-Stress Relationship Plot Generator
-# Developed by Dr. Reuel Smith, 2021-2022
+# Developed by Dr. Reuel Smith, 2021-2023
 
-lifestress.relationplot <- function(data,ls,dist,pp,Smin,Smax,SUse,therm,confid,Llab,Slab) {
+lifestress.relationplot <- function(data,ls,dist,pp,Smin,Smax,SUse,therm=1,confid=0.95,Llab="Characteristic Life - X",Slab="Characteristic Stress - S") {
   #Load plotly library for 3D plotting
   library(plotly)
-
-  # Check first that the data has multiple accelerated stress levels
-  if(length(pp)<3) {
-    stop('Need more than one stress level to generate relationship plot.')
-  }
+  library(ggplot2)
 
   # Check to see that the vectors Smin, Smax, and SUse are the same length to determine
   # if life is based on one stress or multiple stress types
@@ -33,16 +29,15 @@ lifestress.relationplot <- function(data,ls,dist,pp,Smin,Smax,SUse,therm,confid,
     stop('Your S_max is less than your S_min.')
   }
 
-  # Check to see if a confidence bound was entered.  95% is the default.
-  if(missing(confid)){
-    confid <- 0.95
-  }
-
   # Sort the stress data for MLE step
   xircSxiSrc <- sort.xircstressdata(data)
 
   # Compute the LSQ and MLE data
-  LSQoutput <- lifestress.LSQest(ls,dist,pp)
+  LSQoutput <- lifestress.LSQest(data,ls,dist,pp)
+  # Check first that the data has multiple accelerated stress levels
+  if(length(LSQoutput[[1]])==1) {
+    stop('Need more than one stress level to generate relationship plot.')
+  }
   MLEoutput <- lifestress.MLEest(LSQoutput[[3]],ls,dist,xircSxiSrc[[1]],xircSxiSrc[[3]],xircSxiSrc[[2]],xircSxiSrc[[4]],confid)
 
   # ==========================================================================
