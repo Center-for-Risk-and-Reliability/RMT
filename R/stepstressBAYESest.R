@@ -1,13 +1,14 @@
 # Bayesian Step-Stress Estimator
 # Developed by Dr. Reuel Smith, 2021-2022
 
-stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,priors,nsamples,burnin){
+stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,priors,nsamples,burnin,nchains=4){
   #Load pracma library for erf
   library(pracma)
   library(StanHeaders)
   library(rstan)
   library(ggplot2)
   library(shinystan)
+  library(cmdstanr)
   library(bayesplot)
 
   # Add input to this to include prior estimates for LS parameters.
@@ -143,10 +144,10 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
     Tj_adj <- "tjadj[j] = (Tj[j] - Tendj[j])*((a*Sj[j] + b)/(a*Snj[j] + b));"
 
     # Life functions
-    lifeF <- "Lifei[i] = b + Si[i]*a"
-    loglifeF <- "Lifei[i] = log(b + Si[i]*a)"
+    lifeF <- "Lifei[i] = b + Si[i]*a;"
+    loglifeF <- "Lifei[i] = log(b + Si[i]*a);"
     lifeC <- "Lifej[j] = b + Sj[j]*a"
-    loglifeC <- "Lifej[j] = log(b + Sj[j]*a)"
+    loglifeC <- "Lifej[j] = log(b + Sj[j]*a);"
   }
 
   if (ls=="Exponential"){
@@ -163,10 +164,10 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
 
 
     # Life functions
-    lifeF <- "Lifei[i] = b*exp(a*Si[i])"
-    loglifeF <- "Lifei[i] = log(b) + a*Si[i]"
-    lifeC <- "Lifej[j] = b*exp(a*Sj[j])"
-    loglifeC <- "Lifej[j] = log(b) + a*Sj[j]"
+    lifeF <- "Lifei[i] = b*exp(a*Si[i]);"
+    loglifeF <- "Lifei[i] = log(b) + a*Si[i];"
+    lifeC <- "Lifej[j] = b*exp(a*Sj[j]);"
+    loglifeC <- "Lifej[j] = log(b) + a*Sj[j];"
   }
 
   if (ls=="Arrhenius") {
@@ -183,10 +184,10 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
     Tj_adj <- "tjadj[j] = (Tj[j] - Tendj[j])*exp((Ea/8.617385e-5)*((1/Sj[j]) - (1/Snj[j])));"
 
     # Life functions
-    lifeF <- "Lifei[i] = b*exp(Ea/((8.617385e-5)*Si[i]))"
-    loglifeF <- "Lifei[i] = log(b) + (Ea/((8.617385e-5)*Si[i]))"
-    lifeC <- "Lifej[j] = b*exp(Ea/((8.617385e-5)*Sj[j]))"
-    loglifeC <- "Lifej[j] = log(b) + (Ea/((8.617385e-5)*Sj[j]))"
+    lifeF <- "Lifei[i] = b*exp(Ea/((8.617385e-5)*Si[i]));"
+    loglifeF <- "Lifei[i] = log(b) + (Ea/((8.617385e-5)*Si[i]));"
+    lifeC <- "Lifej[j] = b*exp(Ea/((8.617385e-5)*Sj[j]));"
+    loglifeC <- "Lifej[j] = log(b) + (Ea/((8.617385e-5)*Sj[j]));"
   }
 
   if (ls=="Eyring") {
@@ -202,10 +203,10 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
     Tj_adj <- "tjadj[j] = (Tj[j] - Tendj[j])*exp((Ea/8.617385e-5)*((1/Sj[j]) - (1/Snj[j])));"
 
     # Life functions
-    lifeF <- "Lifei[i] = (b/Si[i])*exp(a/Si[i])"
-    loglifeF <- "Lifei[i] = log(b) - log(Si[i]) + (a/Si[i])"
-    lifeC <- "Lifej[j] = (b/Sj[j])*exp(a/Sj[j])"
-    loglifeC <- "Lifej[j] = log(b) - log(Sj[j]) + (a/Sj[j])"
+    lifeF <- "Lifei[i] = (b/Si[i])*exp(a/Si[i]);"
+    loglifeF <- "Lifei[i] = log(b) - log(Si[i]) + (a/Si[i]);"
+    lifeC <- "Lifej[j] = (b/Sj[j])*exp(a/Sj[j]);"
+    loglifeC <- "Lifej[j] = log(b) - log(Sj[j]) + (a/Sj[j]);"
   }
 
   if (ls=="Eyring2") {
@@ -221,10 +222,10 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
     Tj_adj <- "tjadj[j] = (Tj[j] - Tendj[j])*exp((Ea/8.617385e-5)*((1/Sj[j]) - (1/Snj[j])));"
 
     # Life functions
-    lifeF <- "Lifei[i] = (1/Si[i])*exp(-(a - (b/Si[i])))"
-    loglifeF <- "Lifei[i] = -log(Si[i]) - a + (b/Si[i])"
-    lifeC <- "Lifej[j] = (1/Sj[j])*exp(-(a - (b/Sj[j])))"
-    loglifeC <- "Lifej[j] = -log(Sj[j]) - a + (b/Sj[j])"
+    lifeF <- "Lifei[i] = (1/Si[i])*exp(-(a - (b/Si[i])));"
+    loglifeF <- "Lifei[i] = -log(Si[i]) - a + (b/Si[i]);"
+    lifeC <- "Lifej[j] = (1/Sj[j])*exp(-(a - (b/Sj[j])));"
+    loglifeC <- "Lifej[j] = -log(Sj[j]) - a + (b/Sj[j]);"
   }
 
   if (ls=="Power") {
@@ -240,10 +241,10 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
     Tj_adj <- "tjadj[j] = (Tj[j] - Tendj[j])*((Sj[j]/Snj[j])^a);"
 
     # Life functions
-    lifeF <- "Lifei[i] = b*(Si[i]^a)"
-    loglifeF <- "Lifei[i] = log(b) + a*log(Si[i])"
-    lifeC <- "Lifej[j] = b*(Sj[j]^a)"
-    loglifeC <- "Lifej[j] = log(b) + a*log(Sj[j])"
+    lifeF <- "Lifei[i] = b*(Si[i]^a);"
+    loglifeF <- "Lifei[i] = log(b) + a*log(Si[i]);"
+    lifeC <- "Lifej[j] = b*(Sj[j]^a);"
+    loglifeC <- "Lifej[j] = log(b) + a*log(Sj[j]);"
   }
 
   if (ls=="InversePower") {
@@ -278,10 +279,10 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
     Tj_adj <- "tjadj[j] = (Tj[j] - Tendj[j])*((a*log(Sj[j]) + b)/(a*log(Snj[j]) + b));"
 
     # Life functions
-    lifeF <- "Lifei[i] = a*log(Si[i]) + b"
-    loglifeF <- "Lifei[i] = log(a*log(Si[i]) + b)"
-    lifeC <- "Lifej[j] = a*log(Sj[j]) + b"
-    loglifeC <- "Lifej[j] = log(a*log(Sj[j]) + b)"
+    lifeF <- "Lifei[i] = a*log(Si[i]) + b;"
+    loglifeF <- "Lifei[i] = log(a*log(Si[i]) + b);"
+    lifeC <- "Lifej[j] = a*log(Sj[j]) + b;"
+    loglifeC <- "Lifej[j] = log(a*log(Sj[j]) + b);"
   }
 
   if (ls=="MultiStress") {
@@ -325,10 +326,10 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
     Tj_adj <- "tjadj[j] = (Tj[j] - Tendj[j])*exp((Ea/8.617385e-5)*((1/Sj[j]) - (1/Snj[j])));"
 
     # Life functions
-    lifeF <- "Lifei[i] = A*exp((a/Sf[,1]) + (b/Sf[,2]))"
-    loglifeF <- "Lifei[i] = log(A) + (a/Sf[,1]) + (b/Sf[,2])"
-    lifeC <- "Lifej[j] = A*exp((a/Sc[,1]) + (b/Sc[,2]))"
-    loglifeC <- "Lifej[j] = log(A) + (a/Sc[,1]) + (b/Sc[,2])"
+    lifeF <- "Lifei[i] = A*exp((a/Sf[,1]) + (b/Sf[,2]));"
+    loglifeF <- "Lifei[i] = log(A) + (a/Sf[,1]) + (b/Sf[,2]);"
+    lifeC <- "Lifej[j] = A*exp((a/Sc[,1]) + (b/Sc[,2]));"
+    loglifeC <- "Lifej[j] = log(A) + (a/Sc[,1]) + (b/Sc[,2]);"
   }
 
   if (ls=="TempNonthermal") {
@@ -345,10 +346,10 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
     Tj_adj <- "tjadj[j] = (Tj[j] - Tendj[j])*exp((Ea/8.617385e-5)*((1/Sj[j]) - (1/Snj[j])));"
 
     # Life functions
-    lifeF <- "c/((Sf[,2]^b)*exp(-a/Sf[,1]))"
-    loglifeF <- "log(c) - b*log(Sf[,2]) + (a/Sf[,1])"
-    lifeC <- "c/((Sc[,2]^b)*exp(-a/Sc[,1]))"
-    loglifeC <- "log(c) - b*log(Sc[,2]) + (a/Sc[,1])"
+    lifeF <- "c/((Sf[,2]^b)*exp(-a/Sf[,1]));"
+    loglifeF <- "log(c) - b*log(Sf[,2]) + (a/Sf[,1]);"
+    lifeC <- "c/((Sc[,2]^b)*exp(-a/Sc[,1]));"
+    loglifeC <- "log(c) - b*log(Sc[,2]) + (a/Sc[,1]);"
   }
 
   if (ls=="Eyring3") {
@@ -367,10 +368,10 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
     Tj_adj <- "tjadj[j] = (Tj[j] - Tendj[j])*exp((Ea/8.617385e-5)*((1/Sj[j]) - (1/Snj[j])));"
 
     # Life functions
-    lifeF <- "(1/Sf[,1])*exp((a + (b/Sf[,1])) + (c + (d/Sf[,1]))*Sf[,2])"
-    loglifeF <- "-log(Sf[,1]) + a + (b/Sf[,1]) + (c + (d/Sf[,1]))*Sf[,2]"
-    lifeC <- "(1/Sc[,1])*exp((a + (b/Sc[,1])) + (c + (d/Sc[,1]))*Sc[,2])"
-    loglifeC <- "-log(Sc[,1]) + a + (b/Sc[,1]) + (c + (d/Sc[,1]))*Sc[,2]"
+    lifeF <- "(1/Sf[,1])*exp((a + (b/Sf[,1])) + (c + (d/Sf[,1]))*Sf[,2]);"
+    loglifeF <- "-log(Sf[,1]) + a + (b/Sf[,1]) + (c + (d/Sf[,1]))*Sf[,2];"
+    lifeC <- "(1/Sc[,1])*exp((a + (b/Sc[,1])) + (c + (d/Sc[,1]))*Sc[,2]);"
+    loglifeC <- "-log(Sc[,1]) + a + (b/Sc[,1]) + (c + (d/Sc[,1]))*Sc[,2];"
   }
 
   # Fit to log-likelihood distributions
@@ -381,6 +382,7 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
     loglik <- paste(c("target += weibull_lpdf(tiadj | beta, Lifei) + weibull_lccdf(tjadj | beta, Lifej);"),collapse = "")
     params <- paste(c(distparam,lsparams),collapse = " ")
     paramsvec <- c("beta",lsparamsvec)
+    outputparamset <- c("\U03B2",lsparamsvec)
     priors <- paste(c(distpriors,lspriors),collapse = " ")
 
   }
@@ -391,6 +393,7 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
     loglik <- paste(c("target += lognormal_lpdf(tiadj | Lifei, sigma_t) + lognormal_lccdf(tjadj | Lifej, sigma_t);"),collapse = "")
     params <- paste(c(distparam,lsparams),collapse = " ")
     paramsvec <- c("sigma_t",lsparamsvec)
+    outputparamset <- c("\U03C3_t",lsparamsvec)
     priors <- paste(c(distpriors,lspriors),collapse = " ")
   }
   if (dist=="Normal") {
@@ -400,12 +403,14 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
     loglik <- paste(c("target += normal_lpdf(tiadj | Lifei, sigma) + normal_lccdf(tjadj | Lifej, sigma);"),collapse = "")
     params <- paste(c(distparam,lsparams),collapse = " ")
     paramsvec <- c("sigma",lsparamsvec)
+    outputparamset <- c("\U03C3",lsparamsvec)
     priors <- paste(c(distpriors,lspriors),collapse = " ")
   }
   if (dist=="Exponential") {
     loglik <- paste(c("target += exponential_lpdf(tiadj | 1/Lifei) + exponential_lccdf(tjadj 1/Lifej);"),collapse = "")
     params <- lsparams
     paramsvec <- sparamsvec
+    outputparamset <- c(lsparamsvec)
     priors <- lspriors
   }
   if (dist=="2PExponential") {
@@ -415,6 +420,7 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
     loglik <- paste(c("target += double_exponential_lpdf(tiadj | Lifei, sigma) + double_exponential_lccdf(tjadj | Lifej, sigma);"),collapse = "")
     params <- paste(c(distparam,lsparams),collapse = " ")
     paramsvec <- c("sigma",lsparamsvec)
+    outputparamset <- c("\U03C3",lsparamsvec)
     priors <- paste(c(distpriors,lspriors),collapse = " ")
   }
 
@@ -435,20 +441,67 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid,prior
   datablock <- list(n = length(TTF), m = length(TTS), Ti = TTF, Tj = TTS, Tendi = tvecti, Tendj = tvectj, Si = SF, Sj = Sc, Sni = SFn, Snj = Scn)
   # NOT RUN {
   stanlscode <- paste(c(block1,block2,block3),collapse=" ")
+  stanlsfile <- write_stan_file(stanlscode)
+  print(stanlsfile)
+  # Generate initial list (one list per chain)
+  names(pt_est) <- paramsvec
+  pt_estlist <- as.list(pt_est)
+  init_pt_est <- vector("list",nchains)
+  for(i in 1:nchains){
+    init_pt_est[[i]] <- pt_estlist
+  }
   # Build or compile Stan code to C++
-  lsmod <- stan_model(model_code = stanlscode, verbose = TRUE)
-  fit <- sampling(lsmod, data = datablock, iter = nsamples, warmup = burnin, init = pt_est)
+  # return(list(stanlscode,stanlsfile))
+
+  # lsmod <- stan_model(model_code = stanlscode, verbose = TRUE)
+  lsmod <- cmdstan_model(stanlsfile)
+  # return(lsmod)
+  # fit <- sampling(lsmod, data = datablock, iter = nsamples, warmup = burnin, init = pt_est)
+  fit <- lsmod$sample(data = datablock, init = init_pt_est, chains = nchains, iter_warmup = burnin, iter_sampling = nsamples)
   # }
+  # return(fit)
   # Print results.  I need to get this as an output
-  stats <- print(fit, pars = paramsvec, probs=c((1-confid)/2,.5,1-(1-confid)/2))
-  dataout <- fit@.MISC[["summary"]][["msd"]]
-  quanout <- fit@.MISC[["summary"]][["quan"]]
+  # stats <- print(fit, pars = paramsvec, probs=c((1-confid)/2,.5,1-(1-confid)/2))
+  # dataout <- fit@.MISC[["summary"]][["msd"]]
+
+  stats <- fit$summary(variables = paramsvec)
+  dataout <- fit$draws(format = "df")
+  confidbounds <- mcmc_intervals_data(fit$draws(variables = paramsvec),prob_outer = confid)
+  outputtable <- matrix(c(stats[[2]],stats[[4]],confidbounds[[5]],stats[[3]],confidbounds[[9]],stats[[8]]), nrow = length(outputparamset), ncol = 6, byrow = FALSE,dimnames = list(outputparamset,c("Mean","Standard Deviation",conflim_txt[1],"Median",conflim_txt[2],"R\U005E")))
+
 
   # Trace the Markov Chains for each parameter
   # plot1_MCtrace <- traceplot(fit, pars = paramsvec, inc_warmup = TRUE, nrow = 3)
-  plot1_MCtrace <- mcmc_trace(as.matrix(fit),pars=paramsvec, facet_args = list(nrow = length(paramsvec), labeller = label_parsed))
-  plot2_hist <- stan_hist(fit)
-  plot3_density <- stan_dens(fit)
+  # plot1_MCtrace <- mcmc_trace(as.matrix(fit),pars=paramsvec, facet_args = list(nrow = length(paramsvec), labeller = label_parsed))
+  # plot2_hist <- stan_hist(fit)
+  # plot3_density <- stan_dens(fit)
+  plot1_MCtrace <- mcmc_trace(fit$draws(paramsvec))
+  plot2_hist <- mcmc_hist(fit$draws(paramsvec))
+  plot3_density <- mcmc_dens(fit$draws(paramsvec))
+  plot4_densityoverlay <- mcmc_dens_overlay(fit$draws(paramsvec))
 
-  return(list(fit,stats,dataout,quanout,plot1_MCtrace,plot2_hist,plot3_density))
+  # Produce some output text that summarizes the results
+  cat(c("Posterior estimates for Bayesian Analysis.\n\n"),sep = "")
+  print(outputtable)
+  cat(c("\n"),sep = "")
+
+
+  return(list(fit,stats,dataout,plot1_MCtrace,plot2_hist,plot3_density,plot4_densityoverlay))
+
+  # stats <- fit$summary(variables = paramsvec)
+  # dataout <- fit$draws(format = "df")
+  #
+  # # Trace the Markov Chains for each parameter
+  # # plot1_MCtrace <- traceplot(fit, pars = paramsvec, inc_warmup = TRUE, nrow = 3)
+  # # plot1_MCtrace <- mcmc_trace(as.matrix(fit),pars=paramsvec, facet_args = list(nrow = length(paramsvec), labeller = label_parsed))
+  # # plot2_hist <- stan_hist(fit)
+  # # plot3_density <- stan_dens(fit)
+  # plot1_MCtrace <- mcmc_trace(fit$draws(paramsvec))
+  # plot2_hist <- mcmc_hist(fit$draws(paramsvec))
+  # plot3_density <- mcmc_dens(fit$draws(paramsvec))
+  # plot4_densityoverlay <- mcmc_dens_overlay(fit$draws(paramsvec))
+  #
+  #
+  # return(list(fit,stats,dataout,plot1_MCtrace,plot2_hist,plot3_density,plot4_densityoverlay))
+
 }
