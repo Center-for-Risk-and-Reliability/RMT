@@ -11,8 +11,10 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
   library(cmdstanr)
   library(bayesplot)
 
+  # (UPDATE 11/14/2023): Adding an IPL form of l = 1/(b x S^a) and Exponential form b x exp(a/S)
+
   # Add input to this to include prior estimates for LS parameters.
-  # Example: priors<-c("normal(3,4),normal(1,4), lognormal(-2,3)")
+  # Example: priors<-c("normal(3,4)","normal(1,4)", "lognormal(-2,3)")
   # I will have to cite the Rstan text for distributions in the code.  Use lookup("") for the translation.
   # The code takes these and separates them so that they are written into the stan file.
   # Then the code will run the program and compute the Bayes estimation
@@ -77,10 +79,26 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     }
   }
 
+  if (ls=="Exponential2"){
+    # theta[1] - parameter a, theta[2] - parameter b
+    lsparams <- "real a; real<lower=0> b;"
+    lsparamsvec <- c("a","b")
+    pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
+    pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
+    lspriors <- paste(c(pr1,pr2),collapse = " ")
+
+    lifeF <- "b*exp(a/Sf)"
+    loglifeF <- "log(b) + a/Sf"
+    if(missing(Tc)==FALSE){
+      lifeC <- "b*exp(a/Sc)"
+      loglifeC <- "log(b) + a/Sc"
+    }
+  }
+
   if (ls=="Arrhenius") {
     # lsparams[1] - parameter Ea, lsparams[2] - parameter b
     # Temperature HAS to be in Kelvin for this to work
-    lsparams <- "real<lower=0> Ea; real<lower=0> b;"
+    lsparams <- "real Ea; real<lower=0> b;"
     lsparamsvec <- c("Ea","b")
     pr1<-paste(c("Ea ~ ",priors[ishift+1],";"),collapse = "")
     pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
@@ -159,6 +177,22 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     }
   }
 
+  if (ls=="InversePower2") {
+    # lsparams[1] - parameter a, lsparams[2] - parameter b
+    lsparams <- "real a; real<lower=0> b;"
+    lsparamsvec <- c("a","b")
+    pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
+    pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
+    lspriors <- paste(c(pr1,pr2),collapse = " ")
+
+    lifeF <- "1/(b*(Sf^a))"
+    loglifeF <- "-log(b) - a*log(Sf)"
+    if(missing(Tc)==FALSE){
+      lifeC <- "1/(b*(Sc^a))"
+      loglifeC <- "-log(b) - a*log(Sc)"
+    }
+  }
+
   if (ls=="Logarithmic") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b
     lsparams <- "real a; real b;"
@@ -204,7 +238,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
 
   if (ls=="TempHumidity") {
     # lsparams[1] - parameter A, lsparams[2] - parameter a, lsparams[3] - parameter b
-    lsparams <- "real A; real a; real b;"
+    lsparams <- "real<lower=0> A; real a; real b;"
     lsparamsvec <- c("A","a","b")
     pr1<-paste(c("A ~ ",priors[ishift+1],";"),collapse = "")
     pr2<-paste(c("a ~ ",priors[ishift+2],";"),collapse = "")
@@ -221,8 +255,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
 
   if (ls=="TempNonthermal") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - parameter c
-    lsparams <- "real A; real a; real b;"
-    lsparamsvec <- c("A","a","b")
+    lsparams <- "real a; real b; real<lower=0> c;"
+    lsparamsvec <- c("a","b","c")
     pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
     pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
     pr3<-paste(c("c ~ ",priors[ishift+3],";"),collapse = "")
@@ -239,7 +273,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
   if (ls=="Eyring3") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b
     # lsparams[3] - parameter c, lsparams[4] - parameter d
-    lsparams <- "real a; real b; real c; real d"
+    lsparams <- "real a; real b; real c; real d;"
     lsparamsvec <- c("a","b","c","d")
     pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
     pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
@@ -263,7 +297,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     if(missing(Tc)){
       loglik <- paste(c("target += weibull_lpdf(TTF | beta,",lifeF,");"),collapse = "")
     } else{
-      loglik <- paste(c("target += weibull_lpdf(TTF | beta",lifeF,") + weibull_lccdf(TTS | beta",lifeC,");"),collapse = "")
+      loglik <- paste(c("target += weibull_lpdf(TTF | beta,",lifeF,") + weibull_lccdf(TTS | beta,",lifeC,");"),collapse = "")
     }
     params <- paste(c(distparam,lsparams),collapse = " ")
     paramsvec <- c("beta",lsparamsvec)
@@ -344,7 +378,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     init_pt_est[[i]] <- pt_estlist
   }
   # Build or compile Stan code to C++
-  # return(list(stanlscode,stanlsfile))
+  return(list(stanlscode,stanlsfile))
 
   # lsmod <- stan_model(model_code = stanlscode, verbose = TRUE)
   lsmod <- cmdstan_model(stanlsfile)
