@@ -120,11 +120,13 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
     lspriors <- paste(c(pr1,pr2),collapse = " ")
 
-    lifeF <- "(b/Sf)*exp(a/Sf)"
-    loglifeF <- "log(b) - log(Sf) + (a/Sf)"
+    # NOTE (11/15/2023): Eyring life-stress model needs to be entered as a vector because it multiplies two Sf or Sc vectors and
+    # this is how Stan typically treats vectors multiplied or divided from other vectors.
+    lifeF <- "Lifei[i] = (b/Sf[i])*exp(a/Sf[i]);"
+    loglifeF <- "Lifei[i] = log(b) - log(Sf[i]) + (a/Sf[i]);"
     if(missing(Tc)==FALSE){
-      lifeC <- "(b/Sc)*exp(a/Sc)"
-      loglifeC <- "log(b) - log(Sc) + (a/Sc)"
+      lifeC <- "Lifej[j] = (b/Sc[j])*exp(a/Sc[j]);"
+      loglifeC <- "Lifej[j] = log(b) - log(Sc[j]) + (a/Sc[j]);"
     }
   }
 
@@ -136,12 +138,12 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
     lspriors <- paste(c(pr1,pr2),collapse = " ")
 
-    lifeF <- "(1/Sf)*exp(-(a - (b/Sf)))"
-    loglifeF <- "-log(Sf) - a + (b/Sf)"
+    lifeF <- "Lifei[i] = (1/Sf[i])*exp(-(a - (b/Sf[i])));"
+    loglifeF <- "Lifei[i] = -log(Sf[i]) - a + (b/Sf[i]);"
 
     if(missing(Tc)==FALSE){
-      lifeC <- "(1/Sc)*exp(-(a - (b/Sc)))"
-      loglifeC <- "-log(Sc) - a + (b/Sc)"
+      lifeC <- "Lifej[j] = (1/Sc[j])*exp(-(a - (b/Sc[j])));"
+      loglifeC <- "Lifej[j] = -log(Sc[j]) - a + (b/Sc[j]);"
     }
   }
 
@@ -294,10 +296,18 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     distparam <-"real<lower=0> beta;"
     distpriors<-paste(c("beta ~ ",priors[ishift],";"),collapse = "")
 
-    if(missing(Tc)){
-      loglik <- paste(c("target += weibull_lpdf(TTF | beta,",lifeF,");"),collapse = "")
+    if(ls=="Eyring" || ls=="Eyring2"){
+      if(missing(Tc)){
+        loglik <- paste(c("target += weibull_lpdf(TTF | beta, Lifei);"),collapse = "")
+      } else{
+        loglik <- paste(c("target += weibull_lpdf(TTF | beta, Lifei) + weibull_lccdf(TTS | beta, Lifej);"),collapse = "")
+      }
     } else{
-      loglik <- paste(c("target += weibull_lpdf(TTF | beta,",lifeF,") + weibull_lccdf(TTS | beta,",lifeC,");"),collapse = "")
+      if(missing(Tc)){
+        loglik <- paste(c("target += weibull_lpdf(TTF | beta,",lifeF,");"),collapse = "")
+      } else{
+        loglik <- paste(c("target += weibull_lpdf(TTF | beta,",lifeF,") + weibull_lccdf(TTS | beta,",lifeC,");"),collapse = "")
+      }
     }
     params <- paste(c(distparam,lsparams),collapse = " ")
     paramsvec <- c("beta",lsparamsvec)
@@ -308,11 +318,20 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     distparam <-"real<lower=0> sigma_t;"
     distpriors<-paste(c("sigma_t ~ ",priors[ishift],";"),collapse = "")
 
-    if(missing(Tc)){
-      loglik <- paste(c("target += lognormal_lpdf(TTF |",loglifeF,", sigma_t);"),collapse = "")
+    if(ls=="Eyring" || ls=="Eyring2"){
+      if(missing(Tc)){
+        loglik <- paste(c("target += lognormal_lpdf(TTF |Lifei, sigma_t);"),collapse = "")
+      } else{
+        loglik <- paste(c("target += lognormal_lpdf(TTF |Lifei, sigma_t) + lognormal_lccdf(TTS |Lifej, sigma_t);"),collapse = "")
+      }
     } else{
-      loglik <- paste(c("target += lognormal_lpdf(TTF |",loglifeF,", sigma_t) + lognormal_lccdf(TTS |",loglifeC,", sigma_t);"),collapse = "")
+      if(missing(Tc)){
+        loglik <- paste(c("target += lognormal_lpdf(TTF |",loglifeF,", sigma_t);"),collapse = "")
+      } else{
+        loglik <- paste(c("target += lognormal_lpdf(TTF |",loglifeF,", sigma_t) + lognormal_lccdf(TTS |",loglifeC,", sigma_t);"),collapse = "")
+      }
     }
+
     params <- paste(c(distparam,lsparams),collapse = " ")
     paramsvec <- c("sigma_t",lsparamsvec)
     outputparamset <- c("\U03C3_t",lsparamsvec)
@@ -321,10 +340,18 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
   if (dist=="Normal") {
     distparam <-"real<lower=0> sigma;"
     distpriors<-paste(c("sigma ~ ",priors[ishift],";"),collapse = "")
-    if(missing(Tc)){
-      loglik <- paste(c("target += normal_lpdf(TTF |",lifeF,", sigma);"),collapse = "")
+    if(ls=="Eyring" || ls=="Eyring2"){
+      if(missing(Tc)){
+        loglik <- paste(c("target += normal_lpdf(TTF | Lifei, sigma);"),collapse = "")
+      } else{
+        loglik <- paste(c("target += normal_lpdf(TTF | Lifei, sigma) + normal_lccdf(TTS | Lifej, sigma);"),collapse = "")
+      }
     } else{
-      loglik <- paste(c("target += normal_lpdf(TTF |",lifeF,", sigma) + normal_lccdf(TTS |",lifeC,", sigma);"),collapse = "")
+      if(missing(Tc)){
+        loglik <- paste(c("target += normal_lpdf(TTF |",lifeF,", sigma);"),collapse = "")
+      } else{
+        loglik <- paste(c("target += normal_lpdf(TTF |",lifeF,", sigma) + normal_lccdf(TTS |",lifeC,", sigma);"),collapse = "")
+      }
     }
     params <- paste(c(distparam,lsparams),collapse = " ")
     paramsvec <- c("sigma",lsparamsvec)
@@ -332,10 +359,18 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     priors <- paste(c(distpriors,lspriors),collapse = " ")
   }
   if (dist=="Exponential") {
-    if(missing(Tc)){
-      loglik <- paste(c("target += exponential_lpdf(TTF | 1/(",lifeF,"));"),collapse = "")
+    if(ls=="Eyring" || ls=="Eyring2"){
+      if(missing(Tc)){
+        loglik <- paste(c("target += exponential_lpdf(TTF | 1/(Lifei));"),collapse = "")
+      } else{
+        loglik <- paste(c("target += exponential_lpdf(TTF | 1/(Lifei)) + exponential_lccdf(TTS 1/(Lifej));"),collapse = "")
+      }
     } else{
-      loglik <- paste(c("target += exponential_lpdf(TTF | 1/(",lifeF,")) + exponential_lccdf(TTS 1/(",lifeC,"));"),collapse = "")
+      if(missing(Tc)){
+        loglik <- paste(c("target += exponential_lpdf(TTF | 1/(",lifeF,"));"),collapse = "")
+      } else{
+        loglik <- paste(c("target += exponential_lpdf(TTF | 1/(",lifeF,")) + exponential_lccdf(TTS 1/(",lifeC,"));"),collapse = "")
+      }
     }
     params <- lsparams
     paramsvec <- lsparamsvec
@@ -345,10 +380,18 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
   if (dist=="2PExponential") {
     distparam <-"real<lower=0> sigma;"
     distpriors<-paste(c("sigma ~ ",priors[ishift],";"),collapse = "")
-    if(missing(Tc)){
-      loglik <- paste(c("target += double_exponential_lpdf(TTF |",lifeF,", sigma);"),collapse = "")
+    if(ls=="Eyring" || ls=="Eyring2"){
+      if(missing(Tc)){
+        loglik <- paste(c("target += double_exponential_lpdf(TTF | Lifei, sigma);"),collapse = "")
+      } else{
+        loglik <- paste(c("target += double_exponential_lpdf(TTF | Lifei, sigma) + double_exponential_lccdf(TTS | Lifej, sigma);"),collapse = "")
+      }
     } else{
-      loglik <- paste(c("target += double_exponential_lpdf(TTF |",lifeF,", sigma) + double_exponential_lccdf(TTS |",lifeC,", sigma);"),collapse = "")
+      if(missing(Tc)){
+        loglik <- paste(c("target += double_exponential_lpdf(TTF |",lifeF,", sigma);"),collapse = "")
+      } else{
+        loglik <- paste(c("target += double_exponential_lpdf(TTF |",lifeF,", sigma) + double_exponential_lccdf(TTS |",lifeC,", sigma);"),collapse = "")
+      }
     }
     params <- paste(c(distparam,lsparams),collapse = " ")
     paramsvec <- c("sigma",lsparamsvec)
@@ -366,6 +409,22 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
   }
   block2 <- paste(c("parameters {",params,"}"),collapse = " ")
   block3 <- paste(c("model {",priors,loglik,"}"),collapse = " ")
+  if ((ls=="Eyring" || ls=="Eyring2") && dist == "Lognormal"){
+    if(missing(Tc)==TRUE){
+      block3 <- paste(c("model { vector[n] Lifei; vector[m] Lifej; ",priors," for(i in 1:n){",loglifeF,"}",loglik,"}"),collapse = " ")
+    }
+    if(missing(Tc)==FALSE){
+      block3 <- paste(c("model { vector[n] Lifei; vector[m] Lifej; ",priors," for(i in 1:n){",loglifeF,"} for(j in 1:m){",loglifeC,"}",loglik,"}"),collapse = " ")
+    }
+  }
+  if ((ls=="Eyring" || ls=="Eyring2") && (dist == "Normal" || dist=="Weibull" || dist=="Exponential")){
+    if(missing(Tc)==TRUE){
+      block3 <- paste(c("model { vector[n] Lifei; ",priors," for(i in 1:n){",lifeF,"}",loglik,"}"),collapse = " ")
+    }
+    if(missing(Tc)==FALSE){
+      block3 <- paste(c("model { vector[n] Lifei; vector[m] Lifej; ",priors," for(i in 1:n){",lifeF,"} for(j in 1:m){",lifeC,"}",loglik,"}"),collapse = " ")
+    }
+  }
   # NOT RUN {
   stanlscode <- paste(c(block1,block2,block3),collapse=" ")
   stanlsfile <- write_stan_file(stanlscode)
@@ -378,7 +437,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     init_pt_est[[i]] <- pt_estlist
   }
   # Build or compile Stan code to C++
-  return(list(stanlscode,stanlsfile))
+  # return(list(stanlscode,stanlsfile))
 
   # lsmod <- stan_model(model_code = stanlscode, verbose = TRUE)
   lsmod <- cmdstan_model(stanlsfile)
