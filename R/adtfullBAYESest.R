@@ -1,7 +1,7 @@
 # Bayesian Accelerated Degradation Testing Estimator
 # Developed by Dr. Reuel Smith, 2022
 
-adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burnin){
+adt.full.BAYES <- function(pt_est=NULL,data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burnin,nchains=4){
   # (pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsamples,burnin)
   #Load pracma library for erf
   library(pracma)
@@ -9,6 +9,7 @@ adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burn
   library(rstan)
   library(ggplot2)
   library(shinystan)
+  library(cmdstanr)
   library(bayesplot)
 
   # Add input to this to include prior estimates for LS parameters.
@@ -46,9 +47,10 @@ adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burn
   } else {
     adtLSQ<-adt.full.LSQ(data,lifedam,D0)[[1]]
   }
+  ishift<-1
 
-  # Check to see if estimate exists
-  pt_est <- c(colMeans(adtLSQ)[1:(dim(adtLSQ)[2]-2)],1)
+  # # Check to see if estimate exists
+  # pt_est <- c(colMeans(adtLSQ)[1:(dim(adtLSQ)[2]-2)],1)
 
   # Pull necessary data damage time tDam and damage level Dam
   tDam <- data[,1]
@@ -60,9 +62,10 @@ adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burn
     # lifedamparams[1] - parameter a, lifedamparams[2] - parameter b
     lifedamparams <- "real a; real b;"
     lifedamparamsvec <- c("a","b")
-    pr1<-paste(c("a ~ ",priors[1],";"),collapse = "")
-    pr2<-paste(c("b ~ ",priors[2],";"),collapse = "")
+    pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
+    pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
     lifedampriors <- paste(c(pr1,pr2),collapse = " ")
+    pt_est <- c(1,mean(adtLSQ[,1]), mean(adtLSQ[,2]))
 
     DamT <- "Damagei[i] = b + t[i]*a"
     logDamT <- "Damagei[i] = log(b + t[i]*a)"
@@ -74,9 +77,10 @@ adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burn
     # lifedamparams[1] - parameter a, lifedamparams[2] - parameter b
     lifedamparams <- "real a; real<lower=0> b;"
     lifedamparamsvec <- c("a","b")
-    pr1<-paste(c("a ~ ",priors[1],";"),collapse = "")
-    pr2<-paste(c("b ~ ",priors[2],";"),collapse = "")
+    pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
+    pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
     lifedampriors <- paste(c(pr1,pr2),collapse = " ")
+    pt_est <- c(1, mean(adtLSQ[,1]), mean(adtLSQ[,2]))
 
     DamT <- "Damagei[i] = b*exp(a*t[i])"
     logDamT <- "Damagei[i] = log(b) + a*t[i]"
@@ -88,9 +92,10 @@ adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burn
     # theta[1] ~ parameter a, theta[2] ~ parameter b
     lifedamparams <- "real a; real b;"
     lifedamparamsvec <- c("a","b")
-    pr1<-paste(c("a ~ ",priors[1],";"),collapse = "")
-    pr2<-paste(c("b ~ ",priors[2],";"),collapse = "")
+    pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
+    pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
     lifedampriors <- paste(c(pr1,pr2),collapse = " ")
+    pt_est <- c(1, mean(adtLSQ[,1]), mean(adtLSQ[,2]))
 
     DamT <- "Damagei[i] = (a + b*t[i])^2"
     logDamT <- "Damagei[i] = 2*log(a + b*t[i])"
@@ -102,9 +107,10 @@ adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burn
     # lifedamparams[1] - parameter a, lifedamparams[2] - parameter b
     lifedamparams <- "real a; real<lower=0> b;"
     lifedamparamsvec <- c("a","b")
-    pr1<-paste(c("a ~ ",priors[1],";"),collapse = "")
-    pr2<-paste(c("b ~ ",priors[2],";"),collapse = "")
+    pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
+    pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
     lifedampriors <- paste(c(pr1,pr2),collapse = " ")
+    pt_est <- c(0.1, mean(adtLSQ[,1]), mean(adtLSQ[,2]))
 
     DamT <- "Damagei[i] = b*(t[i]^a);"
     logDamT <- "Damagei[i] = log(b) + a*log(t[i]);"
@@ -116,9 +122,10 @@ adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burn
     # lifedamparams[1] - parameter a, lifedamparams[2] - parameter b
     lifedamparams <- "real a; real b;"
     lifedamparamsvec <- c("a","b")
-    pr1<-paste(c("a ~ ",priors[1],";"),collapse = "")
-    pr2<-paste(c("b ~ ",priors[2],";"),collapse = "")
+    pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
+    pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
     lifedampriors <- paste(c(pr1,pr2),collapse = " ")
+    pt_est <- c(1, mean(adtLSQ[,1]), mean(adtLSQ[,2]))
 
     DamT <- "Damagei[i] = a*log(t[i]) + b;"
     logDamT <- "Damagei[i] = log(a*log(t[i]) + b);"
@@ -130,10 +137,11 @@ adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burn
     # lifedamparams[1] ~ parameter a, lifedamparams[2] ~ parameter b, lifedamparams[3] ~ parameter c
     lifedamparams <- "real a; real b; real c"
     lifedamparamsvec <- c("a","b","c")
-    pr1<-paste(c("a ~ ",priors[1],";"),collapse = "")
-    pr2<-paste(c("b ~ ",priors[2],";"),collapse = "")
-    pr3<-paste(c("c ~ ",priors[3],";"),collapse = "")
+    pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
+    pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
+    pr3<-paste(c("c ~ ",priors[ishift+3],";"),collapse = "")
     lifedampriors <- paste(c(pr1,pr2,pr3),collapse = " ")
+    pt_est <- c(1, mean(adtLSQ[,1]), mean(adtLSQ[,2]))
 
     DamT <- "Damagei[i] = a + b^(c*t[i]);"
     logDamT <- "Damagei[i] = log(a + b^(c*t[i]));"
@@ -145,9 +153,10 @@ adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burn
     # lifedamparams[1] - parameter a, lifedamparams[2] - parameter b
     lifedamparams <- "real a; real b;"
     lifedamparamsvec <- c("a","b")
-    pr1<-paste(c("a ~ ",priors[1],";"),collapse = "")
-    pr2<-paste(c("b ~ ",priors[2],";"),collapse = "")
+    pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
+    pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
     lifedampriors <- paste(c(pr1,pr2),collapse = " ")
+    pt_est <- c(1, mean(adtLSQ[,1]), mean(adtLSQ[,2]))
 
     DamT <- "Damagei[i] = a - b/t[i];"
     logDamT <- "Damagei[i] = log(a - b/t[i]);"
@@ -159,9 +168,10 @@ adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burn
     # lifedamparams[1] - parameter a, lifedamparams[2] - parameter b
     lifedamparams <- "real a; real b;"
     lifedamparamsvec <- c("a","b")
-    pr1<-paste(c("a ~ ",priors[1],";"),collapse = "")
-    pr2<-paste(c("b ~ ",priors[2],";"),collapse = "")
+    pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
+    pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
     lifedampriors <- paste(c(pr1,pr2),collapse = " ")
+    pt_est <- c(1, mean(adtLSQ[,1]), mean(adtLSQ[,2]))
 
     DamT <- "Damagei[i] = 1/(1 + b*(t[i]^a));"
     logDamT <- "Damagei[i] = -log(1 + b*(t[i]^a));"
@@ -171,12 +181,16 @@ adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burn
   if (lifedam=="Hamada") {
     # D = 1/(1 + beta1*(t*exp(beta3*11605*(1/Tu - 1/Ti)))^beta2)
     # lifedamparams[1] ~ parameter beta1, lifedamparams[2] ~ parameter beta2, lifedamparams[3] ~ parameter beta3
-    lifedamparams <- "real<lower=0> beta1; real<lower=0> beta2; real beta3; "
+    lifedamparams <- "real beta1; real beta2; real beta3; "
     lifedamparamsvec <- c("beta1","beta2","beta3")
-    pr1<-paste(c("beta1 ~ ",priors[1],";"),collapse = "")
-    pr2<-paste(c("beta2 ~ ",priors[2],";"),collapse = "")
-    pr3<-paste(c("beta3 ~ ",priors[3],";"),collapse = "")
+    pr1<-paste(c("beta1 ~ ",priors[ishift+1],";"),collapse = "")
+    pr2<-paste(c("beta2 ~ ",priors[ishift+2],";"),collapse = "")
+    pr3<-paste(c("beta3 ~ ",priors[ishift+3],";"),collapse = "")
     lifedampriors <- paste(c(pr1,pr2,pr3),collapse = " ")
+    if(is.null(pt_est)==1){
+      pt_est <- c(1,mean(adtLSQ[,1]), mean(adtLSQ[,2]), mean(adtLSQ[,3]))
+    }
+
 
     DamT <- "Damagei[i] = 1/(1 + beta1*(t[i]*exp(beta3*11605*(1/Tu - 1/Ti[i])))^beta2); "
     logDamT <- "Damagei[i] = -log(1 + beta1*(t[i]*exp(beta3*11605*(1/Tu - 1/Ti[i])))^beta2); "
@@ -188,7 +202,7 @@ adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burn
   # Fit to log-likelihood distributions
   if (dist=="Lognormal") {
     distparam <-"real<lower=0> sigma_t;"
-    distpriors<-paste(c("sigma_t ~ ",priors[sigparamno],";"),collapse = "")
+    distpriors<-paste(c("sigma_t ~ ",priors[ishift],";"),collapse = "")
     loglik <- paste(c("target += lognormal_lpdf(Dt | Damagei, sigma_t);"),collapse = "")
     params <- paste(c(distparam,lifedamparams),collapse = " ")
     paramsvec <- c("sigma_t",lifedamparamsvec)
@@ -197,7 +211,7 @@ adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burn
 
   if (dist=="Normal") {
     distparam <-"real<lower=0> sigma;"
-    distpriors<-paste(c("sigma ~ ",priors[sigparamno],";"),collapse = "")
+    distpriors<-paste(c("sigma ~ ",priors[ishift],";"),collapse = "")
     loglik <- paste(c("target += normal_lpdf(Dt | Damagei, sigma);"),collapse = "")
     params <- paste(c(distparam,lifedamparams),collapse = " ")
     paramsvec <- c("sigma",lifedamparamsvec)
@@ -221,20 +235,53 @@ adt.full.BAYES <- function(data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burn
   }
   # NOT RUN {
   stanlscode <- paste(c(block1,block2,block3),collapse=" ")
+  stanlsfile <- write_stan_file(stanlscode)
+  print(stanlsfile)
+  # Generate initial list (one list per chain)
+  names(pt_est) <- paramsvec
+  # return(list(pt_est,paramsvec))
+  pt_estlist <- as.list(pt_est)
+  init_pt_est <- vector("list",nchains)
+  for(i in 1:nchains){
+    init_pt_est[[i]] <- pt_estlist
+  }
+  # return(list(pt_est,init_pt_est,stanlscode))
   # Build or compile Stan code to C++
-  lifedammod <- stan_model(model_code = stanlscode, verbose = TRUE)
-  fit <- sampling(lifedammod, data = datablock, iter = nsamples, warmup = burnin, init = pt_est)
-  # }
+  # return(list(stanlscode,stanlsfile))
+
+  # lifedammod <- stan_model(model_code = stanlscode, verbose = TRUE)
+  lifedammod <- cmdstan_model(stanlsfile)
+  # return(fit)
   # Print results.  I need to get this as an output
-  stats <- print(fit, pars = paramsvec, probs=c((1-confid)/2,.5,1-(1-confid)/2))
-  dataout <- fit@.MISC[["summary"]][["msd"]]
-  quanout <- fit@.MISC[["summary"]][["quan"]]
+  fit <- lifedammod$sample(data = datablock, init = init_pt_est, chains = nchains, iter_warmup = burnin, iter_sampling = nsamples)
+  # }
+  # return(fit)
+  # Print results.  I need to get this as an output
+  # stats <- print(fit, pars = paramsvec, probs=c((1-confid)/2,.5,1-(1-confid)/2))
+  # dataout <- fit@.MISC[["summary"]][["msd"]]
+  conflim_txt<-c(paste(c("Lower ",100*conf.level,"%"),collapse = ""),paste(c("Upper ",100*conf.level,"%"),collapse = ""))
+  stats <- fit$summary(variables = paramsvec)
+  dataout <- fit$draws(format = "df")
+  confidbounds <- mcmc_intervals_data(fit$draws(variables = paramsvec),prob_outer = confid)
+  outputtable <- matrix(c(stats[[2]],stats[[4]],confidbounds[[5]],stats[[3]],confidbounds[[9]],stats[[8]]), nrow = length(outputparamset), ncol = 6, byrow = FALSE,dimnames = list(outputparamset,c("Mean","Standard Deviation",conflim_txt[1],"Median",conflim_txt[2],"R\U005E")))
 
   # Trace the Markov Chains for each parameter
   # plot1_MCtrace <- traceplot(fit, pars = paramsvec, inc_warmup = TRUE, nrow = 3)
-  plot1_MCtrace <- mcmc_trace(as.matrix(fit),pars=paramsvec, facet_args = list(nrow = length(paramsvec), labeller = label_parsed))
-  plot2_hist <- stan_hist(fit)
-  plot3_density <- stan_dens(fit)
+  # plot1_MCtrace <- mcmc_trace(as.matrix(fit),pars=paramsvec, facet_args = list(nrow = length(paramsvec), labeller = label_parsed))
+  # plot2_hist <- stan_hist(fit)
+  # plot3_density <- stan_dens(fit)
+  plot1_MCtrace <- mcmc_trace(fit$draws(paramsvec))
+  plot2_hist <- mcmc_hist(fit$draws(paramsvec))
+  plot3_density <- mcmc_dens(fit$draws(paramsvec))
+  plot4_densityoverlay <- mcmc_dens_overlay(fit$draws(paramsvec))
 
-  return(list(fit,stats,dataout,quanout,plot1_MCtrace,plot2_hist,plot3_density))
+  # Produce some output text that summarizes the results
+  cat(c("Posterior estimates for Bayesian Analysis.\n\n"),sep = "")
+  print(outputtable)
+  cat(c("\n"),sep = "")
+
+
+  return(list(fit,stats,dataout,plot1_MCtrace,plot2_hist,plot3_density,plot4_densityoverlay))
+
+  return(list(fit,stats,dataout,plot1_MCtrace,plot2_hist,plot3_density,plot4_densityoverlay))
 }
