@@ -147,24 +147,6 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     }
   }
 
-  if (ls=="Eyring4") {
-    # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - parameter M
-    lsparams <- "real a; real b; real M;"
-    lsparamsvec <- c("a","b","M")
-    pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
-    pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
-    pr3<-paste(c("M ~ ",priors[ishift+3],";"),collapse = "")
-    lspriors <- paste(c(pr1,pr2,pr3),collapse = " ")
-
-    lifeF <- "Lifei[i] = (1/(Sf^M))*exp(-(a - (b/Sf)));"
-    loglifeF <- "Lifei[i] = -M*log(Sf) - a + (b/Sf);"
-
-    if(missing(Tc)==FALSE){
-      lifeC <- "Lifej[j] = (1/(Sc^M))*exp(-(a - (b/Sc)));"
-      loglifeC <- "Lifej[j] = -M*log(Sc) - a + (b/Sc);"
-    }
-  }
-
   if (ls=="Power") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b
     lsparams <- "real a; real<lower=0> b;"
@@ -314,7 +296,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     distparam <-"real<lower=0> beta;"
     distpriors<-paste(c("beta ~ ",priors[ishift],";"),collapse = "")
 
-    if(ls=="Eyring" || ls=="Eyring2" || ls=="Eyring4"){
+    if(ls=="Eyring" || ls=="Eyring2"){
       if(missing(Tc)){
         loglik <- paste(c("target += weibull_lpdf(TTF | beta, Lifei);"),collapse = "")
       } else{
@@ -336,7 +318,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     distparam <-"real<lower=0> sigma_t;"
     distpriors<-paste(c("sigma_t ~ ",priors[ishift],";"),collapse = "")
 
-    if(ls=="Eyring" || ls=="Eyring2" || ls=="Eyring4"){
+    if(ls=="Eyring" || ls=="Eyring2"){
       if(missing(Tc)){
         loglik <- paste(c("target += lognormal_lpdf(TTF |Lifei, sigma_t);"),collapse = "")
       } else{
@@ -358,7 +340,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
   if (dist=="Normal") {
     distparam <-"real<lower=0> sigma;"
     distpriors<-paste(c("sigma ~ ",priors[ishift],";"),collapse = "")
-    if(ls=="Eyring" || ls=="Eyring2" || ls=="Eyring4"){
+    if(ls=="Eyring" || ls=="Eyring2"){
       if(missing(Tc)){
         loglik <- paste(c("target += normal_lpdf(TTF | Lifei, sigma);"),collapse = "")
       } else{
@@ -377,7 +359,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
     priors <- paste(c(distpriors,lspriors),collapse = " ")
   }
   if (dist=="Exponential") {
-    if(ls=="Eyring" || ls=="Eyring2" || ls=="Eyring4"){
+    if(ls=="Eyring" || ls=="Eyring2"){
       if(missing(Tc)){
         loglik <- paste(c("target += exponential_lpdf(TTF | 1/(Lifei));"),collapse = "")
       } else{
@@ -398,7 +380,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
   if (dist=="2PExponential") {
     distparam <-"real<lower=0> sigma;"
     distpriors<-paste(c("sigma ~ ",priors[ishift],";"),collapse = "")
-    if(ls=="Eyring" || ls=="Eyring2" || ls=="Eyring4"){
+    if(ls=="Eyring" || ls=="Eyring2"){
       if(missing(Tc)){
         loglik <- paste(c("target += double_exponential_lpdf(TTF | Lifei, sigma);"),collapse = "")
       } else{
@@ -427,7 +409,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
   }
   block2 <- paste(c("parameters {",params,"}"),collapse = " ")
   block3 <- paste(c("model {",priors,loglik,"}"),collapse = " ")
-  if ((ls=="Eyring" || ls=="Eyring2" || ls=="Eyring4") && dist == "Lognormal"){
+  if ((ls=="Eyring" || ls=="Eyring2") && dist == "Lognormal"){
     if(missing(Tc)==TRUE){
       block3 <- paste(c("model { vector[n] Lifei; vector[m] Lifej; ",priors," for(i in 1:n){",loglifeF,"}",loglik,"}"),collapse = " ")
     }
@@ -435,7 +417,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsampl
       block3 <- paste(c("model { vector[n] Lifei; vector[m] Lifej; ",priors," for(i in 1:n){",loglifeF,"} for(j in 1:m){",loglifeC,"}",loglik,"}"),collapse = " ")
     }
   }
-  if ((ls=="Eyring" || ls=="Eyring2" || ls=="Eyring4") && (dist == "Normal" || dist=="Weibull" || dist=="Exponential")){
+  if ((ls=="Eyring" || ls=="Eyring2") && (dist == "Normal" || dist=="Weibull" || dist=="Exponential")){
     if(missing(Tc)==TRUE){
       block3 <- paste(c("model { vector[n] Lifei; ",priors," for(i in 1:n){",lifeF,"}",loglik,"}"),collapse = " ")
     }
