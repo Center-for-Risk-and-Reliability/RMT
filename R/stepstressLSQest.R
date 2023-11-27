@@ -59,32 +59,44 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   if (dist=="Lognormal") {
     distlifeest <- function(fulldata){
       distoutput <-probplot.logn(fulldata,pp,colnames(data)[1])[[1]]
+      iparam <- -1 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
+      ilife <- -2 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
+      istress <- -3 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
       lifeest<-exp(unlist(distoutput)[ilife])
 
-      return(list(distoutput,lifeest))
+      return(list(distoutput,lifeest,istress,ilife,iparam))
     }
   }
   if (dist=="Normal") {
     distlifeest <- function(fulldata){
       distoutput <-probplot.nor(fulldata,pp,colnames(data)[1])[[1]]
+      iparam <- -1 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
+      ilife <- -2 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
+      istress <- -3 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
       lifeest<-unlist(distoutput)[ilife]
-      return(list(distoutput,lifeest))
+      return(list(distoutput,lifeest,istress,ilife,iparam))
     }
   }
   if (dist=="Exponential") {
     distlifeest <- function(fulldata){
       distoutput<-probplot.exp(fulldata,pp,colnames(data)[1])[[1]]
+      iparam <- -1 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
+      ilife <- -2 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
+      istress <- -3 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
       ilife2 <- c(3,7,11,15)
       # lifeest<-1/unlist(distoutput)[ilife]
       lifeest<-1/unlist(distoutput)[ilife2]
-      return(list(distoutput,lifeest))
+      return(list(distoutput,lifeest,istress,ilife,iparam))
     }
   }
   if (dist=="2PExponential") {
     distlifeest <- function(fulldata){
       distoutput <-probplot.exp2P(fulldata,pp,colnames(data)[1])[[1]]
+      iparam <- -1 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
+      ilife <- -2 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
+      istress <- -3 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
       lifeest<-unlist(distoutput)[ilife]
-      return(list(distoutput,lifeest))
+      return(list(distoutput,lifeest,istress,ilife,iparam))
     }
   }
   output1<-distlifeest(full_stpstrdata)
@@ -111,10 +123,10 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       R2 <- summary(params)$r.squared
       return(list(lsparams,R2))
     }
-    init_AFn <- function(theta) {
+    init_AFn <- function(theta,Sfrom,Sto) {
       (theta[2]+Sfrom*theta[1])/(theta[2]+Sto*theta[1])
     }
-    adjparam <- function(theta) {
+    adjparam <- function(theta,SfromAdj,StoAdj,iblocked2) {
       col1<-replace(theta*StoAdj - SfromAdj,iblocked2,0)
       col2<-replace(theta - 1,iblocked2,0)
       mati<-matrix(c(col1[col1!=0],col2[col2!=0]),nrow=remNsteps,ncol=2,byrow=FALSE)
@@ -136,11 +148,34 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       R2 <- summary(params)$r.squared
       return(list(lsparams,R2))
     }
-    init_AFn <- function(theta) {
+    init_AFn <- function(theta,Sfrom,Sto) {
       exp(theta[1]*(Sfrom-Sto))
     }
-    adjparam <- function(theta) {
+    adjparam <- function(theta,SfromAdj,StoAdj,iblocked2) {
       v1<-log(theta)/(SfromAdj - StoAdj)
+      v1<-replace(v1,iblocked2,0)
+      v1<-v1[v1!=0]
+      return(v1)
+    }
+    updateparam <- function(theta) {
+      newlsparams<-lsparams
+      newlsparams[1]<-mean(theta)
+      return(newlsparams)
+    }
+  }
+  if (ls=="Exponential2"){
+    # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
+    lsoutput <- function(Lest){
+      params  <- lm(log(Lest) ~ poly(1/Stressset, 1, raw=TRUE))
+      lsparams <- c(summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
+      R2 <- summary(params)$r.squared
+      return(list(lsparams,R2))
+    }
+    init_AFn <- function(theta,Sfrom,Sto) {
+      exp(theta[1]*((1/Sfrom)-(1/Sto)))
+    }
+    adjparam <- function(theta,SfromAdj,StoAdj,iblocked2) {
+      v1<-log(theta)/((1/SfromAdj) - (1/StoAdj))
       v1<-replace(v1,iblocked2,0)
       v1<-v1[v1!=0]
       return(v1)
@@ -161,10 +196,10 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       R2 <- summary(params)$r.squared
       return(list(lsparams,R2))
     }
-    init_AFn <- function(theta) {
+    init_AFn <- function(theta,Sfrom,Sto) {
       exp((theta[1]/K)*((1/Sfrom)-(1/Sto)))
     }
-    adjparam <- function(theta) {
+    adjparam <- function(theta,SfromAdj,StoAdj,iblocked2) {
       v1<-(K*log(theta))/((1/SfromAdj) - (1/StoAdj))
       v1<-replace(v1,iblocked2,0)
       v1<-v1[v1!=0]
@@ -185,10 +220,10 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       R2 <- summary(params)$r.squared
       return(list(lsparams,R2))
     }
-    init_AFn <- function(theta) {
+    init_AFn <- function(theta,Sfrom,Sto) {
       (Sto/Sfrom)*exp(theta[1]*((1/Sfrom)-(1/Sto)))
     }
-    adjparam <- function(theta) {
+    adjparam <- function(theta,SfromAdj,StoAdj,iblocked2) {
       v1<-log(theta*(SfromAdj/StoAdj))/((1/SfromAdj) - (1/StoAdj))
       v1<-replace(v1,iblocked2,0)
       v1<-v1[v1!=0]
@@ -209,10 +244,10 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       R2 <- summary(params)$r.squared
       return(list(lsparams,R2))
     }
-    init_AFn <- function(theta) {
+    init_AFn <- function(theta,Sfrom,Sto) {
       (Sto/Sfrom)*exp(theta[2]*((1/Sfrom)-(1/Sto)))
     }
-    adjparam <- function(theta) {
+    adjparam <- function(theta,SfromAdj,StoAdj,iblocked2) {
       v1<-log(theta*(SfromAdj/StoAdj))/((1/SfromAdj) - (1/StoAdj))
       v1<-replace(v1,iblocked2,0)
       v1<-v1[v1!=0]
@@ -232,10 +267,10 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       R2 <- summary(params)$r.squared
       return(list(lsparams,R2))
     }
-    init_AFn <- function(theta) {
+    init_AFn <- function(theta,Sfrom,Sto) {
       (Sfrom/Sto)^lsparams[1]
     }
-    adjparam <- function(theta) {
+    adjparam <- function(theta,SfromAdj,StoAdj,iblocked2) {
       v1<-log(theta)/log(SfromAdj/StoAdj)
       v1<-replace(v1,iblocked2,0)
       v1<-v1[v1!=0]
@@ -272,6 +307,32 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       return(newlsparams)
     }
   }
+  # UPDATE 11/8/2023: Adding an IPL form of l = 1/(bxS^a)
+  if (ls=="InversePower2"){
+    # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
+    #positivity_v[ishift+2]<-1
+
+    lsoutput <- function(Lest){
+      params  <- lm(log(Lest) ~ poly(log(Stressset), 1, raw=TRUE))
+      lsparams <- c(-summary(params)$coefficients[2,1],exp(-summary(params)$coefficients[1,1]))
+      R2 <- summary(params)$r.squared
+      return(list(lsparams,R2))
+    }
+    init_AFn <- function(theta,Sfrom,Sto) {
+      (Sto/Sfrom)^theta[1]
+    }
+    adjparam <- function(theta,SfromAdj,StoAdj,iblocked2) {
+      v1<-log(theta)/log(StoAdj/SfromAdj)
+      v1<-replace(v1,iblocked2,0)
+      v1<-v1[v1!=0]
+      return(v1)
+    }
+    updateparam <- function(theta) {
+      newlsparams<-lsparams
+      newlsparams[1]<-mean(theta)
+      return(newlsparams)
+    }
+  }
   if (ls=="Logarithmic"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
     lsoutput <- function(Lest){
@@ -280,7 +341,7 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       R2 <- summary(params)$r.squared
       return(list(lsparams,R2))
     }
-    init_AFn <- function(theta) {
+    init_AFn <- function(theta,Sfrom,Sto) {
       (theta[2]+log(Sfrom)*theta[1])/(theta[2]+log(Sto)*theta[1])
     }
   }
@@ -312,7 +373,7 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       R2 <- 1
       return(list(lsparams,R2))
     }
-    init_AFn <- function(theta) {
+    init_AFn <- function(theta,Sfrom,Sto) {
       exp((theta[2]*((1/Sfrom[[1]]) - (1/Sto[[1]])))+(theta[3]*((1/Sfrom[[2]]) - (1/Sto[[2]]))))
     }
     adjparam <- function(theta) {
@@ -347,7 +408,7 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       R2 <- 1
       return(list(lsparams,R2))
     }
-    init_AFn <- function(theta) {
+    init_AFn <- function(theta,Sfrom,Sto) {
       ((Sto[[1]]/Sfrom[[1]])^theta[2])*exp(-theta[1]*((1/Sto[[2]])-(1/Sfrom[[2]])))
     }
     adjparam <- function(theta) {
@@ -380,7 +441,7 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       R2 <- 1
       return(list(lsparams,R2))
     }
-    init_AFn <- function(theta) {
+    init_AFn <- function(theta,Sfrom,Sto) {
       (Sto[[1]]/Sfrom[[1]])*exp((theta[2]*((1/Sfrom[[1]])-(1/Sto[[1]])))+(theta[3]*(Sfrom[[2]]-Sto[[2]]))+(theta[4]*((Sfrom[[2]]/Sfrom[[1]])-(Sto[[2]]/Sto[[1]]))))
     }
     adjparam <- function(theta) {
@@ -413,7 +474,7 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       R2 <- 1
       return(list(lsparams,R2))
     }
-    init_AFn <- function(theta) {
+    init_AFn <- function(theta,Sfrom,Sto) {
       exp((theta[2]*((1/Sto[[1]]) - (1/Sfrom[[1]])))+(theta[3]*((1/Sto[[2]]) - (1/Sfrom[[2]]))))
       # exp((theta[2]*((1/Sfrom[[1]]) - (1/Sto[[1]])))+(theta[3]*((1/Sfrom[[2]]) - (1/Sto[[2]]))))
     }
@@ -516,7 +577,7 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
 
   # Initialize first updated parameter set for optimization
   if(is.list(data[[1]])==FALSE){
-    AFn<-replace(init_AFn(lsparams0),iblocked,0)
+    AFn<-replace(init_AFn(lsparams0,Sfrom,Sto),iblocked,0)
     Tequiv<-colSums(replace(tequiv/AFn,iblocked,0))+stepstresstable[,dim(stepstresstable)[2]]
     Tequivfrom<-matrix(rep(1,remNsteps^2),remNsteps,remNsteps)*Tequiv[stepsno]
     Tequivto<-t(Tequivfrom)
@@ -542,9 +603,9 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
     }
   }
 
-  for (i3 in 1:100){
+  for (i3 in 1:1000){
     if(is.list(data[[1]])==FALSE){
-      AFn<-replace(init_AFn(lsparams0),iblocked,0)
+      AFn<-replace(init_AFn(lsparams0,Sfrom,Sto),iblocked,0)
       Tequiv<-colSums(replace(tequiv/AFn,iblocked,0))+stepstresstable[,dim(stepstresstable)[2]]
       Tequivfrom<-matrix(rep(1,remNsteps^2),remNsteps,remNsteps)*Tequiv[stepsno]
       Tequivto<-t(Tequivfrom)
@@ -572,6 +633,8 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       }
     }
   }
+
+
 
   if(is.list(data[[1]])==FALSE){
     del_T<-Tequiv-stepstresstable[,dim(stepstresstable)[2]]
@@ -641,6 +704,8 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
     # updatedata[[i3]][,1]<-updatedata[[i3]][,1]+del_Tvector[[i3]]
     # colnames(updatefull_stpstrdata) <- colnames(data[[1]], do.NULL = FALSE, prefix = "Obs.")
   }
+
+  # return(list(Tequiv,AFAdj,nAdj,del_Tvector))
 
   # Tabulate LSQ optimized estimates
   output2<-distlifeest(updatedata)
