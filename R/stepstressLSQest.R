@@ -268,7 +268,7 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       return(list(lsparams,R2))
     }
     init_AFn <- function(theta,Sfrom,Sto) {
-      (Sfrom/Sto)^lsparams[1]
+      (Sfrom/Sto)^theta[1]
     }
     adjparam <- function(theta,SfromAdj,StoAdj,iblocked2) {
       v1<-log(theta)/log(SfromAdj/StoAdj)
@@ -635,86 +635,116 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   }
 
 
+  # New updating data section that computes each set of step-stress data
+  # Will replace lines 640 and up as the new code that provides update data.
+  # Initialize the data by step-stress level
+  AFupdate <- init_AFn(lsparams0,Sfrom,Sto)
+  updatedata0 <- stpstrdatsort[[3]]
+  stepfrom <- stpstrdatsort[[4]]
+  Testtime <- stepstresstable[,length(stepstresstable[1,])]
 
-  if(is.list(data[[1]])==FALSE){
-    del_T<-Tequiv-stepstresstable[,dim(stepstresstable)[2]]
-    del_T_trim<-del_T[stepsno]
-    del_Tvector<-rep(0,length(stpstrdatsort[[1]][,1]))
-    updatedata<-stpstrdatsort[[1]]
-
-    if(Nstress==1){
-      for(i2 in 1:length(stpstrdatsort[[2]][,1])){
-        del_Tvector[which(stpstrdatsort[[1]][,3]==stpstrdatsort[[2]][i2,1])]<-del_T_trim[i2]
-      }
+  for(i in 1:length(stepstresstable[,1])){
+    # i == TO-STEPS
+    t_new <- updatedata0[1:length(data[,1]),1]
+    AF_new <- AFupdate[i,]
+    for(j in 1:length(data[,1])){
+      # j == FROM-STEPS
+      # Compute the adjusted times from data[,1] by FROM-STEPS and TO-STEPS
+      # Form time vector
+      time_v <- Testtime[1:stepfrom[j]]
+      time_v[stepfrom[j]] <- t_new[j]
+      # Form AF vector
+      AF_v <- AF_new[1:stepfrom[j]]
+      t_new[j] <- time_v%*%AF_v
     }
-    if(Nstress==2){
-      for(i2 in 1:length(stpstrdatsort[[2]][,1])){
-        del_Tvector[intersect(which(stpstrdatsort[[1]][,3]==stpstrdatsort[[2]][i2,1]),which(stpstrdatsort[[1]][,4]==stpstrdatsort[[2]][i2,2]))]<-del_T_trim[i2]
-      }
+    if(i == 1){
+      t_adj <- t_new
+    } else{
+      t_adj <- c(t_adj,t_new)
     }
-    if(Nstress>=3){
-      for(i2 in 1:length(stpstrdatsort[[2]][,1])){
-        stressmatch<-vector(mode = "list",Nstress)
-        for(i3 in 1:Nstress){
-          stressmatch[[i3]]<-which(stpstrdatsort[[1]][,i3+2]==stpstrdatsort[[2]][i2,i3])
-        }
-        del_Tvector[Reduce(intersect, stressmatch)]<-del_T_trim[i2]
-      }
-    }
-    updatedata[,1]<-updatedata[,1]+del_Tvector
-  } else{
-    del_T<-vector("list",length(cumdmg))
-    del_T_trim<-vector("list",length(cumdmg))
-    del_Tvector<-vector("list",length(cumdmg))
-    updatedata<-full_stpstrdata
-    # updatestpstrdatsort<-vector("list",length(cumdmg))
-    for(i3 in 1:length(cumdmg)){
-      del_T[[i3]]<-Tequiv[[i3]]-stepstresstable[[i3]][,dim(stepstresstable[[i3]])[2]]
-      del_T_trim[[i3]]<-del_T[[i3]][stepsno[[i3]]]
-      del_Tvector[[i3]]<-rep(0,length(stpstrdatsort[[i3]][[1]][,1]))
-      # updatedata[[i3]]<-stpstrdatsort[[i3]][[1]]
-      if(Nstress==1){
-        for(i2 in 1:length(stpstrdatsort[[i3]][[2]][,1])){
-          del_Tvector[[i3]][which(stpstrdatsort[[i3]][[1]][,3]==stpstrdatsort[[i3]][[2]][i2,1])]<-del_T_trim[[i3]][i2]
-        }
-      }
-      if(Nstress==2){
-        for(i2 in 1:length(stpstrdatsort[[i3]][[2]][,1])){
-          del_Tvector[[i3]][intersect(which(stpstrdatsort[[i3]][[1]][,3]==stpstrdatsort[[i3]][[2]][i2,1]),which(stpstrdatsort[[i3]][[1]][,4]==stpstrdatsort[[i3]][[2]][i2,2]))]<-del_T_trim[[i3]][i2]
-        }
-      }
-      if(Nstress>=3){
-        for(i2 in 1:length(stpstrdatsort[[i3]][[2]][,1])){
-          stressmatch<-vector(mode = "list",Nstress)
-          for(i4 in 1:Nstress){
-            stressmatch[[i4]]<-which(stpstrdatsort[[i3]][[1]][,i4+2]==stpstrdatsort[[i3]][[2]][i2,i4])
-          }
-          del_Tvector[[i3]][Reduce(intersect, stressmatch)]<-del_T_trim[[i3]][i2]
-        }
-      }
-      # updatedata[[i3]][,1]<-updatedata[[i3]][,1]+del_Tvector[[i3]]
-      # updatestpstrdatsort[[i3]]<-stepstress.data(updatedata[[i3]],stepstresstable[[i3]])
-      # if(i3 == 1){
-      #   updatefull_stpstrdata <- updatestpstrdatsort[[i3]][[1]]
-      # } else{
-      #   updatefull_stpstrdata <- merge(updatefull_stpstrdata,updatestpstrdatsort[[i3]][[1]], all = TRUE, sort=FALSE)
-      # }
-    }
-    updatedata[,1]<-updatedata[,1]+unlist(del_Tvector)
-    # updatedata[[i3]][,1]<-updatedata[[i3]][,1]+del_Tvector[[i3]]
-    # colnames(updatefull_stpstrdata) <- colnames(data[[1]], do.NULL = FALSE, prefix = "Obs.")
   }
+  updatedata <- updatedata0
+  updatedata[,1] <- t_adj
+
+  # return(list(paramsfirst,c(distparam0,lsparams0),updatedata0,Sfrom,Sto,AFupdate,t_adj,updatedata))
+#
+#   if(is.list(data[[1]])==FALSE){
+#     del_T<-Tequiv-stepstresstable[,dim(stepstresstable)[2]]
+#     del_T_trim<-del_T[stepsno]
+#     del_Tvector<-rep(0,length(stpstrdatsort[[1]][,1]))
+#     updatedata<-stpstrdatsort[[1]]
+#
+#     if(Nstress==1){
+#       for(i2 in 1:length(stpstrdatsort[[2]][,1])){
+#         del_Tvector[which(stpstrdatsort[[1]][,3]==stpstrdatsort[[2]][i2,1])]<-del_T_trim[i2]
+#       }
+#     }
+#     if(Nstress==2){
+#       for(i2 in 1:length(stpstrdatsort[[2]][,1])){
+#         del_Tvector[intersect(which(stpstrdatsort[[1]][,3]==stpstrdatsort[[2]][i2,1]),which(stpstrdatsort[[1]][,4]==stpstrdatsort[[2]][i2,2]))]<-del_T_trim[i2]
+#       }
+#     }
+#     if(Nstress>=3){
+#       for(i2 in 1:length(stpstrdatsort[[2]][,1])){
+#         stressmatch<-vector(mode = "list",Nstress)
+#         for(i3 in 1:Nstress){
+#           stressmatch[[i3]]<-which(stpstrdatsort[[1]][,i3+2]==stpstrdatsort[[2]][i2,i3])
+#         }
+#         del_Tvector[Reduce(intersect, stressmatch)]<-del_T_trim[i2]
+#       }
+#     }
+#     updatedata[,1]<-updatedata[,1]+del_Tvector
+#   } else{
+#     del_T<-vector("list",length(cumdmg))
+#     del_T_trim<-vector("list",length(cumdmg))
+#     del_Tvector<-vector("list",length(cumdmg))
+#     updatedata<-full_stpstrdata
+#     # updatestpstrdatsort<-vector("list",length(cumdmg))
+#     for(i3 in 1:length(cumdmg)){
+#       del_T[[i3]]<-Tequiv[[i3]]-stepstresstable[[i3]][,dim(stepstresstable[[i3]])[2]]
+#       del_T_trim[[i3]]<-del_T[[i3]][stepsno[[i3]]]
+#       del_Tvector[[i3]]<-rep(0,length(stpstrdatsort[[i3]][[1]][,1]))
+#       # updatedata[[i3]]<-stpstrdatsort[[i3]][[1]]
+#       if(Nstress==1){
+#         for(i2 in 1:length(stpstrdatsort[[i3]][[2]][,1])){
+#           del_Tvector[[i3]][which(stpstrdatsort[[i3]][[1]][,3]==stpstrdatsort[[i3]][[2]][i2,1])]<-del_T_trim[[i3]][i2]
+#         }
+#       }
+#       if(Nstress==2){
+#         for(i2 in 1:length(stpstrdatsort[[i3]][[2]][,1])){
+#           del_Tvector[[i3]][intersect(which(stpstrdatsort[[i3]][[1]][,3]==stpstrdatsort[[i3]][[2]][i2,1]),which(stpstrdatsort[[i3]][[1]][,4]==stpstrdatsort[[i3]][[2]][i2,2]))]<-del_T_trim[[i3]][i2]
+#         }
+#       }
+#       if(Nstress>=3){
+#         for(i2 in 1:length(stpstrdatsort[[i3]][[2]][,1])){
+#           stressmatch<-vector(mode = "list",Nstress)
+#           for(i4 in 1:Nstress){
+#             stressmatch[[i4]]<-which(stpstrdatsort[[i3]][[1]][,i4+2]==stpstrdatsort[[i3]][[2]][i2,i4])
+#           }
+#           del_Tvector[[i3]][Reduce(intersect, stressmatch)]<-del_T_trim[[i3]][i2]
+#         }
+#       }
+#       # updatedata[[i3]][,1]<-updatedata[[i3]][,1]+del_Tvector[[i3]]
+#       # updatestpstrdatsort[[i3]]<-stepstress.data(updatedata[[i3]],stepstresstable[[i3]])
+#       # if(i3 == 1){
+#       #   updatefull_stpstrdata <- updatestpstrdatsort[[i3]][[1]]
+#       # } else{
+#       #   updatefull_stpstrdata <- merge(updatefull_stpstrdata,updatestpstrdatsort[[i3]][[1]], all = TRUE, sort=FALSE)
+#       # }
+#     }
+#     updatedata[,1]<-updatedata[,1]+unlist(del_Tvector)
+#     # updatedata[[i3]][,1]<-updatedata[[i3]][,1]+del_Tvector[[i3]]
+#     # colnames(updatefull_stpstrdata) <- colnames(data[[1]], do.NULL = FALSE, prefix = "Obs.")
+#   }
 
   # return(list(Tequiv,AFAdj,nAdj,del_Tvector))
 
   # Tabulate LSQ optimized estimates
-  output2<-distlifeest(updatedata)
-  distoutput<-output2[[1]]
+  output2 <- lifestress.LSQest(updatedata,ls,dist,pp)
+  paramslast<-output2[[3]]
   lifeest<-output2[[2]]
-  setvect <- unlist(distoutput)[output2[[5]]]
-  distparam<-mean(setvect[!is.na(setvect)])
-  lsparams<-lsoutput(lifeest)[[1]]
 
-  return(list(paramsfirst,c(distparam0,lsparams0),c(distparam,lsparams),lifeest,full_stpstrdata,updatedata))
+  return(list(paramsfirst,paramslast,lifeest,full_stpstrdata,updatedata))
+  # return(list(paramsfirst,paramslast,lifeest,full_stpstrdata,updatedata,plotstepstress = output2$plotoutput))
   # return(list(c(distparam0,lsparams0),c(distparam,lsparams),lifeest,Sfrom,Sto,AFn,AFAdj,nAdj,tequiv,Tequiv,del_T,updatedata,c(distparam0,lsparamsfirst),updatedata))
 }
