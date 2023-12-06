@@ -500,14 +500,14 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
   }
   # return(list(S,L,LSQ,R2,plotoutput=plotoutput))
 
-  if(ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
-    if(is.null(Suse)==TRUE){
-      relplotoutput <- lifestress.relationplot.LSQ(data,ls,dist,lsparams,S,L)
-    }
-    if(is.null(Suse)==FALSE){
-      relplotoutput <- lifestress.relationplot.LSQ(data,ls,dist,lsparams,S,L,Suse = Suse)
-    }
-  }
+  # if(ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
+  #   if(is.null(Suse)==TRUE){
+  #     relplotoutput <- lifestress.relationplot.LSQ(data,ls,dist,lsparams,S,L)
+  #   }
+  #   if(is.null(Suse)==FALSE){
+  #     relplotoutput <- lifestress.relationplot.LSQ(data,ls,dist,lsparams,S,L,Suse = Suse)
+  #   }
+  # }
 
   # if(is.null(Suse)==TRUE){
   #   relplotoutput <- lifestress.relationplot.LSQ(data,ls,dist,lsparams,S,L)
