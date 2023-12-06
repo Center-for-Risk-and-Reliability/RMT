@@ -107,6 +107,8 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       log(theta[ishift+2] + Sc*theta[ishift+1])
     }
+    ls_txt<-ls
+    params_txt<-c("a","b")
   }
 
   if (ls=="Exponential"){
@@ -137,6 +139,8 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       theta[ishift+2] + Sc*theta[ishift+1]
     }
+    ls_txt<-ls
+    params_txt<-c("a","b")
   }
 
   if (ls=="Exponential2"){
@@ -167,6 +171,8 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       theta[ishift+2] + (theta[ishift+1]/Sc)
     }
+    ls_txt<-ls
+    params_txt<-c("a","b")
   }
 
   if (ls=="Arrhenius") {
@@ -200,6 +206,8 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       theta[ishift+2] + theta[ishift+1]/(K*Sc)
     }
+    ls_txt<-ls
+    params_txt<-c("E_a","b")
   }
 
   if (ls=="Eyring") {
@@ -226,6 +234,8 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       log(theta[ishift+2]) - log(Sc) + theta[ishift+1]/Sc
     }
+    ls_txt<-ls
+    params_txt<-c("a","b")
   }
 
   if (ls=="Eyring2") {
@@ -252,11 +262,15 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       - log(Sc) - theta[ishift+1] + theta[ishift+2]/Sc
     }
+    ls_txt<-ls
+    params_txt<-c("a","b")
   }
 
   if (ls=="Power") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b
-    positivity_v[ishift+2]<-1
+    # First redefine b parameter as logb
+    LSQest[ishift+2] <- log(LSQest[ishift+2])
+    # positivity_v[ishift+2]<-1
 
     # Life ratio L1/L2
     L1dL2 <- function(theta,S1,S2) {
@@ -264,22 +278,24 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     }
     # Life difference L2-L1
     L2mL1 <- function(theta,S1,S2) {
-      theta[ishift+2]*((S2^theta[ishift+1])-(S1^theta[ishift+1]))
+      exp(theta[ishift+2])*((S2^theta[ishift+1])-(S1^theta[ishift+1]))
     }
 
     # Life functions
     lifeF <- function(theta) {
-      theta[ishift+2]*(SF^theta[ishift+1])
+      exp(theta[ishift+2])*(SF^theta[ishift+1])
     }
     loglifeF <- function(theta) {
-      log(theta[ishift+2]) + theta[ishift+1]*log(SF)
+      theta[ishift+2] + theta[ishift+1]*log(SF)
     }
     lifeC <- function(theta) {
-      theta[ishift+2]*(Sc^theta[ishift+1])
+      exp(theta[ishift+2])*(Sc^theta[ishift+1])
     }
     loglifeC <- function(theta) {
-      log(theta[ishift+2]) + theta[ishift+1]*log(Sc)
+      theta[ishift+2] + theta[ishift+1]*log(Sc)
     }
+    ls_txt<-ls
+    params_txt<-c("a","b")
   }
 
   if (ls=="InversePower") {
@@ -310,6 +326,8 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       theta[ishift+2] - theta[ishift+1]*log(Sc)
     }
+    ls_txt<-"Inverse-Power"
+    params_txt<-c("a","b")
   }
 
   if (ls=="InversePower2") {
@@ -340,6 +358,8 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       -theta[ishift+2] - theta[ishift+1]*log(Sc)
     }
+    ls_txt<-"Inverse-Power"
+    params_txt<-c("a","b")
   }
 
   if (ls=="Logarithmic") {
@@ -367,6 +387,8 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       log(theta[ishift+1]*log(Sc) + theta[ishift+2])
     }
+    ls_txt<-ls
+    params_txt<-c("a","b")
   }
 
   if (ls=="MultiStress") {
@@ -504,11 +526,15 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
         return(eqn4)
       }
     }
+    ls_txt<-ls
+    params_txt<-c("a","b")
   }
 
   if (ls=="TempHumidity") {
     # lsparams[1] - parameter A, lsparams[2] - parameter a, lsparams[3] - parameter b
-    positivity_v[ishift+1]<-1
+    # First redefine A parameter as logA
+    LSQest[ishift+1] <- log(LSQest[ishift+1])
+    # positivity_v[ishift+1]<-1
 
     # Life ratio L1/L2
     L1dL2 <- function(theta,S1,S2) {
@@ -516,27 +542,30 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     }
     # Life difference L2-L1
     L2mL1 <- function(theta,S1,S2) {
-      theta[ishift+1]*((exp((theta[ishift+2]/S2[1])- (theta[ishift+3]/S2[2]))) - (exp((theta[ishift+2]/S1[1])- (theta[ishift+3]/S1[2]))))
+      exp(theta[ishift+1])*((exp((theta[ishift+2]/S2[1])- (theta[ishift+3]/S2[2]))) - (exp((theta[ishift+2]/S1[1])- (theta[ishift+3]/S1[2]))))
     }
 
     # Life functions
     lifeF <- function(theta) {
-      theta[ishift+1]*exp((theta[ishift+2]/SF[,1]) + (theta[ishift+3]/SF[,2]))
+      exp(theta[ishift+1])*exp((theta[ishift+2]/SF[,1]) + (theta[ishift+3]/SF[,2]))
     }
     loglifeF <- function(theta) {
-      log(theta[ishift+1]) + (theta[ishift+2]/SF[,1]) + (theta[ishift+3]/SF[,2])
+      theta[ishift+1] + (theta[ishift+2]/SF[,1]) + (theta[ishift+3]/SF[,2])
     }
     lifeC <- function(theta) {
-      theta[ishift+1]*exp((theta[ishift+2]/Sc[,1]) + (theta[ishift+3]/Sc[,2]))
+      exp(theta[ishift+1])*exp((theta[ishift+2]/Sc[,1]) + (theta[ishift+3]/Sc[,2]))
     }
     loglifeC <- function(theta) {
-      log(theta[ishift+1]) + (theta[ishift+2]/Sc[,1]) + (theta[ishift+3]/Sc[,2])
+      theta[ishift+1] + (theta[ishift+2]/Sc[,1]) + (theta[ishift+3]/Sc[,2])
     }
+    ls_txt<-"Temperature-Humidity"
+    params_txt<-c("A","a","b")
   }
 
   if (ls=="TempNonthermal") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - parameter c
-    positivity_v[ishift+3]<-1
+    # First redefine c parameter as logc
+    LSQest[ishift+3] <- log(LSQest[ishift+3])
 
     # Life ratio L1/L2
     L1dL2 <- function(theta,S1,S2) {
@@ -544,22 +573,25 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     }
     # Life difference L2-L1
     L2mL1 <- function(theta,S1,S2) {
-      theta[ishift+3]*((1/((S2[1]^theta[ishift+2])*exp(-theta[ishift+1]/S2[2]))) - (1/((S1[1]^theta[ishift+2])*exp(-theta[ishift+1]/S1[2]))))
+      exp(theta[ishift+3])*((1/((S2[1]^theta[ishift+2])*exp(-theta[ishift+1]/S2[2]))) - (1/((S1[1]^theta[ishift+2])*exp(-theta[ishift+1]/S1[2]))))
     }
 
     # Life functions
     lifeF <- function(theta) {
-      theta[ishift+3]/((SF[,2]^theta[ishift+2])*exp(-theta[ishift+1]/SF[,1]))
+      exp(theta[ishift+3])/((SF[,2]^theta[ishift+2])*exp(-theta[ishift+1]/SF[,1]))
     }
     loglifeF <- function(theta) {
-      log(theta[ishift+3]) - theta[ishift+2]*log(SF[,2]) + (theta[ishift+1]/SF[,1])
+      theta[ishift+3] - theta[ishift+2]*log(SF[,2]) + (theta[ishift+1]/SF[,1])
     }
     lifeC <- function(theta) {
-      theta[ishift+3]/((Sc[,2]^theta[ishift+2])*exp(-theta[ishift+1]/Sc[,1]))
+      exp(theta[ishift+3])/((Sc[,2]^theta[ishift+2])*exp(-theta[ishift+1]/Sc[,1]))
     }
     loglifeC <- function(theta) {
-      log(theta[ishift+3]) - theta[ishift+2]*log(Sc[,2]) + (theta[ishift+1]/Sc[,1])
+      theta[ishift+3] - theta[ishift+2]*log(Sc[,2]) + (theta[ishift+1]/Sc[,1])
     }
+
+    ls_txt<-"Temperature-Non-thermal"
+    params_txt<-c("a","b","c")
   }
 
   if (ls=="Eyring3") {
@@ -588,6 +620,8 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       -log(Sc[,1]) + theta[ishift+1] + (theta[ishift+2]/Sc[,1]) + (theta[ishift+3] + (theta[ishift+4]/Sc[,1]))*Sc[,2]
     }
+    ls_txt<-ls
+    params_txt<-c("a","b","c","d")
   }
 
   if (ls=="PH1") {
@@ -616,6 +650,8 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       -(theta[ishift+1]) - (theta[ishift+2]/Sc[,1]) - (theta[ishift+3]/Sc[,2])
     }
+    ls_txt<-ls
+    params_txt<-c("beta0","beta1","beta2")
   }
   # Initialize tau_i and tau_j functions and the step numbers (taui_steps and tauj_steps) to look for
   if(is.list(data[[1]])==FALSE){
@@ -1395,6 +1431,9 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglik <- function(theta){
       -sum(log(theta[1]) + (theta[1]-1)*log(ti(theta)) - theta[1]*loglifeF(theta) - ((ti(theta)/lifeF(theta))^theta[1])) - sum(- ((tj(theta)/lifeC(theta))^theta[1]))
     }
+
+    dist_txt<-dist
+    distparam_txt<-"\U03B2"
   }
   if (dist=="Lognormal") {
     positivity_v[1]<-1
@@ -1402,6 +1441,8 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglik <- function(theta){
       -sum(-log(theta[1]) - 0.5*log(2*pi) - log(ti(theta)) - 0.5*(theta[1]^-2)*((log(ti(theta)) - loglifeF(theta))^2)) - sum(log(0.5 - 0.5*erf((2^-0.5)*(theta[1]^-1)*(log(tj(theta)) - loglifeC(theta)))))
     }
+    dist_txt<-dist
+    distparam_txt<-"\U03C3_t"
   }
   if (dist=="Normal") {
     positivity_v[1]<-1
@@ -1409,11 +1450,14 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglik <- function(theta){
       -sum(-log(theta[1]) - 0.5*log(2*pi) - 0.5*(theta[1]^-2)*((ti(theta) - lifeF(theta))^2)) - sum(log(0.5 - 0.5*erf((2^-0.5)*(theta[1]^-1)*(tj(theta) - lifeC(theta)))))
     }
+    dist_txt<-dist
+    distparam_txt<-"\U03C3"
   }
   if (dist=="Exponential") {
     loglik <- function(theta){
       -sum(-loglifeF(theta) - ti(theta)/lifeF(theta)) - sum(-tj(theta)/lifeC(theta))
     }
+    dist_txt<-dist
   }
   if (dist=="2PExponential") {
     positivity_v[1]<-1
@@ -1421,6 +1465,15 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglik <- function(theta){
       -sum(-log(theta[1]) - (theta[1]^-1)*(ti(theta) - lifeF(theta)) - 1) - sum(-(theta[1])*(tj(theta) - lifeC(theta)) - 1)
     }
+    dist_txt<-"Two-Parameter Exponential"
+    distparam_txt<-"\U03C3"
+  }
+
+  if(dist=="Exponential") {
+    params_txt<-params_txt
+  }
+  else {
+    params_txt<-c(distparam_txt,params_txt)
   }
 
   MLEandvar <- MLE.var.covar.select(loglik,LSQest)
@@ -1430,6 +1483,7 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
   crit <- qnorm((1 + conf.level)/2)
   crit2 <- qnorm(conf.level)
   conflim<-vector(mode = "list", length = length(LSQest))
+  fulllimset<-vector(mode = "list", length = length(LSQest))
 
   for(i in 1:length(LSQest)){
     if(sided == "twosided"){
@@ -1453,6 +1507,13 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
       if((ls=="InversePower2") && i == (ishift+2)){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
+      if(ls=="TempHumidity" && i == (ishift+1)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if (ls=="TempNonthermal" && i == (ishift+3)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      conflim_txt<-c(paste(c("Lower ",100*conf.level,"%"),collapse = ""),paste(c("Upper ",100*conf.level,"%"),collapse = ""))
     }
     if(sided == "onesidedlow"){
       if(positivity_v[i]==0){
@@ -1469,12 +1530,22 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
       if(ls=="Arrhenius" && i == (ishift+2)){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
+      if((ls=="Power") && i == (ishift+2)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
       if((ls=="InversePower") && i == (ishift+2)){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
       if((ls=="InversePower2") && i == (ishift+2)){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
+      if(ls=="TempHumidity" && i == (ishift+1)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if (ls=="TempNonthermal" && i == (ishift+3)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      conflim_txt<-paste(c("One-Sided Low ",100*conf.level,"%"),collapse = "")
     }
     if(sided == "onesidedhigh"){
       if(positivity_v[i]==0){
@@ -1491,14 +1562,47 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
       if(ls=="Arrhenius" && i == (ishift+2)){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
+      if((ls=="Power") && i == (ishift+2)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
       if((ls=="InversePower") && i == (ishift+2)){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
       if((ls=="InversePower2") && i == (ishift+2)){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
+      if(ls=="TempHumidity" && i == (ishift+1)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if (ls=="TempNonthermal" && i == (ishift+3)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      conflim_txt<-paste(c("One-Sided High ",100*conf.level,"%"),collapse = "")
+    }
+    fulllimset[[i]]<-c(theta.hat[i],conflim[[i]])
+
+    if((ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius"|| ls=="Power" || ls=="InversePower" || ls=="InversePower2") && i == (ishift+2)){
+      fulllimset[[i]] <- c(exp(theta.hat[i]),conflim[[i]])
+    }
+    if(ls=="TempHumidity" && i == (ishift+1)){
+      fulllimset[[i]] <- c(exp(theta.hat[i]),conflim[[i]])
+    }
+    if (ls=="TempNonthermal" && i == (ishift+3)){
+      fulllimset[[i]] <- c(exp(theta.hat[i]),conflim[[i]])
     }
   }
+
+  AIC = 2*length(theta.hat) + 2*loglik(theta.hat)
+  BIC = 2*log(length(TTF)+length(Tc)) + 2*loglik(theta.hat)
+
+  # if(is.null(Suse) == FALSE){
+  #   # Generate some data
+  # }
+
+  # Produce some output text that summarizes the results
+  cat(c("Maximum-Likelihood estimates for the ",ls_txt,"-",dist_txt," Step-Stress Life-Stress model.\n\n"),sep = "")
+  print(matrix(unlist(fulllimset), nrow = length(unlist(fulllimset))/length(LSQest), ncol = length(LSQest), byrow = FALSE,dimnames = list(c("Step-Stress Life-Stress Parameters Mean",conflim_txt),params_txt)))
+
   #return(list(ti(LSQest),tj(LSQest),theta.hat,conflim))
   # Add a plot for the LSQ and MLE here as well (CDF)
 
@@ -1512,12 +1616,21 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
   if(ls=="Arrhenius"){
     theta.hat[ishift+2] <- exp(theta.hat[ishift+2])
   }
+  if(ls=="Power"){
+    theta.hat[ishift+2] <- exp(theta.hat[ishift+2])
+  }
   if(ls=="InversePower"){
     theta.hat[ishift+2] <- exp(theta.hat[ishift+2])
   }
   if(ls=="InversePower2"){
     theta.hat[ishift+2] <- exp(theta.hat[ishift+2])
   }
+  if(ls=="TempHumidity"){
+    theta.hat[ishift+1] <- exp(theta.hat[ishift+1])
+  }
+  if (ls=="TempNonthermal"){
+    theta.hat[ishift+3] <- exp(theta.hat[ishift+3])
+  }
 
-  return(list(theta.hat,inv.fish,conflim))
+  return(list(theta.hat,inv.fish,conflim,AIC=AIC,BIC=BIC))
 }

@@ -1,7 +1,7 @@
 # Bayesian Accelerated Degradation Testing Estimator
 # Developed by Dr. Reuel Smith, 2022
 
-adt.full.BAYES <- function(pt_est=NULL,data,lifedam,dist,D0,Tuse,confid,priors,nsamples,burnin,nchains=4){
+adt.full.BAYES <- function(pt_est=NULL,data,lifedam,dist,D0,Tuse=NULL,confid=0.95,priors,nsamples=50000,burnin=10000,nchains=4){
   # (pt_est,ls,dist,TTF,SF,Tc,Sc,confid,priors,nsamples,burnin)
   #Load pracma library for erf
   library(pracma)
@@ -19,18 +19,7 @@ adt.full.BAYES <- function(pt_est=NULL,data,lifedam,dist,D0,Tuse,confid,priors,n
   # Then the code will run the program and compute the Bayes estimation
 
   # Check to see if confidence exists
-  if(missing(confid)){
-    conf.level <- 0.95
-  } else {
-    conf.level <- confid
-  }
-
-  # Check to see if burn-in exists
-  if(missing(burnin)){
-    burnin <- floor(nsamples/2)
-  } else {
-    burnin <- burnin
-  }
+  conf.level <- confid
 
   # Check the condition if the Hamada damage model is chosen and whether or not
   # a use temperature has been identified or not.  If not then room temperature
@@ -206,6 +195,7 @@ adt.full.BAYES <- function(pt_est=NULL,data,lifedam,dist,D0,Tuse,confid,priors,n
     loglik <- paste(c("target += lognormal_lpdf(Dt | Damagei, sigma_t);"),collapse = "")
     params <- paste(c(distparam,lifedamparams),collapse = " ")
     paramsvec <- c("sigma_t",lifedamparamsvec)
+    outputparamset <- c("\U03C3_t",lifedamparamsvec)
     priors <- paste(c(distpriors,lifedampriors),collapse = " ")
   }
 
@@ -215,6 +205,7 @@ adt.full.BAYES <- function(pt_est=NULL,data,lifedam,dist,D0,Tuse,confid,priors,n
     loglik <- paste(c("target += normal_lpdf(Dt | Damagei, sigma);"),collapse = "")
     params <- paste(c(distparam,lifedamparams),collapse = " ")
     paramsvec <- c("sigma",lifedamparamsvec)
+    outputparamset <- c("\U03C3",lifedamparamsvec)
     priors <- paste(c(distpriors,lifedampriors),collapse = " ")
   }
 
@@ -283,5 +274,5 @@ adt.full.BAYES <- function(pt_est=NULL,data,lifedam,dist,D0,Tuse,confid,priors,n
 
   return(list(fit,stats,dataout,plot1_MCtrace,plot2_hist,plot3_density,plot4_densityoverlay))
 
-  return(list(fit,stats,dataout,plot1_MCtrace,plot2_hist,plot3_density,plot4_densityoverlay))
+  # return(list(fit,stats,dataout,plot1_MCtrace,plot2_hist,plot3_density,plot4_densityoverlay))
 }
