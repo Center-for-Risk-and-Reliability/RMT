@@ -75,36 +75,14 @@ The output of the least-squares analysis for a given step-stress life model incl
   The post optimization step-stress life model parameter estimate based on the retabluated data from \code{\link{stepstress.data}} and optimization by adjusted acceleration factors.  The life distribution parameter leads followed by the life-stress parameters.
   }
   \item{Output[[3]]}{
-  The step-stress based mean life based on the optimized parameter estimates.
+  The step-stress based mean life at each step based on the optimized parameter estimates.
   }
   \item{Output[[4]]}{
-  An \eqn{n x n} matrix that represents the "from" step-stress state where stresses are listed by column and repeated.  Needed for both least-squares and maximum likelihood analysis.
+  The adjusted failure data table for probability plotting based on the unoptimized step-stress fit.
   }
   \item{Output[[5]]}{
-  An \eqn{n x n} matrix that represents the "to" step-stress state where stresses are listed by row and repeated.  Needed for both least-squares and maximum likelihood analysis.
-  }
-  \item{Output[[6]]}{
-  An \eqn{n x n} matrix that represents the "from/to" acceleration factors based on the "from" and "to" step-stress matricies.  Needed for both least-squares and maximum likelihood analysis.
-  }
-  \item{Output[[7]]}{
-  An matrix that represents the "from/to" adjusted acceleration factors based on the equivalent times and the cumulative damage.  Only relevant for steps where damage occurs.
-  }
-  \item{Output[[8]]}{
-  The adjusted step-stress life parameters based on the adjusted acceleration factors for all \eqn{n} steps.  The average of which is used to update the next iteration of the solution.
-  }
-  \item{Output[[9]]}{
-  An \eqn{n x n} matrix that represents the test times for each step-stress state where times are listed by column and repeated.  Needed for both least-squares and maximum likelihood analysis.
-  }
-  \item{Output[[10]]}{
-  The step equivalent times for all \eqn{n} steps.
-  }
-  \item{Output[[11]]}{
-  The difference between the step equivalent times and the oriinal test times for all \eqn{n} steps.
-  }
-  \item{Output[[12]]}{
   The adjusted failure data table for probability plotting based on the optimized step-stress life least-square analysis.
   }
-%% ...
 }
 \references{
 Modarres, M., Amiri, M., Jackson, C.  (2017)  Probabilistic Physics of Failure Approach to Reliability: Modeling, Accelerated Testing, Prognosis and Reliability Assessment.  Center for Risk and Reliability
