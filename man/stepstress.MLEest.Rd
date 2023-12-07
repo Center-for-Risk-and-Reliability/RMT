@@ -107,16 +107,7 @@ tableStepStress1 <- read.csv("https://raw.githubusercontent.com/Center-for-Risk-
 est1<-stepstress.LSQest(datStepStress1,tableStepStress1, "InversePower", "Weibull", "Blom")[[2]]
 stepstress.MLEest(est1,datStepStress1,tableStepStress1,"InversePower","Weibull",0.95)
 
-## Example 2: Dual Stress Step-Stress
-## Load the CSVs for step-stress data and the step-stress table from the Github site by read.csv.  The
-## first table is made up of the step-stress data made up of 15 units tested from relative
-## humidity 70\% to 90\% and temperature 525K to 555K.  While the second table is the step
-## description based on relative humidity and temperature and test time for each step.  This is
-## based on Table 4.18 and Example 4.16 in the text.
-datStepStress2 <- read.csv("https://raw.githubusercontent.com/Center-for-Risk-and-Reliability/RMT/main/CSVExampleData/Step_Stress_Data_3_by_temperature_Kelvin_and_relative_humidity_percent_step_based_time_Example_4_16.csv")
-tableStepStress2 <- read.csv("https://raw.githubusercontent.com/Center-for-Risk-and-Reliability/RMT/main/CSVExampleData/Step_Stress_Table_3_by_temperature_Kelvin_and_relative_humidity_percent_step_based_time_Example_4_16.csv")
-est2<-stepstress.LSQest(datStepStress2,tableStepStress2, "TempHumidity", "Weibull", "Blom")[[2]]
-stepstress.MLEest(est2,datStepStress2,tableStepStress2,"TempHumidity","Weibull",0.95)
+
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

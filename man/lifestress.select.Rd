@@ -19,10 +19,10 @@ lifestress.select(ls)
   \deqn{L = b + a S} \emph{Parameter order} - c(a,b)
 
   \item \strong{Exponential} (Enter as "Exponential")
-  \deqn{L = b \exp(a S)} \emph{Parameter order} - c(a,b)
+  \deqn{L = b \exp(a S)} Enter "Exponential2" for the Exponential notation \deqn{L = b \exp(\frac{a}{S})} \emph{Parameter order} - c(a,b)
 
   \item \strong{Arrhenius} (Enter as "Arrhenius")
-  \deqn{L = b \exp(\frac{E_a}{K S})} \emph{Parameter order} - c(E_a,b) (\emph{NOTE}: \eqn{K = 8.617385 \times 10^-5 \frac{eV}{K}})
+  \deqn{L = b \exp(\frac{E_a}{K S})} \emph{Parameter order} - c(E_a,b) (\emph{NOTE}: \eqn{K = 8.617385 \times 10^{-5} \frac{eV}{K}})
 
   \item \strong{Eyring} (Enter as "Eyring")
   \deqn{L = \frac{b}{S} \exp(\frac{a}{S})} \emph{Parameter order} - c(a,b)
@@ -34,7 +34,7 @@ lifestress.select(ls)
   \deqn{L = b S^a} \emph{Parameter order} - c(a,b)
 
   \item \strong{Inverse Power} (Enter as "InversePower")
-  \deqn{L = b S^{-a}} or \deqn{L = \frac{b}{S^a}} \emph{Parameter order} - c(a,b)
+  \deqn{L = b S^{-a}} or \deqn{L = \frac{b}{S^a}} Enter "InversePower2" for the Inverse Power notation \deqn{L = \frac{1}{bS^a}} \emph{Parameter order} - c(a,b)
 
   \item \strong{Logarithmic} (Enter as "Logarithmic")
   \deqn{L = b + a \ln(S)} \emph{Parameter order} - c(a,b)
@@ -49,7 +49,7 @@ lifestress.select(ls)
   \deqn{L = \frac{1}{S} \exp((a + \frac{b}{S}) + (c + \frac{d}{S}) U)} \emph{Parameter order} - c(a,b,c,d) (\emph{NOTE}: \eqn{S} is temperature and \eqn{U} is the nonthermal stress)
 
   \item \strong{General Multi-Stress} (Enter as "MultiStress")
-  \deqn{L = \exp(a_0 + a_1 S_1 + a_2 S_2 + ...+ a_n S_n)} \emph{Parameter order} - c(a_1,a_2,...,a_n)
+  \deqn{L = \exp(a_0 + a_1 S_1 + a_2 S_2 + ...+ a_n S_n)} \emph{Parameter order} - c(a_0,a_1,a_2,...,a_n)
   }
 }
 }

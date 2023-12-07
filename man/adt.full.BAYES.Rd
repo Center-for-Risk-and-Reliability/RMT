@@ -102,11 +102,7 @@ Modarres, M., Amiri, M., Jackson, C.  (2017)  Probabilistic Physics of Failure A
 Dr. Reuel Smith (2022)
 }
 \note{
-Suggest running the ADT Rank Calculator \code{\link{adt.rank}} before running this script.
-}
-
-\section{Warning }{
-RStan is currently unable to compile stan code for R and Rtools versions 4.2 and higher.  Stan developers are working on this but suggest downloading older versions of Rtools for now (\link{https://blog.mc-stan.org/2022/04/26/stan-r-4-2-on-windows/}).  Meanwhile with regard to the development of this toolkit, a temporary workaround is being developed.
+Suggest running the ADT Rank Calculator \code{\link{adt.rank}} before running this script.  As of version 1.2.6, this tool is operational.
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
@@ -120,8 +116,8 @@ RStan is currently unable to compile stan code for R and Rtools versions 4.2 and
 ## full set of LED luminosity test data based on Table 5.10.  Per Example 5.5, failure occurs
 ## when luminosity drops to 0.5.  Normal use temperature is given as 20 deg C and the priors
 ## for
-datADT4 <- read.csv("https://raw.githubusercontent.com/ReuS009/reliabilitytk/main/CSVExampleData/Degradation_Data_4_Luminosity_Drop_by_Temperature_Kelvin_Example_5_5.csv")
-adt.full.BAYES(datADT4,"Hamada","Lognormal",0.5,293.15,0.9,c("uniform(0.000001,100)","uniform(0.00001,100)","uniform(-100,100)","uniform(0.00001,100)"), 5000,100)
+datADT4 <- read.csv("https://raw.githubusercontent.com/Center-for-Risk-and-Reliability/RMT/main/CSVExampleData/Degradation_Data_4_Luminosity_Drop_by_Temperature_Kelvin_Example_5_5.csv")
+adt.full.BAYES(ptest=c(1,1,1,1),datADT4,"Hamada","Lognormal",0.5,293.15,0.9,c("uniform(0.000001,100)","uniform(0.00001,100)","uniform(-100,100)","uniform(0.00001,100)"), 5000,100)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory (show via RShowDoc("KEYWORDS")):
