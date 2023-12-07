@@ -666,14 +666,15 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   updatedata <- updatedata0
   updatedata[,1] <- t_adj
 
-  return(list(paramsfirst,c(distparam0,lsparams0),updatedata0,Sfrom,Sto,AFupdate,t_adj,updatedata))
+  # return(list(paramsfirst,c(distparam0,lsparams0),updatedata0,Sfrom,Sto,AFupdate,t_adj,updatedata))
 
   # return(list(Tequiv,AFAdj,nAdj,del_Tvector))
 
   # Tabulate LSQ optimized estimates
-  output2 <- lifestress.LSQest(updatedata,ls,dist,pp)
+  output2 <- suppressWarnings(lifestress.LSQest(updatedata,ls,dist,pp))
   paramslast<-output2[[3]]
   lifeest<-output2[[2]]
+
 
   return(list(paramsfirst,paramslast,lifeest,full_stpstrdata,updatedata))
   # return(list(paramsfirst,paramslast,lifeest,full_stpstrdata,updatedata,plotstepstress = output2$plotoutput))
