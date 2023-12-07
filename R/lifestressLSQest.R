@@ -529,16 +529,18 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
   cat("\n")
 
   # Return parameter list
-  if(ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
-    if(is.null(Suse)==TRUE){
-      return(list(S,L,LSQ,R2,plotoutput=plotoutput,relplotoutput=relplotoutput$relationplot))
-    }
-    if(is.null(Suse)==FALSE){
-      return(list(S,L,LSQ,R2,Use_Life = relplotoutput$Luse,plotoutput=plotoutput,relplotoutput=relplotoutput$relationplot))
-    }
-  } else{
-    return(list(S,L,LSQ,R2,plotoutput=plotoutput))
-  }
+  return(list(S,L,LSQ,R2,plotoutput=plotoutput))
+  # FOR USE WITH RELATION PLOT UPDATE
+  # if(ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
+  #   if(is.null(Suse)==TRUE){
+  #     return(list(S,L,LSQ,R2,plotoutput=plotoutput,relplotoutput=relplotoutput$relationplot))
+  #   }
+  #   if(is.null(Suse)==FALSE){
+  #     return(list(S,L,LSQ,R2,Use_Life = relplotoutput$Luse,plotoutput=plotoutput,relplotoutput=relplotoutput$relationplot))
+  #   }
+  # } else{
+  #   return(list(S,L,LSQ,R2,plotoutput=plotoutput))
+  # }
 
   # if(is.null(Suse)==TRUE){
   #   return(list(S,L,LSQ,R2,plotoutput=plotoutput,relplotoutput=relplotoutput$relationplot))

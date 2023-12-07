@@ -376,7 +376,7 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
     init_AFn <- function(theta,Sfrom,Sto) {
       exp((theta[2]*((1/Sfrom[[1]]) - (1/Sto[[1]])))+(theta[3]*((1/Sfrom[[2]]) - (1/Sto[[2]]))))
     }
-    adjparam <- function(theta) {
+    adjparam <- function(theta,SfromAdj,StoAdj,iblocked2) {
       b<-replace(theta,iblocked2,0)
       col1<-replace(SfromAdj[[1]] - StoAdj[[1]],iblocked2,0)
       col2<-replace(SfromAdj[[2]] - StoAdj[[2]],iblocked2,0)
@@ -411,7 +411,7 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
     init_AFn <- function(theta,Sfrom,Sto) {
       ((Sto[[1]]/Sfrom[[1]])^theta[2])*exp(-theta[1]*((1/Sto[[2]])-(1/Sfrom[[2]])))
     }
-    adjparam <- function(theta) {
+    adjparam <- function(theta,SfromAdj,StoAdj,iblocked2) {
       b<-replace(theta,iblocked2,0)
       col1<-replace((1/SfromAdj[[2]]) - (1/StoAdj[[2]]),iblocked2,0)
       col2<-replace(log(StoAdj[[1]]) - log(SfromAdj[[1]]),iblocked2,0)
@@ -666,7 +666,7 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   updatedata <- updatedata0
   updatedata[,1] <- t_adj
 
-  # return(list(paramsfirst,c(distparam0,lsparams0),updatedata0,Sfrom,Sto,AFupdate,t_adj,updatedata))
+  return(list(paramsfirst,c(distparam0,lsparams0),updatedata0,Sfrom,Sto,AFupdate,t_adj,updatedata))
 
   # return(list(Tequiv,AFAdj,nAdj,del_Tvector))
 
