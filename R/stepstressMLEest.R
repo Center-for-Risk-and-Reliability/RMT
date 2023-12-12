@@ -1593,7 +1593,7 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
   }
 
   AIC = 2*length(theta.hat) + 2*loglik(theta.hat)
-  BIC = 2*log(length(TTF)+length(Tc)) + 2*loglik(theta.hat)
+  BIC = 2*log(length(tF)+length(tc)) + 2*loglik(theta.hat)
 
   # if(is.null(Suse) == FALSE){
   #   # Generate some data
