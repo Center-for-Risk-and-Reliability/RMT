@@ -4,4 +4,4 @@ The Reliability Modeling Toolkit (**RMT**) is an R-based library of educational 
 
 ### Downloadables
 * Tutorial slides
-* Ebook M. Modarres, M. Amiri, C. Jackson.  *Probabilistic Physics of Failure Approach to Reliability: Modeling, Accelerated Testing, Prognosis and Reliability Assessment, Maryland, University of Maryland, 2017* (Coming soon)
+* Free Ebook *M. Modarres, M. Amiri, C. Jackson.  Probabilistic Physics of Failure Approach to Reliability: Modeling, Accelerated Testing, Prognosis and Reliability Assessment, Maryland, University of Maryland, 2017* (Coming soon)
