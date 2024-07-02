@@ -1,7 +1,7 @@
 # Physics of Failure Model and Use Table
 
-| Category | Model | Equation | Parameters | Physics of Failure | RMT Tool(s) |
-| -------- | ----- | -------- | ---------- | ------------------ | -------- |
+| Category | Model | Equation | Parameters | Physics of Failure Applications | RMT Tool(s) |
+| -------- | ----- | -------- | ---------- | ------------------------------- | -------- |
 | **Stress-Life** | S-N | $$S_{a} = A N_{f}^b \text{ or } N_{f} = \left(\frac{S_{a}}{A}\right)^{\frac{1}{b}}$$ | $$A, b$$ | Low cycle fatigue |      |
 | **Strain-Life** | Coffin-Manson Relationship | $$\epsilon_a = \frac{\sigma_f'}{E} (2 N_f)^b + \epsilon_f' (2 N_f)^c$$ | $$\epsilon_a$$ Total strain amplitude, $$E$$ Modulus of elasticity, $$\sigma_f'$$ | High cycle fatigue |      |
 |              | Morrow Mean-Stress Correction | $$\epsilon_a = \frac{\sigma_f' - \sigma_m}{E} (2 N_f)^b + \epsilon_f' (2 N_f)^c$$ |    |      |      |
