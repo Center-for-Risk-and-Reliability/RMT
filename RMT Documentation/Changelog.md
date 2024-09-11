@@ -62,13 +62,19 @@ Updated output for Bayesian estimation tools distribution.BAYESest and lifestres
 
 **Version 1.2.0** (October 7th, 2022)
 * Added seven new scripts:
-** notch.SN.diagram - Generates the stress-life (or S-N) diagram based on various stress and fatigue life input data as well as notch effect.
-** SN.meanstresseffect - Computes the equivalent stress amplitude  for a non-zero mean stress amplitude  or non-fully reversible scenario.
-** stress.concentration.factor - Computes the stress concentration factor  for a specified geometry and set of dimensions.
-** notch.lifestrain.life.trace - Computes the strain-life (in fatigue cycles  and reversals) for a given set of strain-life parameters and conditions with consideration for notch effect.
-** fatigue.stress.concentration.factor.ratio - Approximates the fatigue notch factor ratio  based on the ultimate tensile strength (based on Figure 4.10 Bannantine).
-** crack.propagation - Basic crack propagation analysis calculation
-** crack.correction - Computes the crack correction factor  or  for a specified geometry and set of dimensions.
+> notch.SN.diagram - Generates the stress-life (or S-N) diagram based on various stress and fatigue life input data as well as notch effect.
+>
+> SN.meanstresseffect - Computes the equivalent stress amplitude  for a non-zero mean stress amplitude  or non-fully reversible scenario.
+>
+> stress.concentration.factor - Computes the stress concentration factor  for a specified geometry and set of dimensions.
+>
+> notch.lifestrain.life.trace - Computes the strain-life (in fatigue cycles  and reversals) for a given set of strain-life parameters and conditions with consideration for notch effect.
+>
+> fatigue.stress.concentration.factor.ratio - Approximates the fatigue notch factor ratio  based on the ultimate tensile strength (based on Figure 4.10 Bannantine).
+>
+> crack.propagation - Basic crack propagation analysis calculation.
+>
+> crack.correction - Computes the crack correction factor  or  for a specified geometry and set of dimensions.
 
 **Version 1.1.0** (September 19th, 2022)
 * Updated SN.diagram tool to run loading cases where loading is not fully reversed (that is ) and combined loading conditions on 3D or multiaxial fatigue cases.
