@@ -33,10 +33,13 @@ Updated output for Bayesian estimation tools distribution.BAYESest and lifestres
 * Updated use of Bayesian based evaluations
 * Added some new tools for some wear, creep, and corrosion applications:
 > wear.sliding - Computes sliding wear output for a given scenario
+> 
 > wear.coefficient - Selects sliding wear coefficient for two materials from a database of values
-> creep.analysis - Performs creep data analysis by reading thermal acceleration creep data and determine creep model parameters (for a given creep model) and
-> creep rupture time with a given reference used for the model parameters
+> 
+> creep.analysis - Performs creep data analysis by reading thermal acceleration creep data and determine creep model parameters (for a given creep model) and> creep rupture time with a given reference used for the model parameters
+> 
 > corrosion.pitting - Calculates pitting corrosion model parameters, rates, and times based on pit corrosion data.
+> 
 * Added some new tools for basic distribution fitting
 * Added new probability plot options for Gamma, Gumbel, Logistic, and Log-logistic distributions.
 
