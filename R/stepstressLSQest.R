@@ -1,7 +1,7 @@
 # Least-Squares Step-Stress Estimator
 # Developed by Dr. Reuel Smith, 2021-2023
 
-stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
+stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,xlabel1="X",therm=1) {
   #Load pracma library for pseudo-inverse
   library(pracma)
   library(dplyr)
@@ -80,12 +80,10 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   if (dist=="Exponential") {
     distlifeest <- function(fulldata){
       distoutput<-probplot.exp(fulldata,pp,colnames(data)[1])[[1]]
-      iparam <- -1 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
-      ilife <- -2 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
-      istress <- -3 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
-      ilife2 <- c(3,7,11,15)
-      # lifeest<-1/unlist(distoutput)[ilife]
-      lifeest<-1/unlist(distoutput)[ilife2]
+      iparam <- -1 + cumsum(rep(1+Nstress+1, ((length(distoutput)-rem(length(distoutput),3))/3)))
+      ilife <- -1 + cumsum(rep(1+Nstress+1, ((length(distoutput)-rem(length(distoutput),3))/3)))
+      istress <- -3 + cumsum(rep(1+Nstress+1, ((length(distoutput)-rem(length(distoutput),3))/3)))
+      lifeest<-1/unlist(distoutput)[ilife]
       return(list(distoutput,lifeest,istress,ilife,iparam))
     }
   }
@@ -95,28 +93,47 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       iparam <- -1 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
       ilife <- -2 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
       istress <- -3 + cumsum(rep(1+Nstress+2, ((length(distoutput)-rem(length(distoutput),3))/3)))
-      lifeest<-unlist(distoutput)[ilife]
+      lifeest<-(unlist(distoutput)[ilife+1])*exp(unlist(distoutput)[ilife]/unlist(distoutput)[ilife+1])
       return(list(distoutput,lifeest,istress,ilife,iparam))
     }
   }
   output1<-distlifeest(full_stpstrdata)
   distoutput<-output1[[1]]
   lifeest<-output1[[2]]
+
   # Collect the stresses for evaluation
-  if(Nstress==1){
+  if(Nstress==1 && dist=="Exponential"){
+    Stressset<-unlist(distoutput)[output1[[3]]+1]
+  }
+  if(Nstress==1 && dist!="Exponential"){
     Stressset<-unlist(distoutput)[output1[[3]]]
   }
-  if(Nstress==2){
+  if(Nstress==2 && dist=="Exponential"){
     Stressset<-cbind(unlist(distoutput)[output1[[3]]],unlist(distoutput)[output1[[3]]+1])
   }
-  if(Nstress==3){
+  if(Nstress==2 && dist!="Exponential"){
+    Stressset<-cbind(unlist(distoutput)[output1[[3]]-1],unlist(distoutput)[output1[[3]]])
+  }
+  if(Nstress==3 && dist=="Exponential"){
     Stressset<-cbind(unlist(distoutput)[output1[[3]]],unlist(distoutput)[output1[[3]]+1],unlist(distoutput)[output1[[3]]+2])
   }
-  setvect <- unlist(distoutput)[output1[[5]]]
-  distparam0<-mean(setvect[!is.na(setvect)])
+  if(Nstress==3 && dist!="Exponential"){
+    Stressset<-cbind(unlist(distoutput)[output1[[3]]-1],unlist(distoutput)[output1[[3]]],unlist(distoutput)[output1[[3]]+1])
+  }
+  # Initialize average parameter for all cases except Exponential ls
+  if(dist!="Exponential"){
+    setvect <- unlist(distoutput)[output1[[5]]]
+    distparam0<-mean(setvect[!is.na(setvect)])
+  }
+
+  # return(list(output1,Nstress,Stressset))
+
 
   if (ls=="Linear"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
+    if(Nstress>=2) {
+      stop('Select a data set with only one stress type.')
+    }
     lsoutput <- function(Lest){
       params  <- lm(Lest ~ poly(Stressset, 1, raw=TRUE))
       lsparams <- c(summary(params)$coefficients[2,1],summary(params)$coefficients[1,1])
@@ -142,6 +159,9 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   }
   if (ls=="Exponential"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
+    if(Nstress>=2) {
+      stop('Select a data set with only one stress type.')
+    }
     lsoutput <- function(Lest){
       params  <- lm(log(Lest) ~ poly(Stressset, 1, raw=TRUE))
       lsparams <- c(summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
@@ -165,6 +185,9 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   }
   if (ls=="Exponential2"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
+    if(Nstress>=2) {
+      stop('Select a data set with only one stress type.')
+    }
     lsoutput <- function(Lest){
       params  <- lm(log(Lest) ~ poly(1/Stressset, 1, raw=TRUE))
       lsparams <- c(summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
@@ -189,6 +212,9 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   if (ls=="Arrhenius"){
     # lsparams[1] - parameter Ea, lsparams[2] - parameter b, lsparams[3] - R^2
     # Temperature HAS to be in Kelvin for this to work
+    if(Nstress>=2) {
+      stop('Select a data set with only one stress type.')
+    }
     K<-8.617385e-5
     lsoutput <- function(Lest){
       params  <- lm(log(Lest) ~ poly(1/Stressset, 1, raw=TRUE))
@@ -213,6 +239,9 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   }
   if (ls=="Eyring"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
+    if(Nstress>=2) {
+      stop('Select a data set with only one stress type.')
+    }
     lsoutput <- function(Lest){
       Lvals<-log(Lest)
       params  <- nls(Lvals ~ log(b) -log(Stressset) + (a/Stressset),start = list(a = 1,b = 3))
@@ -237,6 +266,9 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   }
   if (ls=="Eyring2"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
+    if(Nstress>=2) {
+      stop('Select a data set with only one stress type.')
+    }
     lsoutput <- function(Lest){
       Lvals<-log(Lest)
       params  <- nls(Lvals ~ -log(Stressset) + (b/Stressset) - a,start = list(a = 1,b = 3))
@@ -261,6 +293,9 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   }
   if (ls=="Power"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
+    if(Nstress>=2) {
+      stop('Select a data set with only one stress type.')
+    }
     lsoutput <- function(Lest){
       params  <- lm(log(Lest) ~ poly(log(Stressset), 1, raw=TRUE))
       lsparams <- c(summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
@@ -284,6 +319,9 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   }
   if (ls=="InversePower"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
+    if(Nstress>=2) {
+      stop('Select a data set with only one stress type.')
+    }
     #positivity_v[ishift+2]<-1
 
     lsoutput <- function(Lest){
@@ -310,6 +348,9 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   # UPDATE 11/8/2023: Adding an IPL form of l = 1/(bxS^a)
   if (ls=="InversePower2"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
+    if(Nstress>=2) {
+      stop('Select a data set with only one stress type.')
+    }
     #positivity_v[ishift+2]<-1
 
     lsoutput <- function(Lest){
@@ -335,6 +376,9 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   }
   if (ls=="Logarithmic"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
+    if(Nstress>=2) {
+      stop('Select a data set with only one stress type.')
+    }
     lsoutput <- function(Lest){
       params  <- lm(Lest ~ poly(log(Stressset), 1, raw=TRUE))
       lsparams <- c(summary(params)$coefficients[2,1],summary(params)$coefficients[1,1])
@@ -364,25 +408,27 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
     if(Nstress<2) {
       stop('Select a data set with more than one stress type.')
     }
+    # if(max(Stressset[,alttherm])>1) {
+    #   stop('Relative Humidity must be entered as ratio between 0 and 1.')
+    # }
     lsoutput <- function(Lest){
       Lvals<-log(Lest)
       Svals<-matrix(c(rep(1,length(Stressset[,1])),1/Stressset[,therm],1/Stressset[,alttherm]),nrow=remNsteps,ncol=3,byrow=FALSE)
       params  <- pinv(Svals)%*%Lvals
       params[1]<-exp(params[1])
       lsparams <- c(params)
-      R2 <- 1
+      lnLmodel <- log(lsparams[1]) + (lsparams[2]/Stressset[,therm]) + (lsparams[3]/Stressset[,alttherm])
+      R2 <- 1 - sum((Lvals - lnLmodel)^2)/sum((Lvals - mean(Lvals))^2)
       return(list(lsparams,R2))
     }
     init_AFn <- function(theta,Sfrom,Sto) {
-      exp((theta[2]*((1/Sfrom[[1]]) - (1/Sto[[1]])))+(theta[3]*((1/Sfrom[[2]]) - (1/Sto[[2]]))))
+      exp((theta[2]*((1/Sfrom[[1]]) - (1/Sto[[1]]))) + (theta[3]*((1/Sfrom[[2]]) - (1/Sto[[2]]))))
     }
     adjparam <- function(theta,SfromAdj,StoAdj,iblocked2) {
       b<-replace(theta,iblocked2,0)
-      col1<-replace(SfromAdj[[1]] - StoAdj[[1]],iblocked2,0)
-      col2<-replace(SfromAdj[[2]] - StoAdj[[2]],iblocked2,0)
-      # mati<-matrix(c(col1[col1!=0],col2[col2!=0]),nrow=remNsteps,ncol=2,byrow=FALSE)
+      col1<-replace(1/SfromAdj[[1]] - 1/StoAdj[[1]],iblocked2,0)
+      col2<-replace(1/SfromAdj[[2]] - 1/StoAdj[[2]],iblocked2,0)
       mati<-matrix(c(col1[col1!=0],col2[col2!=0]),nrow=length(col1[col1!=0]),ncol=2,byrow=FALSE)
-      return(list(b,col1,col2,mati))
       v1<-pinv(mati)%*%log(b[b!=0])
       v1<-v1[v1!=0]
       return(v1)
@@ -444,7 +490,7 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
     init_AFn <- function(theta,Sfrom,Sto) {
       (Sto[[1]]/Sfrom[[1]])*exp((theta[2]*((1/Sfrom[[1]])-(1/Sto[[1]])))+(theta[3]*(Sfrom[[2]]-Sto[[2]]))+(theta[4]*((Sfrom[[2]]/Sfrom[[1]])-(Sto[[2]]/Sto[[1]]))))
     }
-    adjparam <- function(theta) {
+    adjparam <- function(theta,SfromAdj,StoAdj,iblocked2) {
       b<-replace(theta,iblocked2,0)
       c<-replace(StoAdj[[1]]/SfromAdj[[1]],iblocked2,0)
       col1<-replace((1/SfromAdj[[1]]) - (1/StoAdj[[1]]),iblocked2,0)
@@ -471,20 +517,19 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       Svals<-matrix(c(rep(-1,length(Stressset[,1])),-1/Stressset[,therm],-1/Stressset[,alttherm]),nrow=remNsteps,ncol=3,byrow=FALSE)
       params  <- pinv(Svals)%*%Lvals
       lsparams <- c(params)
-      R2 <- 1
+      Lmodel <- exp(-lsparams[1])*exp(-lsparams[2]/Stressset[,therm] - lsparams[3]/Stressset[,alttherm])
+      lnLmodel <- log(Lmodel)
+      R2 <- 1 - sum((Lvals - lnLmodel)^2)/sum((Lvals - mean(Lvals))^2)
       return(list(lsparams,R2))
     }
     init_AFn <- function(theta,Sfrom,Sto) {
       exp((theta[2]*((1/Sto[[1]]) - (1/Sfrom[[1]])))+(theta[3]*((1/Sto[[2]]) - (1/Sfrom[[2]]))))
-      # exp((theta[2]*((1/Sfrom[[1]]) - (1/Sto[[1]])))+(theta[3]*((1/Sfrom[[2]]) - (1/Sto[[2]]))))
     }
-    adjparam <- function(theta) {
+    adjparam <- function(theta,SfromAdj,StoAdj,iblocked2) {
       b<-replace(theta,iblocked2,0)
-      col1<-replace(StoAdj[[1]] - SfromAdj[[1]],iblocked2,0)
-      col2<-replace(StoAdj[[2]] - SfromAdj[[2]],iblocked2,0)
-      # mati<-matrix(c(col1[col1!=0],col2[col2!=0]),nrow=remNsteps,ncol=2,byrow=FALSE)
+      col1<-replace(1/StoAdj[[1]] - 1/SfromAdj[[1]],iblocked2,0)
+      col2<-replace(1/StoAdj[[2]] - 1/SfromAdj[[2]],iblocked2,0)
       mati<-matrix(c(col1[col1!=0],col2[col2!=0]),nrow=length(col1[col1!=0]),ncol=2,byrow=FALSE)
-      # return(list(b,col1,col2,mati))
       v1<-pinv(mati)%*%log(b[b!=0])
       v1<-v1[v1!=0]
       return(v1)
@@ -569,11 +614,19 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
     }
   }
 
+  # return(list(lifeest,lsoutput(lifeest)))
+
   # Initialize life-stress model parameters
+  lifeest0 <- lifeest
   lsparams0<-lsoutput(lifeest)[[1]]
   lsparams<-lsparams0
   lsparamsfirst<-lsparams0
-  paramsfirst<-c(distparam0,lsparamsfirst)
+  if(dist=="Exponential"){ # Check if exponential distribution is assumed for life 5/6/2024
+    paramsfirst<-lsparamsfirst
+  } else{
+    paramsfirst<-c(distparam0,lsparamsfirst)
+  }
+  # return(list(SfromAdj,StoAdj,Sfrom,Sto,paramsfirst,cumdmgfrom,cumdmgto))
 
   # Initialize first updated parameter set for optimization
   if(is.list(data[[1]])==FALSE){
@@ -602,6 +655,13 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
       nAdj[[i2]]<-adjparam(AFAdj[[i2]],SfromAdj[[i2]],StoAdj[[i2]],iblocked2[[i2]])
     }
   }
+  # return(list(adjparam,AFAdj,SfromAdj,StoAdj,iblocked2))
+  # return(list(SfromAdj,StoAdj,Sfrom,Sto,paramsfirst,iblocked2))
+
+  # return(list(lsparams0,Sfrom,Sto,AFAdj))
+
+  # return(list(lsparams0,Sfrom,Sto,iblocked,init_AFn,AFn,StoAdj,SfromAdj,AFAdj,nAdj,updateparam))
+  # return(Sto)
 
   for (i3 in 1:1000){
     if(is.list(data[[1]])==FALSE){
@@ -643,6 +703,8 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   stepfrom <- stpstrdatsort[[4]]
   Testtime <- stepstresstable[,length(stepstresstable[1,])]
 
+  # return(list(lsparams0,Sfrom,Sto,AFAdj,AFupdate))
+
   for(i in 1:length(stepstresstable[,1])){
     # i == TO-STEPS
     t_new <- updatedata0[1:length(data[,1]),1]
@@ -666,17 +728,32 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,therm=1) {
   updatedata <- updatedata0
   updatedata[,1] <- t_adj
 
+  # Index the data that are from physical values
+  indexupdatephysicaldata <- rep(0,length(t_adj))
+  for(i in 1:length(stepstresstable[,1])){
+    # for each STEP i
+    for(j in 1:length(data[,1])){
+      if(stepfrom[j] == i && data[j,2] == 1){
+        indexupdatephysicaldata[(j+((i-1)*length(data[,1])))] <- 1
+      }
+    }
+  }
+  indexupdatephysicaldata <- indexupdatephysicaldata[which(updatedata[,2]==1)]
+
   # return(list(paramsfirst,c(distparam0,lsparams0),updatedata0,Sfrom,Sto,AFupdate,t_adj,updatedata))
+  # return(list(paramsfirst,c(lsparams0),updatedata0,Sfrom,Sto,AFupdate,t_adj,updatedata))
 
   # return(list(Tequiv,AFAdj,nAdj,del_Tvector))
 
   # Tabulate LSQ optimized estimates
-  output2 <- suppressWarnings(lifestress.LSQest(updatedata,ls,dist,pp))
+  output2 <- suppressWarnings(lifestress.LSQest(updatedata,ls,dist,pp,xlabel1))
+  # return(output2)
+
   paramslast<-output2[[3]]
   lifeest<-output2[[2]]
+  plotoutput = output2$plotoutput
 
-
-  return(list(paramsfirst,paramslast,lifeest,full_stpstrdata,updatedata))
+  return(list(paramsfirst,paramslast,lifeest,full_stpstrdata,updatedata,indexupdatephysicaldata,AFupdate,plotoutput=plotoutput))
   # return(list(paramsfirst,paramslast,lifeest,full_stpstrdata,updatedata,plotstepstress = output2$plotoutput))
   # return(list(c(distparam0,lsparams0),c(distparam,lsparams),lifeest,Sfrom,Sto,AFn,AFAdj,nAdj,tequiv,Tequiv,del_T,updatedata,c(distparam0,lsparamsfirst),updatedata))
 }

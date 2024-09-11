@@ -1,8 +1,13 @@
 # Weibull Probability Plot
-# Developed by Dr. Reuel Smith, 2021-2022
+# Developed by Dr. Reuel Smith, 2021-2024
 
-probplot.wbl <- function(data,pp,xlabel1="X",confid=0.95) {
+probplot.wbl <- function(data,pp,xlabel1="X",confid=0.95,stpstr_i=NULL,MLE_i=NULL) {
   library(ggplot2)
+
+  # Legend colors
+  col_legend <- c("red","blue","darkgreen","violet","aquamarine","orange","pink","darkblue","lightgreen","yellow","green")
+  # Legend shapes
+  shape_legend <- c(0:25)
 
   dcount<-checkdatacount(checkstress(data))
   # Error message to check if there is any plots for a life distribution estimate
@@ -39,6 +44,7 @@ probplot.wbl <- function(data,pp,xlabel1="X",confid=0.95) {
     ttfcrange <- ttfc[[1]]
     params<-ttfc[[3]]
     outputpp<-list(ttfc[[3]],ttfc[[4]])
+    SSEtot<-ttfc$SSE
   } else {
     ixirc_list<- vector(mode = "list", length = length(databystress))
     xiRFblock_list<- vector(mode = "list", length = length(databystress))
@@ -50,11 +56,14 @@ probplot.wbl <- function(data,pp,xlabel1="X",confid=0.95) {
     Xboundhigh_list<- vector(mode = "list", length = length(databystress))
     Fboundhigh_list<- vector(mode = "list", length = length(databystress))
     ttfc_list<- vector(mode = "list", length = length(databystress))
+    ttfc_MLE_list<- vector(mode = "list", length = length(databystress))
     outputpp <- vector(mode = "list", length = 3*length(databystress)+1)
+    SSEtot<-rep(1, length(databystress))
     ttfcrange<-c(1)
     XBfull<-c(1)
     FBfull<-c(1)
     # Multi-stress data
+    # NOTE RCS 07/23/2024: Added MLE plotting
     for(i in 1:length(databystress)){
       ixirc_list[[i]]<-sort.xircdata(databystress[[i]])
       xiRFblock_list[[i]]<-plotposit.select(ixirc_list[[i]][[2]],ixirc_list[[i]][[3]],pp)
@@ -62,9 +71,22 @@ probplot.wbl <- function(data,pp,xlabel1="X",confid=0.95) {
       XB_list[[i]]<-xiRFblock_list[[i]][,1]
       FB_list[[i]] <- log(log(1/xiRFblock_list[[i]][,3]))
       ttfc_list[[i]]<-probplotparam.wbl(xiRFblock_list[[i]][,1],xiRFblock_list[[i]][,3])
-      outputpp[[i*3-2]]<-databystress[[i]][1,3:length(databystress[[i]][1,])]
-      outputpp[[i*3-1]]<-ttfc_list[[i]][[3]]
+      if(is.null(MLE_i) == FALSE){
+        # Compute MLE
+        ttfc_MLE_list[[i]] <- distribution.MLEest(c(ttfc_list[[i]][[3]]),"Weibull",ixirc_list[[i]][[2]],ixirc_list[[i]][[3]])
+        # Recalculate x-points if MLE
+        ttfc_list[[i]][[1]] <- c(exp((log(log(1./(1-0.001))) + ttfc_MLE_list[[i]][[1]][2]*log(ttfc_MLE_list[[i]][[1]][1]))/ttfc_MLE_list[[i]][[1]][2]),exp((log(log(1./(1-0.999))) + ttfc_MLE_list[[i]][[1]][2]*log(ttfc_MLE_list[[i]][[1]][1]))/ttfc_MLE_list[[i]][[1]][2]))
+      }
+      outputpp[[i*3-2]]<-databystress[[i]][1,3:length(databystress[[i]][1,])] # Stress
+      # NOTE RCS 07/23/2024: ttfc_list[[i]][[3]] is the parameter list which change if MLE
+      if(is.null(MLE_i) == TRUE){
+        outputpp[[i*3-1]]<-ttfc_list[[i]][[3]]
+      } else{
+        outputpp[[i*3-1]]<-ttfc_MLE_list[[i]][[1]]
+        ttfc_list[[i]][[3]]<-ttfc_MLE_list[[i]][[1]]
+      }
       outputpp[[i*3]]<-ttfc_list[[i]][[4]]
+      SSEtot[i]<-ttfc_list[[i]]$SSE
       XBfull<-c(XBfull,XB_list[[i]])
       FBfull<-c(FBfull,FB_list[[i]])
       ttfcrange<-c(ttfcrange,ttfc_list[[i]][[1]])
@@ -97,6 +119,8 @@ probplot.wbl <- function(data,pp,xlabel1="X",confid=0.95) {
   FB_low <- log(log(1/(1-F_low)))
 
   for(i in 1:length(databystress)){
+    # F(x) = 1 - exp[-(x/alp)^bet] =>exp[-(x/alp)^bet] = R => (x/alp)^bet = -ln(R) => bet*ln(x) - bet*ln(alp) = ln[-ln(x)]
+    # bet*ln(x) = ln[-ln(x)] + bet*ln(alp) => X = exp{(1/bet)*ln[-ln(x)] + ln(alp)}
     Xbound_list[[i]] <- exp((FB_bound+c(ttfc_list[[i]][[3]][2])*log(c(ttfc_list[[i]][[3]][1])))/c(ttfc_list[[i]][[3]][2]))
     Fboundlow_list[[i]] <- FB_low
     Xboundlow_list[[i]] <- Xbound_list[[i]]
@@ -153,24 +177,26 @@ probplot.wbl <- function(data,pp,xlabel1="X",confid=0.95) {
     }
     df <- data.frame(XScale = XBfull, Fscale = FBfull, data = data_legend)
     df2 <- data.frame(Xline = xlines, Fline = Flines, best_fit = line_legend)
-    # df3 <- data.frame(Xline2 = xlinesconf, Fline2 = Flinesconf, confidence = conf_legend)
     df3 <- data.frame(Xline2up = xlinesconf_up, Xline2down = xlinesconf_down, Fline2up = Flinesconf_up, Fline2down = Flinesconf_down)
 
+    # If step-stress problem, identify the index of comparison (RCS 01082024)
+    if(is.null(stpstr_i)==FALSE){
+      df <- df[which(stpstr_i==1),]
+    }
 
     plotout<-ggplot() +
       geom_point(data=df, aes(XScale,Fscale, shape = data), colour = 'black', size = 2.2) +
+      scale_shape_manual(values=shape_legend[1:length(databystress)]) +
+      scale_color_manual(values=col_legend[1:length(databystress)])+
       scale_x_continuous(trans = 'log10', limits = c(10^min(signs1), 10^max(signs1)), breaks=Pticks1X, labels=Pticks1Xlabel) +
       scale_y_continuous(limits = c(min(fcB), max(fcB)), breaks=Pticks, labels=Pticks1label) +
       xlab(xlabel1) +
       ylab("Percent Failure")
 
+
     plotout <- plotout + geom_line(data=df2, aes(Xline,Fline, colour = best_fit), size = 0.9, linetype = "dashed") +
-      # geom_path(data=df3, aes(Xline2,Fline2, colour = confidence), size = 0.9, linetype = "dotted")
       geom_ribbon(data=df3, aes(x=Xline2up, ymin=Fline2down, ymax=Fline2up), alpha=0.25, fill = "blue")
   }
 
-  # return(df3)
-
-  # return(plotout)
-  return(list(outputpp, prob_plot = plotout))
+  return(list(outputpp, SSEbyStress = SSEtot, summary.nonparametric=xiRFblock_list, prob_plot = plotout))
 }

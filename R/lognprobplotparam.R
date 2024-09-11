@@ -23,6 +23,7 @@ probplotparam.logn <- function(xi,F) {
     sigmat <- 1/slope
     meant <- -intercept*sigmat
     R2 <- summary(pb2)$r.squared
+    SSE <- sum((fitted(pb2) - yfit)^2)
     #meant <- (50-slope)/intercept
     #t84 <- (84-slope)/intercept
     #sigmat <- t84-meant
@@ -39,8 +40,9 @@ probplotparam.logn <- function(xi,F) {
     sigmat <- 0
     meant <- log(xi)
     R2 <- 0
+    SSE <- 0
     lognresults <- matrix(c(meant,sigmat), nrow = 1, ncol = 2, byrow = TRUE,dimnames = list(c("Lognormal Parameters"),c("mean_t", "sigma_t")))
     ttfc <- rep(xi,2)
   }
-  return(list(ttfc,fcB,lognresults,R2))
+  return(list(ttfc,fcB,lognresults,R2,SSE=SSE))
 }

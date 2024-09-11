@@ -15,184 +15,221 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
 
   # Fit to log-likelihood distributions
   if (dist=="Weibull") {
-    positivity_v[1]<-1
-    positivity_v[2]<-1
+    # positivity_v[1]<-1
+    # positivity_v[2]<-1
+    # shift alpha to log alpha
+    LSQest[1] <- log(LSQest[1])
+    # shift beta to log beta
+    LSQest[2] <- log(LSQest[2])
 
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(log(theta[2]) + (theta[2]-1)*log(TTF) - theta[2]*log(theta[1]) - ((TTF/theta[1])^theta[2]))
+        -sum(theta[2] + (exp(theta[2])-1)*log(TTF) - exp(theta[2])*theta[1] - ((TTF/exp(theta[1]))^exp(theta[2])))
       }
     } else{
       loglik <- function(theta){
-        -sum(log(theta[2]) + (theta[2]-1)*log(TTF) - theta[2]*log(theta[1]) - ((TTF/theta[1])^theta[2])) - sum(- ((Tc/theta[1])^theta[2]))
+        -sum(theta[2] + (exp(theta[2])-1)*log(TTF) - exp(theta[2])*theta[1] - ((TTF/exp(theta[1]))^exp(theta[2]))) - sum(- ((Tc/exp(theta[1]))^exp(theta[2])))
       }
     }
   }
 
-  if (dist=="3PWeibull" && LSQest[2] > 2) {
-    positivity_v[1]<-1
-    positivity_v[2]<-1
-
-    if(is.null(Tc)){
-      loglik <- function(theta){
-        ll <- -sum(log(theta[2]) + (theta[2]-1)*log(TTF-theta[3]) - theta[2]*log(theta[1]) - (((TTF-theta[3])/theta[1])^theta[2]))
-        attr(ll, "gradient") <- -c(sum(-(theta[2]/theta[1]) + (theta[2]/(theta[1]^(1+theta[2])))*((TTF-theta[3])^theta[2])),
-                                  sum((1/theta[2]) - log(theta[1]) + log(TTF-theta[3]) - log((TTF-theta[3])/theta[1])*(((TTF-theta[3])/theta[1])^theta[2])),
-                                  sum(-((theta[2]-1)/(TTF-theta[3])) + (theta[2]/theta[1])*(((TTF-theta[3])/theta[1])^(theta[2]-1))))
-        attr(ll,"hessian") <- -rbind(c(sum(theta[2]/theta[1]^2 + (2*theta[2]*(theta[3] - TTF)*(-(theta[3] - TTF)/theta[1])^(theta[2] - 1))/theta[1]^3 - (theta[2]*(theta[3] - TTF)^2*(-(theta[3] - TTF)/theta[1])^(theta[2] - 2)*(theta[2] - 1))/theta[1]^4),
-                                       sum(- 1/theta[1] - ((theta[3] - TTF)*(-(theta[3] - TTF)/theta[1])^(theta[2] - 1))/theta[1]^2 - (theta[2]*log(-(theta[3] - TTF)/theta[1])*(theta[3] - TTF)*(-(theta[3] - TTF)/theta[1])^(theta[2] - 1))/theta[1]^2),
-                                       sum((theta[2]*(theta[3] - TTF)*(-(theta[3] - TTF)/theta[1])^(theta[2] - 2)*(theta[2] - 1))/theta[1]^3 - (theta[2]*(-(theta[3] - TTF)/theta[1])^(theta[2] - 1))/theta[1]^2)),
-                                     c(sum(- 1/theta[1] - ((theta[3] - TTF)*(-(theta[3] - TTF)/theta[1])^(theta[2] - 1))/theta[1]^2 - (theta[2]*log(-(theta[3] - TTF)/theta[1])*(theta[3] - TTF)*(-(theta[3] - TTF)/theta[1])^(theta[2] - 1))/theta[1]^2),
-                                       sum(- log(-(theta[3] - TTF)/theta[1])^2*(-(theta[3] - TTF)/theta[1])^theta[2] - 1/theta[2]^2),
-                                       sum(1/(theta[3] - TTF) - (-(theta[3] - TTF)/theta[1])^theta[2]/(theta[3] - TTF) + (theta[2]*log(-(theta[3] - TTF)/theta[1])*(-(theta[3] - TTF)/theta[1])^(theta[2] - 1))/theta[1])),
-                                     c(sum((theta[2]*(theta[3] - TTF)*(-(theta[3] - TTF)/theta[1])^(theta[2] - 2)*(theta[2] - 1))/theta[1]^3 - (theta[2]*(-(theta[3] - TTF)/theta[1])^(theta[2] - 1))/theta[1]^2),
-                                       sum(1/(theta[3] - TTF) - (-(theta[3] - TTF)/theta[1])^theta[2]/(theta[3] - TTF) + (theta[2]*log(-(theta[3] - TTF)/theta[1])*(-(theta[3] - TTF)/theta[1])^(theta[2] - 1))/theta[1]),
-                                       sum(- (theta[2] - 1)/(theta[3] - TTF)^2 - (theta[2]*(-(theta[3] - TTF)/theta[1])^(theta[2] - 2)*(theta[2] - 1))/theta[1]^2)))
-        ll
+  if (dist=="3PWeibull") {
+    # positivity_v[1]<-1
+    # positivity_v[2]<-1
+    # Check Gamma first and if it is greater than any of the times, reset
+    if(LSQest[3] > min(TTF) || (is.null(Tc) == FALSE && LSQest[3] > min(Tc))){
+      if(is.null(Tc)==TRUE){
+        LSQest[3] <- 0.5*min(TTF)
+      } else{
+        LSQest[3] <- 0.5*min(Tc)
       }
-    } else{
-      loglik <- function(theta){
-        ll <- -sum(log(theta[2]) + (theta[2]-1)*log(TTF-theta[3]) - theta[2]*log(theta[1]) - (((TTF-theta[3])/theta[1])^theta[2])) - sum(- (((Tc-theta[3])/theta[1])^theta[2]))
-        ll
-        # -sum(log(theta[2]) + (theta[2]-1)*log(TTF-exp(theta[3])) - theta[2]*log(theta[1]) - (((TTF-exp(theta[3]))/theta[1])^theta[2])) - sum(- (((Tc-exp(theta[3]))/theta[1])^theta[2]))
-      }
+      LSQest[1:2] <- c(probplot.wbl(cbind(c(TTF,Tc)-LSQest[3],c(rep(1,length(TTF)),rep(0,length(Tc))),rep(1,length(TTF)+length(Tc))),"Blom")[[1]][[2]])
     }
-  }
-
-  if (dist=="3PWeibull" && LSQest[2] < 2) {
-    positivity_v[1]<-1
-    positivity_v[2]<-1
-    gammaset <- LSQest[3]
-    LSQest1 <- LSQest[1:2]
+    # shift alpha to log alpha
+    LSQest[1] <- log(LSQest[1])
+    # shift beta to log beta
+    LSQest[2] <- log(LSQest[2])
 
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(log(theta[2]) + (theta[2]-1)*log(TTF-gammaset) - theta[2]*log(theta[1]) - (((TTF-gammaset)/theta[1])^theta[2]))
+        -sum(theta[2] + (exp(theta[2])-1)*log(TTF-theta[3]) - exp(theta[2])*theta[1] - (((TTF-theta[3])/exp(theta[1]))^exp(theta[2])))
       }
     } else{
       loglik <- function(theta){
-        -sum(log(theta[2]) + (theta[2]-1)*log(TTF-gammaset) - theta[2]*log(theta[1]) - (((TTF-gammaset)/theta[1])^theta[2])) - sum(- (((Tc-gammaset)/theta[1])^theta[2]))
+        -sum(theta[2] + (exp(theta[2])-1)*log(TTF - theta[3]) - exp(theta[2])*theta[1] - (((TTF - theta[3])/exp(theta[1]))^exp(theta[2]))) - sum(- (((Tc - theta[3])/exp(theta[1]))^exp(theta[2])))
       }
     }
   }
 
   if (dist=="Lognormal") {
-    positivity_v[2]<-1
+    # positivity_v[2]<-1
+    # shift sigma to log sigma
+    LSQest[2] <- log(LSQest[2])
 
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(-log(theta[2]) - 0.5*log(2*pi) - 0.5*(theta[2]^-2)*((log(TTF) - theta[1])^2))
+        -sum(-theta[2] - 0.5*log(2*pi) - 0.5*(exp(theta[2])^-2)*((log(TTF) - theta[1])^2))
       }
     } else{
       loglik <- function(theta){
-        -sum(-log(theta[2]) - 0.5*log(2*pi) - 0.5*(theta[2]^-2)*((log(TTF) - theta[1])^2)) - sum(log(0.5 - 0.5*erf((2^-0.5)*(theta[2]^-1)*(log(Tc) - theta[1]))))
+        -sum(-theta[2] - 0.5*log(2*pi) - 0.5*(exp(theta[2])^-2)*((log(TTF) - theta[1])^2)) - sum(log(0.5 - 0.5*erf((2^-0.5)*(exp(theta[2])^-1)*(log(Tc) - theta[1]))))
       }
     }
   }
   if (dist=="Normal") {
-    positivity_v[2]<-1
+    # positivity_v[2]<-1
+    # shift sigma to log sigma
+    LSQest[2] <- log(LSQest[2])
 
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(-log(theta[2]) - 0.5*log(2*pi) - 0.5*(theta[2]^-2)*((TTF - theta[1])^2))
+        -sum(-theta[2] - 0.5*log(2*pi) - 0.5*(exp(theta[2])^-2)*((TTF - theta[1])^2))
       }
     } else{
       loglik <- function(theta){
-        -sum(-log(theta[2]) - 0.5*log(2*pi) - 0.5*(theta[2]^-2)*((TTF - theta[1])^2)) - sum(log(0.5 - 0.5*erf((2^-0.5)*(theta[2]^-1)*(Tc - theta[1]))))
+        -sum(-theta[2] - 0.5*log(2*pi) - 0.5*(exp(theta[2])^-2)*((TTF - theta[1])^2)) - sum(log(0.5 - 0.5*erf((2^-0.5)*(exp(theta[2])^-1)*(Tc - theta[1]))))
       }
     }
   }
   if (dist=="Exponential") {
-    positivity_v[1]<-1
+    # positivity_v[1]<-1
+    # shift lambda to log lambda
+    LSQest[1] <- log(LSQest[1])
+
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(log(theta) - TTF*theta)
+        -sum(theta - TTF*exp(theta))
       }
     } else{
       loglik <- function(theta){
-        -sum(log(theta) - TTF*theta) + sum( Tc*theta)
+        -sum(theta - TTF*exp(theta)) + sum( Tc*exp(theta))
       }
     }
   }
   if (dist=="2PExponential") {
-    positivity_v[2]<-1
+    # positivity_v[2]<-1
+    # Check Gamma first and if it is greater than any of the times, reset
+    if(LSQest[1] > min(TTF) || (is.null(Tc) == FALSE && LSQest[1] > min(Tc))){
+      if(is.null(Tc)==TRUE){
+        LSQest[1] <- 0.5*min(TTF)
+      } else{
+        LSQest[1] <- 0.5*min(Tc)
+      }
+      LSQest[2] <- 1/c(probplot.exp(cbind(c(TTF,Tc)-LSQest[1],c(rep(1,length(TTF)),rep(0,length(Tc))),rep(1,length(TTF)+length(Tc))),"Blom")[[1]][[2]])
+    }
+    # shift sigma to log sigma
+    LSQest[2] <- log(LSQest[2])
 
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(-log(theta[2]) - (theta[2]^-1)*(TTF - theta[1]) - 1)
+        -sum(-theta[2] - (exp(theta[2])^-1)*(TTF - theta[1]))
       }
     } else{
       loglik <- function(theta){
-        -sum(-log(theta[2]) - (theta[2]^-1)*(TTF - theta[1]) - 1) - sum(-(theta[2])*(Tc - theta[1]) - 1)
+        -sum(-theta[2] - (exp(theta[2])^-1)*(TTF - theta[1])) - sum(-exp(theta[2])*(Tc - theta[1]))
       }
     }
   }
   if (dist=="Gamma") {
-    positivity_v[1]<-1
-    positivity_v[2]<-1
+    # Re-parameterize alpha and beta to mu and lambda
+    LSQest0 <- c(0,0)
+    # mu = ln beta + ln alpha (-Inf to Inf)
+    LSQest0[1] <- log(LSQest[2]) + log(LSQest[1])
+    # lambda = 1/sqrt(alpha) (positive so make loglambda)
+    LSQest0[2] <- log(1/sqrt(LSQest[1]))
+    LSQest <- LSQest0
 
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(-log(gamma(theta[1])) + theta[1]*log(theta[2]) + (theta[1] - 1)*log(TTF) - theta[2]*TTF)
+        -sum(-log(gamma(1/(exp(theta[2]))^2)) - (1/(exp(theta[2]))^2)*(theta[1] + log((exp(theta[2]))^2)) + ((1/(exp(theta[2]))^2) - 1)*log(TTF) - (1/(exp(theta[2]))^2)*exp(log(TTF) - theta[1]))
       }
     } else{
       loglik <- function(theta){
-        -sum(-log(gamma(theta[1])) + theta[1]*log(theta[2]) + (theta[1] - 1)*log(TTF) - theta[2]*TTF) - sum(1 - Rgamma(theta[1],Tc*theta[2]))
+        -sum(-log(gamma(1/(exp(theta[2]))^2)) - (1/(exp(theta[2]))^2)*(theta[1] + log((exp(theta[2]))^2)) + ((1/(exp(theta[2]))^2) - 1)*log(TTF) - (1/(exp(theta[2]))^2)*exp(log(TTF) - theta[1])) - sum(log(1 - Rgamma(1/(exp(theta[2]))^2,exp(log(Tc) - theta[1])/(exp(theta[2]))^2),lower=TRUE))
+      }
+    }
+  }
+  if (dist=="3PGamma") {
+    # Re-parameterize alpha, beta, and gamma to mu, lambda, and sigma
+    LSQest0 <- c(0,0,0)
+    # mu = ln beta + (1/gamma)*ln alpha (-Inf to Inf)
+    LSQest0[1] <- log(LSQest[2]) + (1/LSQest[3])*log(LSQest[1])
+    # lambda = 1/sqrt(alpha) (positive so make loglambda)
+    LSQest0[2] <- log(1/sqrt(LSQest[1]))
+    # sigma = 1/gamma*sqrt(alpha) (positive so make logsigma)
+    LSQest0[3] <- log(1/(LSQest[3]*sqrt(LSQest[1])))
+    LSQest <- LSQest0
+
+    if(is.null(Tc)){
+      loglik <- function(theta){
+        -sum(log(abs(exp(theta[2]))) - log(exp(theta[3])) - log(gamma(1/(exp(theta[2]))^2)) - (1/(exp(theta[2]))^2)*(((theta[1]*exp(theta[2]))/exp(theta[3])) + log((exp(theta[2]))^2)) + ((1/(exp(theta[2])*exp(theta[3]))) - 1)*log(TTF) - (1/(exp(theta[2]))^2)*exp((exp(theta[2])/exp(theta[3]))*(log(TTF) - theta[1])))
+      }
+    } else{
+      loglik <- function(theta){
+        -sum(log(abs(exp(theta[2]))) - log(exp(theta[3])) - log(gamma(1/(exp(theta[2]))^2)) - (1/(exp(theta[2]))^2)*(((theta[1]*exp(theta[2]))/exp(theta[3])) + log((exp(theta[2]))^2)) + ((1/(exp(theta[2])*exp(theta[3]))) - 1)*log(TTF) - (1/(exp(theta[2]))^2)*exp((exp(theta[2])/exp(theta[3]))*(log(TTF) - theta[1]))) - sum(log(1 - Rgamma(1/(exp(theta[2]))^2,exp((exp(theta[2])/exp(theta[3]))*(log(Tc) - theta[1]))/(exp(theta[2]))^2),lower=TRUE))
       }
     }
   }
   if (dist=="Logistic") {
-    positivity_v[2]<-1
+    # positivity_v[2]<-1
+    LSQest[2] <- log(LSQest[2])
 
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(((TTF - theta[1])/theta[2]) - log(theta[2]) - 2*log(1 + exp((TTF - theta[1])/theta[2])))
+        -sum(((TTF - theta[1])/exp(theta[2])) - theta[2] - 2*log(1 + exp((TTF - theta[1])/exp(theta[2]))))
       }
     } else{
       loglik <- function(theta){
-        -sum(((TTF - theta[1])/theta[2]) - log(theta[2]) - 2*log(1 + exp((TTF - theta[1])/theta[2]))) + sum(log(1 + exp((Tc - theta[1])/theta[2])))
+        -sum(((TTF - theta[1])/exp(theta[2])) - theta[2] - 2*log(1 + exp((TTF - theta[1])/exp(theta[2])))) + sum(log(1 + exp((Tc - theta[1])/exp(theta[2]))))
       }
     }
   }
   if (dist=="Loglogistic") {
-    positivity_v[2]<-1
+    # positivity_v[2]<-1
+    LSQest[2] <- log(LSQest[2])
 
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(((log(TTF) - theta[1])/theta[2]) - log(theta[2]) - log(TTF*((1 + exp((log(TTF) - theta[1])/theta[2]))^2)))
+        -sum(((log(TTF) - theta[1])/exp(theta[2])) - theta[2] - log(TTF*((1 + exp((log(TTF) - theta[1])/exp(theta[2])))^2)))
       }
     } else{
       loglik <- function(theta){
-        -sum(((log(TTF) - theta[1])/theta[2]) - log(theta[2]) - log(TTF*((1 + exp((log(TTF) - theta[1])/theta[2]))^2))) + sum(log(1 + exp((log(Tc) - theta[1])/theta[2])))
+        -sum(((log(TTF) - theta[1])/exp(theta[2])) - theta[2] - log(TTF*((1 + exp((log(TTF) - theta[1])/exp(theta[2])))^2))) + sum(log(1 + exp((log(Tc) - theta[1])/exp(theta[2]))))
       }
     }
   }
   if (dist=="Gumbel") {
-    positivity_v[2]<-1
+    # positivity_v[2]<-1
+    # shift sigma to log sigma
+    LSQest[2] <- log(LSQest[2])
 
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(-log(theta[2]) + ((TTF - theta[1])/theta[2]) - exp((TTF - theta[1])/theta[2]))
+        -sum(-theta[2] + ((TTF - theta[1])/exp(theta[2])) - exp((TTF - theta[1])/exp(theta[2])))
       }
     } else{
       loglik <- function(theta){
-        -sum(-log(theta[2]) + ((TTF - theta[1])/theta[2]) - exp((TTF - theta[1])/theta[2])) + sum(exp((Tc - theta[1])/theta[2]))
+        -sum(-theta[2] + ((TTF - theta[1])/exp(theta[2])) - exp((TTF - theta[1])/exp(theta[2]))) + sum(exp((Tc - theta[1])/exp(theta[2])))
       }
     }
   }
+  # return(list(loglik,LSQest))
 
-
-  if (dist=="3PWeibull" && LSQest[2] < 2){
-    MLEandvar <- MLE.var.covar.select(loglik,LSQest1)
-  } else {
+  if (dist=="3PWeibull"){
+    MLEandvar <- MLE.var.covar.select(loglik,LSQest,0.99*min(c(TTF,Tc)))
+  }
+  if (dist=="2PExponential"){
+    MLEandvar <- MLE.var.covar.select(loglik,LSQest,0.99*min(c(TTF,Tc)))
+  }
+  if (dist=="Weibull" || dist=="Normal" || dist=="Lognormal" || dist=="Exponential" || dist=="Gumbel" || dist=="Logistic" || dist=="Loglogistic" || dist=="Gamma" || dist=="3PGamma"){
     MLEandvar <- MLE.var.covar.select(loglik,LSQest)
   }
+  # return(MLEandvar)
 
   theta.hat <- MLEandvar[[1]]
   inv.fish  <- MLEandvar[[2]]
   loglik.hat <- -loglik(theta.hat)
   likeli.hat <- exp(loglik.hat)
-
 
   crit <- qnorm((1 + conf.level)/2)
   crit2 <- qnorm(conf.level)
@@ -206,6 +243,18 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
       } else if(positivity_v[i]==1){
         conflim[[i]]<-theta.hat[i]*exp(c(-1, 1) * crit * (sqrt(inv.fish[i, i])/theta.hat[i]))
       }
+      if((dist=="Weibull" || dist=="3PWeibull") && (i == 1 || i == 2)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if(dist=="Exponential" && i == 1){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if ((dist=="Normal" || dist=="Lognormal" || dist=="2PExponential" || dist=="Logistic" || dist=="Loglogistic" || dist=="Gamma" || dist=="3PGamma" || dist=="Gumbel") && i == 2){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if(dist=="3PGamma" && i == 3){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
       conflim_txt<-c(paste(c("Lower ",100*conf.level,"%"),collapse = ""),paste(c("Upper ",100*conf.level,"%"),collapse = ""))
     }
     if(sided == "onesidedlow"){
@@ -213,6 +262,18 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
         conflim[[i]]<-theta.hat[i] - crit2 * sqrt(inv.fish[i, i])
       } else if(positivity_v[i]==1){
         conflim[[i]]<-theta.hat[i]*exp(-crit2 * (sqrt(inv.fish[i, i])/theta.hat[i]))
+      }
+      if((dist=="Weibull" || dist=="3PWeibull") && (i == 1 || i == 2)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if(dist=="Exponential" && i == 1){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if ((dist=="Normal" || dist=="Lognormal" || dist=="2PExponential" || dist=="Logistic" || dist=="Loglogistic" || dist=="Gamma" || dist=="3PGamma" || dist=="Gumbel") && i == 2){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if(dist=="3PGamma" && i == 3){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
       }
       conflim_txt<-paste(c("One-Sided Low ",100*conf.level,"%"),collapse = "")
     }
@@ -222,15 +283,60 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
       } else if(positivity_v[i]==1){
         conflim[[i]]<-theta.hat[i]*exp(crit2 * (sqrt(inv.fish[i, i])/theta.hat[i]))
       }
+      if((dist=="Weibull" || dist=="3PWeibull") && (i == 1 || i == 2)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if(dist=="Exponential" && i == 1){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if ((dist=="Normal" || dist=="Lognormal" || dist=="2PExponential" || dist=="Logistic" || dist=="Loglogistic" || dist=="Gamma" || dist=="3PGamma" || dist=="Gumbel") && i == 2){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if(dist=="3PGamma" && i == 3){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
       conflim_txt<-paste(c("One-Sided High ",100*conf.level,"%"),collapse = "")
     }
-    # fulllimset[[i]]<-c(theta.hat[i],conflim[[i]])
   }
 
-  if (dist=="3PWeibull" && LSQest[2] < 2){
-    theta.hat <- c(theta.hat,gammaset)
-    conflim[[3]]<-c(NA,NA)
+  if(dist=="Gamma"){
+    conflim0 <- conflim
+    conflim[[1]] <- 1/(conflim0[[2]])^2
+    conflim[[2]] <- exp(conflim0[[1]] + log((conflim0[[2]])^2))
+  }
+  if(dist=="3PGamma"){
+    conflim0 <- conflim
+    conflim[[1]] <- 1/(conflim0[[2]])^2
+    conflim[[2]] <- exp(conflim0[[1]] + (conflim0[[3]]/conflim0[[2]])*log((conflim0[[2]])^2))
+    conflim[[3]] <- conflim0[[2]]/conflim0[[3]]
   }
 
-  return(list(theta.hat,inv.fish,conflim,loglik.hat,likeli.hat))
+
+  AIC = 2*length(theta.hat) + 2*loglik(theta.hat)
+  BIC = 2*log(length(TTF)+length(Tc)) + 2*loglik(theta.hat)
+
+  # Recompute necessary output
+  if(dist=="Weibull" || dist=="3PWeibull"){
+    theta.hat[1] <- exp(theta.hat[1])
+    theta.hat[2] <- exp(theta.hat[2])
+  }
+  if(dist=="Gamma"){
+    theta.hat0 <- theta.hat
+    theta.hat[1] <- 1/exp(theta.hat0[2])^2
+    theta.hat[2] <- exp(theta.hat0[1] + log(exp(theta.hat0[2])^2))
+  }
+  if(dist=="3PGamma"){
+    theta.hat0 <- theta.hat
+    theta.hat[1] <- 1/(theta.hat0[2])^2
+    theta.hat[2] <- exp(theta.hat0[1] + (theta.hat0[3]/theta.hat0[2])*log((theta.hat0[2])^2))
+    theta.hat[3] <- theta.hat0[2]/theta.hat0[3]
+  }
+  if(dist=="Exponential"){
+    theta.hat[1] <- exp(theta.hat[1])
+  }
+  if(dist=="Normal" || dist=="Lognormal" || dist=="2PExponential" || dist=="Logistic" || dist=="Loglogistic" || dist=="Gumbel"){
+    theta.hat[2] <- exp(theta.hat[2])
+  }
+
+  return(list(theta.hat,inv.fish,conflim,loglik.hat,likeli.hat,AIC,BIC))
 }

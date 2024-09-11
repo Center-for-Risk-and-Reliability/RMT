@@ -17,6 +17,7 @@ probplotparam.logist <- function(xi,F) {
     logistparm  <- lm(yfit ~ poly(xfit, 1, raw=TRUE))
     sigma <- 1/summary(logistparm)$coefficients[2,1]
     mu <- -summary(logistparm)$coefficients[1,1]*sigma
+    SSE <- sum((fitted(logistparm) - yfit)^2)
     R2 <- summary(logistparm)$r.squared
     # Calculate upper and lower bound of best fit line
     intercept <- summary(logistparm)$coefficients[1,1]
@@ -25,10 +26,11 @@ probplotparam.logist <- function(xi,F) {
   if(length(xi) == 1){
     mu <- xi
     sigma <- NA
+    SSE <- 0
     R2 <- 0
     ttfc <- rep(xi,2)
   }
   logistresults <- matrix(c(mu,-sigma), nrow = 1, ncol = 2, byrow = TRUE,dimnames = list(c("Logistic Parameters"),c("mu", "sigma")))
 
-  return(list(ttfc,fcB,logistresults,R2))
+  return(list(ttfc,fcB,logistresults,R2,SSE=SSE))
 }

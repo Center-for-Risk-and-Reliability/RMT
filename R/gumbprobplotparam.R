@@ -17,6 +17,7 @@ probplotparam.gumb <- function(xi,R) {
     gumbparm  <- lm(yfit ~ poly(xfit, 1, raw=TRUE))
     sigma <- 1/summary(gumbparm)$coefficients[2,1]
     mu <- -summary(gumbparm)$coefficients[1,1]*sigma
+    SSE <- sum((fitted(gumbparm) - yfit)^2)
     R2 <- summary(gumbparm)$r.squared
     # Calculate upper and lower bound of best fit line
     intercept <- summary(gumbparm)$coefficients[1,1]
@@ -25,10 +26,11 @@ probplotparam.gumb <- function(xi,R) {
   if(length(xi) == 1){
     mu <- xi
     sigma <- NA
+    SSE <- 0
     R2 <- 0
     ttfc <- rep(xi,2)
   }
   gumbresults <- matrix(c(mu,sigma), nrow = 1, ncol = 2, byrow = TRUE,dimnames = list(c("Gumbel Parameters"),c("mu", "sigma")))
 
-  return(list(ttfc,fcB,gumbresults,R2))
+  return(list(ttfc,fcB,gumbresults,R2,SSE=SSE))
 }

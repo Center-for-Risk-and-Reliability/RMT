@@ -1,17 +1,13 @@
 # Lognormal Probability Plot
-# Developed by Dr. Reuel Smith, 2021-2022
+# Developed by Dr. Reuel Smith, 2021-2024
 
-probplot.logn <- function(data,pp,xlabel1,confid=0.95) {
+probplot.logn <- function(data,pp,xlabel1="X",confid=0.95,stpstr_i=NULL,MLE_i=NULL) {
   library(ggplot2)
 
-  # Check if X is there
-  if(missing(xlabel1)) {
-    xlabel1<-"X"
-  }
-  # =====================================================
-  # NEW CODE BLOCK - REPEAT IN ALL PLOT FUNCTIONS (Begin)
-  # =====================================================
-  # =====================================================
+  # Legend colors
+  col_legend <- c("red","blue","darkgreen","violet","aquamarine","orange","pink","darkblue","lightgreen","yellow","green")
+  # Legend shapes
+  shape_legend <- c(0:25)
 
   dcount<-checkdatacount(checkstress(data))
   # Error message to check if there is any plots for a life distribution estimate
@@ -30,12 +26,6 @@ probplot.logn <- function(data,pp,xlabel1,confid=0.95) {
     databystress<-checkstress(data)[which(dcount[[1]] == 1 & dcount[[2]] == 1)]
     singledat<-checkstress(data)[which(!dcount[[1]] == 1 & dcount[[2]] == 1)]
   }
-
-  # =====================================================
-  # =====================================================
-  # NEW CODE BLOCK - REPEAT IN ALL PLOT FUNCTIONS (End)
-  # =====================================================
-
 
   # Initialize Percent Failure ticks
   Pticks1 <- c(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,c(1:10),10*c(2:9),95,99,99.9)
@@ -65,9 +55,9 @@ probplot.logn <- function(data,pp,xlabel1,confid=0.95) {
     Xboundhigh_list<- vector(mode = "list", length = length(databystress))
     Fboundhigh_list<- vector(mode = "list", length = length(databystress))
     ttfc_list<- vector(mode = "list", length = length(databystress))
-
-    #UPDATE
+    ttfc_MLE_list<- vector(mode = "list", length = length(databystress))
     outputpp <- vector(mode = "list", length = 3*length(databystress)+1)
+    SSEtot<-rep(1, length(databystress))
     ttfcrange<-c(1)
     XBfull<-c(1)
     FBfull<-c(1)
@@ -79,14 +69,25 @@ probplot.logn <- function(data,pp,xlabel1,confid=0.95) {
       XB_list[[i]]<-xiRFblock_list[[i]][,1]
       FB_list[[i]] <- qnorm(xiRFblock_list[[i]][,2],mean=0,sd=1)
       ttfc_list[[i]]<-probplotparam.logn(xiRFblock_list[[i]][,1],xiRFblock_list[[i]][,2])
+      if(is.null(MLE_i) == FALSE){
+        # Compute MLE
+        ttfc_MLE_list[[i]] <- distribution.MLEest(c(ttfc_list[[i]][[3]]),"Lognormal",ixirc_list[[i]][[2]],ixirc_list[[i]][[3]])
+        # Recalculate x-points if MLE
+        ttfc_list[[i]][[1]] <- exp(c(ttfc_MLE_list[[i]][[1]][2])*fcB + c(ttfc_MLE_list[[i]][[1]][1]))
+      }
       outputpp[[i*3-2]]<-databystress[[i]][1,3:length(databystress[[i]][1,])]
-      outputpp[[i*3-1]]<-ttfc_list[[i]][[3]]
+      if(is.null(MLE_i) == TRUE){
+        outputpp[[i*3-1]]<-ttfc_list[[i]][[3]]
+      } else{
+        outputpp[[i*3-1]]<-ttfc_MLE_list[[i]][[1]]
+        ttfc_list[[i]][[3]]<-ttfc_MLE_list[[i]][[1]]
+      }
       outputpp[[i*3]]<-ttfc_list[[i]][[4]]
+      SSEtot[i]<-ttfc_list[[i]]$SSE
       XBfull<-c(XBfull,XB_list[[i]])
       FBfull<-c(FBfull,FB_list[[i]])
       ttfcrange<-c(ttfcrange,ttfc_list[[i]][[1]])
     }
-    #NEW LINE
     outputpp[[3*length(databystress)+1]]<-singledat
     ttfcrange<-ttfcrange[2:length(ttfcrange)]
     XBfull<-XBfull[2:length(XBfull)]
@@ -127,7 +128,7 @@ probplot.logn <- function(data,pp,xlabel1,confid=0.95) {
   }
 
   # ========================================================
-  # Plotting
+  # New Plotting
   # ========================================================
   if (!is.null(dim(databystress))){
     # Single Stress
@@ -141,7 +142,6 @@ probplot.logn <- function(data,pp,xlabel1,confid=0.95) {
       xlab(xlabel1) +
       ylab("Percent Failure")
     plotout <- plotout + geom_line(data=df2, aes(Xline,Fline, colour = best_fit), size = 0.9, linetype = "dashed")
-
   } else {
     # Multi-Stress
     data_legend <- logical(0)
@@ -154,6 +154,7 @@ probplot.logn <- function(data,pp,xlabel1,confid=0.95) {
     Flinesconf_up <- rep(0,length(databystress)*1000)
     Flinesconf_down <- rep(0,length(databystress)*1000)
     line_legend <- rep(0,length(databystress)*2)
+    conf_legend <- rep(0,length(databystress)*2001)
 
     for(i in 1:length(databystress)){
       xlines[((i*2) - 1):(i*2)] <- ttfc_list[[i]][[1]]
@@ -164,35 +165,32 @@ probplot.logn <- function(data,pp,xlabel1,confid=0.95) {
       Flinesconf_down[((i*1000) - 999):(i*1000)] <- Fboundlow_list[[i]]
       xlinesconf_down[((i*1000) - 999):(i*1000)] <- Xboundlow_list[[i]]
       xlinesconf_up[((i*1000) - 999):(i*1000)] <- Xboundhigh_list[[i]]
-      # Flinesconf[((i*2) - 1):((i*2)+1)] <- c(Fboundlow_list[[i]],NA)
       data_legend<-c(data_legend,rep(paste(c("Data for stress level ",databystress[[i]][1,3:length(databystress[[i]][1,])]),collapse = " "),length(XB_list[[i]])))
       line_legend[((i*2) - 1):(i*2)] <- rep(paste(c("Best-fit for stress level ",databystress[[i]][1,3:length(databystress[[i]][1,])]),collapse = " "),2)
+      conf_legend[((i*2001) - 2000):(i*2001)] <- rep(paste(c(confid*100,"% Confidence for stress level ",databystress[[i]][1,3:length(databystress[[i]][1,])]),collapse = " "),2001)
     }
     df <- data.frame(XScale = XBfull, Fscale = FBfull, data = data_legend)
     df2 <- data.frame(Xline = xlines, Fline = Flines, best_fit = line_legend)
-    # df3 <- data.frame(Xline2 = xlinesconf, Fline2 = Flinesconf)
-
-    # return(list(xlinesconf_up,xlinesconf_down,Flinesconf))
-
     df3 <- data.frame(Xline2up = xlinesconf_up, Xline2down = xlinesconf_down, Fline2up = Flinesconf_up, Fline2down = Flinesconf_down)
+
+    # If step-stress problem, identify the index of comparison (RCS 01082024)
+    if(is.null(stpstr_i)==FALSE){
+      df <- df[which(stpstr_i==1),]
+    }
 
     plotout<-ggplot() +
       geom_point(data=df, aes(XScale,Fscale, shape = data), colour = 'black', size = 2.2) +
+      scale_shape_manual(values=shape_legend[1:length(databystress)]) +
+      scale_color_manual(values=col_legend[1:length(databystress)])+
       scale_x_continuous(trans = 'log10', limits = c(10^min(signs1), 10^max(signs1)), breaks=Pticks1X, labels=Pticks1Xlabel) +
       scale_y_continuous(limits = c(min(fcB), max(fcB)), breaks=Pticks, labels=Pticks1label) +
       xlab(xlabel1) +
       ylab("Percent Failure")
-    # df <- data.frame(X = xrange, YCDF = ycdf, YCDFlow = ycdf_low, YCDFhigh = ycdf_high, best_fit = rep("Fitted",1000))
 
 
-    # plotout <- plotout + geom_line(data=df2, aes(Xline,Fline, colour = best_fit), size = 0.9, linetype = "dashed")
     plotout <- plotout + geom_line(data=df2, aes(Xline,Fline, colour = best_fit), size = 0.9, linetype = "dashed") +
-      # geom_path(data=df3, aes(Xline2,Fline2, colour = 'red'), size = 0.9, linetype = "dotted")
       geom_ribbon(data=df3, aes(x=Xline2up, ymin=Fline2down, ymax=Fline2up), alpha=0.25, fill = "blue")
   }
-  # return(df3)
-  # return(plotout)
-  return(list(outputpp, prob_plot = plotout))
 
-  # return(list(outputpp, Xbound_list, Fboundlow_list, Fboundhigh_list, prob_plot = plotout))
+  return(list(outputpp, SSEbyStress = SSEtot, summary.nonparametric=xiRFblock_list, prob_plot = plotout))
 }

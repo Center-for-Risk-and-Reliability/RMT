@@ -1,7 +1,7 @@
 # Plotting Position Selector
 # Developed by Dr. Reuel Smith, 2020-2022
 
-plotposit.select <- function(xi, rc, pp) {
+plotposit.select <- function(xi, rc=NULL, pp="Blom") {
   if (pp=="Blom") {
     if(is.null(rc)) {
       matFR<-plotposit.blom(rankcalc(xi),xi)

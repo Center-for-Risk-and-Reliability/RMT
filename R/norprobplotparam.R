@@ -20,6 +20,7 @@ probplotparam.nor <- function(xi,F) {
     sigmay <- 1/slope
     meany <- -intercept*sigmay
     R2 <- summary(pb2)$r.squared
+    SSE <- sum((fitted(pb2) - yfit)^2)
     #meany <- (50-slope)/intercept
     #t84 <- (84-slope)/intercept
     #sigmay <- t84-meany
@@ -36,9 +37,10 @@ probplotparam.nor <- function(xi,F) {
     sigmay <- 0
     meany <- xi
     R2 <- 0
+    SSE <- 0
     normresults <- matrix(c(meany,sigmay), nrow = 1, ncol = 2, byrow = TRUE,dimnames = list(c("Normal Parameters"),c("mean_t", "sigma_t")))
     ttfc <- rep(xi,2)
   }
 
-  return(list(ttfc,fcB,normresults,R2))
+  return(list(ttfc,fcB,normresults,R2,SSE=SSE))
 }

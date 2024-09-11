@@ -1,7 +1,7 @@
 # Bayesian Life-Stress Estimator
 # Developed by Dr. Reuel Smith, 2021-2023
 
-lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,confid=0.95,priors,nsamples=20000,burnin=10000,nchains=4){
+lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,SACC=NULL,confid=0.95,priors,nsamples=20000,burnin=10000,nchains=4){
   #Load pracma library for erf
   library(pracma)
   library(StanHeaders)
@@ -191,6 +191,33 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,confid=0.9
     }
   }
 
+  if (ls=="PowerBias") {
+    # theta[1] - parameter a, theta[2] - parameter b, theta[3] - parameter C
+    lsparams <- "real a; real b; real C;"
+    lsparamsvec <- c("a","b","C")
+    pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
+    pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
+    pr3<-paste(c("C ~ ",priors[ishift+3],";"),collapse = "")
+    lspriors <- paste(c(pr1,pr2,pr3),collapse = " ")
+
+    lifeF <- "C + b*(Sf^a)"
+    loglifeF <- "log(C + b*(Sf^a))"
+    if(missing(Tc)==FALSE){
+      lifeC <- "C + b*(Sc^a)"
+      loglifeC <- "log(C + b*(Sc^a))"
+    }
+    if(missing(SUSE)==FALSE){
+      lifeU <- "C + b*(Suse^a);"
+      complifeU <- pt_est[ishift+3] + pt_est[ishift+2]*(SUSE^pt_est[ishift+1])
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      AFheading <- paste(c("AFat",SACC),collapse = "")
+      AF <- "(C + b*(Suse^a))/(C + b*(Sacc^a));"
+      complifeU <- pt_est[ishift+3] + pt_est[ishift+2]*(SUSE^pt_est[ishift+1])
+      compAF <- (pt_est[ishift+3] + pt_est[ishift+2]*(SUSE^pt_est[ishift+1]))/(pt_est[ishift+3] + pt_est[ishift+2]*(SACC^pt_est[ishift+1]))
+    }
+  }
+
   if (ls=="Logarithmic") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b
     lsparams <- "real a; real b;"
@@ -350,6 +377,28 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,confid=0.9
     outputparamset <- c("\U03B2",lsparamsvec)
     priors <- paste(c(distpriors,lspriors),collapse = " ")
   }
+  if (dist=="3PWeibull") {
+    distparam <-"real<lower=0> beta; real gamma;"
+    distpriors<-paste(c("beta ~ ",priors[ishift],";","gamma ~ ",priors[ishift+1],";"),collapse = "")
+
+    if(ls=="Eyring" || ls=="Eyring2" || ls=="Eyring3" || ls=="TempHumidity" || ls=="TempNonthermal" || ls=="MultiStress"){
+      if(missing(Tc)){
+        loglik <- paste(c("target += weibull_lpdf(TTF | beta, Lifei);"),collapse = "")
+      } else{
+        loglik <- paste(c("target += weibull_lpdf(TTF | beta, Lifei) + weibull_lccdf(TTS | beta, Lifej);"),collapse = "")
+      }
+    } else{
+      if(missing(Tc)){
+        loglik <- paste(c("target += weibull_lpdf(TTF | beta,",lifeF,");"),collapse = "")
+      } else{
+        loglik <- paste(c("target += weibull_lpdf(TTF | beta,",lifeF,") + weibull_lccdf(TTS | beta,",lifeC,");"),collapse = "")
+      }
+    }
+    params <- paste(c(distparam,lsparams),collapse = " ")
+    paramsvec <- c("beta","gamma",lsparamsvec)
+    outputparamset <- c("\U03B2","\U03B3",lsparamsvec)
+    priors <- paste(c(distpriors,lspriors),collapse = " ")
+  }
   if (dist=="Lognormal") {
     distparam <-"real<lower=0> sigma_t;"
     distpriors<-paste(c("sigma_t ~ ",priors[ishift],";"),collapse = "")
@@ -439,11 +488,40 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,confid=0.9
   if(missing(Tc)){
     block1 <- "data {int<lower=0> n; vector[n] TTF; vector[n] Sf;}"
     datablock <- list(n = length(TTF), TTF = TTF, Sf = SF)
+    if(missing(SUSE)==FALSE){
+      block1 <- "data {int<lower=0> n; vector[n] TTF; vector[n] Sf; real Suse;}"
+      datablock <- list(n = length(TTF), TTF = TTF, Sf = SF, Suse = SUSE)
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      block1 <- "data {int<lower=0> n; vector[n] TTF; vector[n] Sf; real Suse; real Sacc;}"
+      datablock <- list(n = length(TTF), TTF = TTF, Sf = SF, Suse = SUSE, Sacc = SACC)
+    }
   } else{
     block1 <- "data {int<lower=0> n; int<lower=0> m; vector[n] TTF; vector[m] TTS; vector[n] Sf; vector[m] Sc;}"
     datablock <- list(n = length(TTF), m = length(Tc), TTF = TTF, Sf = SF, TTS = Tc, Sc = Sc)
+    if(missing(SUSE)==FALSE){
+      block1 <- "data {int<lower=0> n; int<lower=0> m; vector[n] TTF; vector[m] TTS; vector[n] Sf; vector[m] Sc; real Suse;}"
+      datablock <- list(n = length(TTF), m = length(Tc), TTF = TTF, Sf = SF, TTS = Tc, Sc = Sc, Suse = SUSE)
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      block1 <- "data {int<lower=0> n; int<lower=0> m; vector[n] TTF; vector[m] TTS; vector[n] Sf; vector[m] Sc; real Suse; real Sacc;}"
+      datablock <- list(n = length(TTF), m = length(Tc), TTF = TTF, Sf = SF, TTS = Tc, Sc = Sc, Suse = SUSE, Sacc = SACC)
+    }
   }
   block2 <- paste(c("parameters {",params,"}"),collapse = " ")
+  if(missing(SUSE)==FALSE){
+    block2b <- paste(c("transformed parameters { real<lower=0> Uselife; Uselife = ",lifeU,"}"),collapse = " ")
+    paramsvec0 <- c(paramsvec,"Uselife")
+    # pt_est <- c(pt_est,complifeU)
+  }
+  if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+    block2b <- paste(c("transformed parameters { real<lower=0> Uselife; real<lower=0> ",AFheading,"; Uselife = ",lifeU,AFheading," = ",AF,"}"),collapse = " ")
+    paramsvec0 <- c(paramsvec,"Uselife",AFheading)
+    # pt_est <- c(pt_est,complifeU,compAF)
+  }
+  if(missing(SUSE)==TRUE && missing(SACC)==TRUE){
+    paramsvec0 <- paramsvec
+  }
   block3 <- paste(c("model {",priors,loglik,"}"),collapse = " ")
   if ((ls=="Eyring" || ls=="Eyring2"  || ls=="Eyring3" || ls=="TempHumidity" || ls=="TempNonthermal" || ls=="MultiStress") && dist == "Lognormal"){
     if(missing(Tc)==TRUE){
@@ -463,6 +541,9 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,confid=0.9
   }
   # NOT RUN {
   stanlscode <- paste(c(block1,block2,block3),collapse=" ")
+  if(missing(SUSE)==FALSE || missing(SACC)==FALSE){
+    stanlscode <- paste(c(block1,block2,block2b,block3),collapse=" ")
+  }
   stanlsfile <- write_stan_file(stanlscode)
   print(stanlsfile)
   # Generate initial list (one list per chain)
@@ -486,10 +567,10 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,confid=0.9
   # stats <- print(fit, pars = paramsvec, probs=c((1-confid)/2,.5,1-(1-confid)/2))
   # dataout <- fit@.MISC[["summary"]][["msd"]]
   conflim_txt<-c(paste(c("Lower ",100*conf.level,"%"),collapse = ""),paste(c("Upper ",100*conf.level,"%"),collapse = ""))
-  stats <- fit$summary(variables = paramsvec)
+  stats <- fit$summary(variables = paramsvec0)
   dataout <- fit$draws(format = "df")
-  confidbounds <- mcmc_intervals_data(fit$draws(variables = paramsvec),prob_outer = confid)
-  outputtable <- matrix(c(stats[[2]],stats[[4]],confidbounds[[5]],stats[[3]],confidbounds[[9]],stats[[8]]), nrow = length(outputparamset), ncol = 6, byrow = FALSE,dimnames = list(outputparamset,c("Mean","Standard Deviation",conflim_txt[1],"Median",conflim_txt[2],"R\U005E")))
+  confidbounds <- mcmc_intervals_data(fit$draws(variables = paramsvec0),prob_outer = confid)
+  outputtable <- matrix(c(stats[[2]],stats[[4]],confidbounds[[5]],stats[[3]],confidbounds[[9]],stats[[8]]), nrow = length(paramsvec0), ncol = 6, byrow = FALSE,dimnames = list(paramsvec0,c("Mean","Standard Deviation",conflim_txt[1],"Median",conflim_txt[2],"R\U005E")))
 
 
   # Trace the Markov Chains for each parameter
@@ -497,10 +578,10 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,confid=0.9
   # plot1_MCtrace <- mcmc_trace(as.matrix(fit),pars=paramsvec, facet_args = list(nrow = length(paramsvec), labeller = label_parsed))
   # plot2_hist <- stan_hist(fit)
   # plot3_density <- stan_dens(fit)
-  plot1_MCtrace <- mcmc_trace(fit$draws(paramsvec))
-  plot2_hist <- mcmc_hist(fit$draws(paramsvec))
-  plot3_density <- mcmc_dens(fit$draws(paramsvec))
-  plot4_densityoverlay <- mcmc_dens_overlay(fit$draws(paramsvec))
+  plot1_MCtrace <- mcmc_trace(fit$draws(paramsvec0))
+  plot2_hist <- mcmc_hist(fit$draws(paramsvec0))
+  plot3_density <- mcmc_dens(fit$draws(paramsvec0))
+  plot4_densityoverlay <- mcmc_dens_overlay(fit$draws(paramsvec0))
 
   # Produce some output text that summarizes the results
   cat(c("Posterior estimates for Bayesian Analysis.\n\n"),sep = "")

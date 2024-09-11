@@ -1,16 +1,21 @@
 # Least-Squares Life-Stress Estimator
 # Developed by Dr. Reuel Smith, 2021-2023
 
-lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
+lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab=NULL,Slab=NULL) {
   #Load pracma library for pseudoinverse
   library(pracma)
 
   # Compute probability plotting output first based on input
   # UPDATE (11/7/2023) - Now includes the probability plot for the stress levels
-  # UPDATE (11/20/2023) - Now includes Gumbel, Logistic, and Loglogisitic life distribution options
+  # UPDATE (11/20/2023) - Now includes Gumbel, Logistic, and Log-logistic life distribution options
   if (dist=="Weibull") {
     ppoutput <- probplot.wbl(data,pp,xlabel1)[[1]]
     plotoutput <- probplot.wbl(data,pp,xlabel1)$prob_plot
+  }
+  if (dist=="3PWeibull") {
+    ppoutput <- probplot.wbl3P(data,pp,xlabel1)[[1]]
+    plotoutput <- probplot.wbl3P(data,pp,xlabel1)$prob_plot
+    nonparamoutput <- probplot.wbl3P(data,pp,xlabel1)$summary.nonparametric
   }
   if (dist=="Lognormal") {
     ppoutput <- probplot.logn(data,pp,xlabel1)[[1]]
@@ -101,6 +106,10 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
         L[i2]<-ppoutput[[i2*3-1]][,1]
         distparams[i2]<-ppoutput[[i2*3-1]][2]
       }
+      if (dist=="3PWeibull") {
+        L[i2]<-ppoutput[[i2*3-1]][,1]
+        distparams[i2]<-ppoutput[[i2*3-1]][2]
+      }
       if (dist=="Lognormal") {
         L[i2]<-exp(ppoutput[[i2*3-1]][,1])
         distparams[i2]<-ppoutput[[i2*3-1]][2]
@@ -146,6 +155,10 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
         L[i2]<-ppoutput[[i2*3-1]][,1]
         distparams[i2]<-ppoutput[[i2*3-1]][2]
       }
+      if (dist=="3PWeibull") {
+        L[i2]<-ppoutput[[i2*3-1]][,1]
+        distparams[i2]<-ppoutput[[i2*3-1]][2]
+      }
       if (dist=="Lognormal") {
         L[i2]<-exp(ppoutput[[i2*3-1]][,1])
         distparams[i2]<-ppoutput[[i2*3-1]][2]
@@ -183,10 +196,17 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
     }
   }
 
+  # return(list(S,L,distparams))
+
   if (dist=="Weibull") {
     # Writeup for the output text
     dist_txt<-dist
     distparam_txt<-"\U03B2"
+  }
+  if (dist=="3PWeibull") {
+    # Writeup for the output text
+    dist_txt<-"Three-Parameter Weibull"
+    distparam_txt<-c("\U03B2","\U03B3")
   }
   if (dist=="Lognormal") {
     # Writeup for the output text
@@ -305,8 +325,8 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
     params  <- lm(log(L) ~ poly(log(S), 1, raw=TRUE))
     lsparams <- c(summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
     R2 <- summary(params)$r.squared
-    params_txt<-c("a","b")
     # Writeup for the output text
+    params_txt<-c("a","b")
     ls_txt<-ls
     life_txt2<-"b*(S^a)"
     loglife_txt<-"(ln(b) + aln(S))"
@@ -347,8 +367,12 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
   }
   if (ls=="MultiStress"){
     # lsparams - c(ao,a1,...,an), S - c(1,S1,...,Sn)
+    defaultStressname <- c("S\U2081","S\U2082","S\U2083","S\U2084","S\U2085","S\U2086","S\U2087","S\U2088","S\U2089","S\U2081\U2080")
     if(length(ppoutput[[1]])<2) {
       stop('Select a data set with more than one stress type.')
+    }
+    if(is.null(names(ppoutput[[1]]))==TRUE){
+      names(ppoutput[[1]]) <- defaultStressname[1:length(ppoutput[[1]])]
     }
     Lvals<-log(L)
     Svals<-matrix(c(rep(1,length(S[,1])),S),nrow=length(ppoutput)/3,ncol=1+length(ppoutput[[1]]),byrow=FALSE)
@@ -366,6 +390,9 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
     # lsparams[1] - parameter A, lsparams[2] - parameter a, lsparams[3] - parameter b
     if(length(ppoutput[[1]])<2) {
       stop('Select a data set with more than one stress type.')
+    }
+    if(is.null(names(ppoutput[[1]]))==TRUE){
+      names(ppoutput[[1]]) <- c("Temperature (K)","RH")
     }
     Lvals<-log(L)
     Svals<-matrix(c(rep(1,length(S[,1])),1/S[,therm],1/S[,alttherm]),nrow=length(ppoutput)/3,ncol=3,byrow=FALSE)
@@ -386,6 +413,9 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
     if(length(ppoutput[[1]])<2) {
       stop('Select a data set with more than one stress type.')
     }
+    if(is.null(names(ppoutput[[1]]))==TRUE){
+      names(ppoutput[[1]]) <- c("Temperature (K)","Nonthermal Stress")
+    }
     Lvals<-log(L)
     Svals<-matrix(c(1/S[,therm],-log(S[,alttherm]),rep(1,length(S[,1]))),nrow=length(ppoutput)/3,ncol=3,byrow=FALSE)
     params  <- pinv(Svals)%*%Lvals
@@ -404,6 +434,9 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
     # lsparams[3] - parameter c, lsparams[4] - parameter d
     if(length(ppoutput[[1]])<2) {
       stop('Select a data set with more than one stress type.')
+    }
+    if(is.null(names(ppoutput[[1]]))==TRUE){
+      names(ppoutput[[1]]) <- c("Temperature (K)","Nonthermal Stress")
     }
     Lvals<-log(L)+log(S[,therm])
     Svals<-matrix(c(rep(1,length(S[,1])),1/S[,therm],S[,alttherm],S[,alttherm]/S[,therm]),nrow=length(ppoutput)/3,ncol=4,byrow=FALSE)
@@ -425,6 +458,9 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
     if(length(ppoutput[[1]])<2) {
       stop('Select a data set with more than one stress type.')
     }
+    if(is.null(names(ppoutput[[1]]))==TRUE){
+      names(ppoutput[[1]]) <- c("Temperature (K)","Nonthermal Stress")
+    }
     Lvals<-log(L)
     Svals<-matrix(c(rep(1,length(S[,1])),-log(S[,alttherm]),1/S[,therm]),nrow=length(ppoutput)/3,ncol=3,byrow=FALSE)
     params  <- pinv(Svals)%*%Lvals
@@ -439,12 +475,40 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
     life_txt2<-"A exp(E_a/(K*S)) U^-b"
     loglife_txt<-"ln(A) + (E_a/(K*S)) - b ln(U)"
   }
+  if (ls=="PH1"){
+    # lsparams[1] - parameter beta_0, lsparams[2] - parameter beta_1, lsparams[3] - parameter beta_2
+    if(length(ppoutput[[1]])<2) {
+      stop('Select a data set with more than one stress type.')
+    }
+    if(is.null(names(ppoutput[[1]]))==TRUE){
+      names(ppoutput[[1]]) <- c("Temperature (K)","RH")
+    }
+
+    Lvals<-log(L)
+    Svals<-matrix(c(rep(-1,length(S[,1])),-1/S[,therm],-1/S[,alttherm]),nrow=length(ppoutput)/3,ncol=3,byrow=FALSE)
+    params  <- pinv(Svals)%*%Lvals
+    lsparams <- c(params)
+    Lmodel <- exp(-lsparams[1])*exp(-lsparams[2]/S[,therm] - lsparams[3]/S[,alttherm])
+    lnLmodel <- log(Lmodel)
+    R2 <- 1 - sum((Lvals - lnLmodel)^2)/sum((Lvals - mean(Lvals))^2)
+    params_txt<-c("\U03B2\U2080","\U03B2\U2081","\U03B2\U2082")
+    # Writeup for the output text
+    ls_txt<-"Proportional-Hazard"
+    life_txt2<-"exp(-\U03B2\U2080) exp(-\U03B2\U2081/S - \U03B2\U2082/RH)"
+    loglife_txt<-"-\U03B2\U2080 - \U03B2\U2081/S - \U03B2\U2082/RH"
+  }
 
   # Writeup for the output text
   if (dist=="Weibull") {
     dist_txt<-dist
     distparam_txt<-"\U03B2"
     pdf_txt<-c("(\U03B2/",life_txt2,")*(x/",life_txt2,")^(\U03B2-1)*exp(-(x/",life_txt2,")^\U03B2)")
+    life_txt<-"63.2% Life - \U03B1"
+  }
+  if (dist=="3PWeibull") {
+    dist_txt<-"Three-Parameter Weibull"
+    distparam_txt<-c("\U03B2","\U03B3")
+    pdf_txt<-c("(\U03B2/",life_txt2,")*((x-\U03B3)/",life_txt2,")^(\U03B2-1)*exp(-((x-\U03B3)/",life_txt2,")^\U03B2)")
     life_txt<-"63.2% Life - \U03B1"
   }
   if (dist=="Lognormal") {
@@ -494,21 +558,49 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
     LSQ<-lsparams
     params_txt<-params_txt
   }
-  else {
+  if(dist=="3PWeibull") {
+    beta_LSQ<-mean(distparams[which(is.na(distparams) == FALSE)])
+    for(i in 1:length(nonparamoutput)){
+      if(i == 1){
+        xfull <- nonparamoutput[[i]][,1]
+        Rfull <- nonparamoutput[[i]][,3]
+        alpfull <- rep(L[i],length(nonparamoutput[[i]][,1]))
+      } else{
+        xfull <- c(xfull,nonparamoutput[[i]][,1])
+        Rfull <- c(Rfull,nonparamoutput[[i]][,3])
+        alpfull <- c(alpfull,rep(L[i],length(nonparamoutput[[i]][,1])))
+      }
+
+    }
+    gam_LSQest <- function(gam){
+      Fx <- sum((log(-log(Rfull)) - beta_LSQ*log(xfull - gam) + beta_LSQ*log(alpfull))^2)
+      return(Fx)
+    }
+    gamma_LSQ <- nlminb(0.5*min(xfull),gam_LSQest,hessian=TRUE,lower = -Inf,upper = 0.99*min(xfull))$par
+
+    LSQ<-c(beta_LSQ,gamma_LSQ,lsparams)
+    params_txt<-c(distparam_txt,params_txt)
+  }
+  if(dist=="2PExponential" || dist=="Weibull" || dist=="Normal" || dist=="Lognormal" || dist=="Gumbell" || dist=="Logistic" || dist=="Loglogistic") {
     LSQ<-c(mean(distparams[which(is.na(distparams) == FALSE)]),lsparams)
     params_txt<-c(distparam_txt,params_txt)
   }
   # return(list(S,L,LSQ,R2,plotoutput=plotoutput))
+  # lifestress.relationplot.LSQ(data,ls,dist,params,S=NULL,L=NULL,Smin=NULL,Smax=NULL,Suse=NULL,therm=1,confid=0.95,Llab="Characteristic Life - X",Slab="Characteristic Stress - S") {
+  # return(LSQ)
 
-  # if(ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
-  #   if(is.null(Suse)==TRUE){
-  #     relplotoutput <- lifestress.relationplot.LSQ(data,ls,dist,lsparams,S,L)
-  #   }
-  #   if(is.null(Suse)==FALSE){
-  #     relplotoutput <- lifestress.relationplot.LSQ(data,ls,dist,lsparams,S,L,Suse = Suse)
-  #   }
-  # }
-
+  if(ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
+    if(is.null(Suse)==TRUE){
+      relplotoutput <- lifestress.relationplot.LSQ(data,ls,dist,LSQ,S,L)
+    }
+    if(is.null(Suse)==FALSE){
+      relplotoutput <- lifestress.relationplot.LSQ(data,ls,dist,LSQ,S,L,Suse = Suse)
+    }
+    if(is.null(Llab)==FALSE && is.null(Slab)==FALSE){
+      relplotoutput <- lifestress.relationplot.LSQ(data,ls,dist,LSQ,S,L,Suse = Suse,Llab = Llab,Slab = Slab)
+    }
+  }
+  #
   # if(is.null(Suse)==TRUE){
   #   relplotoutput <- lifestress.relationplot.LSQ(data,ls,dist,lsparams,S,L)
   # }
@@ -516,7 +608,11 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
   #   relplotoutput <- lifestress.relationplot.LSQ(data,ls,dist,lsparams,S,L,Suse = Suse)
   # }
 
-  # Produce some output text that summariZes the results
+  # return(relplotoutput)
+
+  # return(list(c(names(ppoutput[[1]]),life_txt)))
+
+  # Produce some output text that summarizes the results
   cat(c("Least-Squares estimates for the ",ls_txt,"-",dist_txt," Life-Stress model.\n\nf(x,S) = ",pdf_txt,"\n\n"),sep = "")
   print(matrix(c(LSQ), nrow = 1, ncol = length(LSQ), byrow = TRUE,dimnames = list(c("Life-Stress Parameters"),params_txt)))
   cat("\n")
@@ -529,19 +625,19 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
   cat("\n")
 
   # Return parameter list
-  return(list(S,L,LSQ,R2,plotoutput=plotoutput))
+  # return(list(S,L,LSQ,R2,plotoutput=plotoutput))
   # FOR USE WITH RELATION PLOT UPDATE
-  # if(ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
-  #   if(is.null(Suse)==TRUE){
-  #     return(list(S,L,LSQ,R2,plotoutput=plotoutput,relplotoutput=relplotoutput$relationplot))
-  #   }
-  #   if(is.null(Suse)==FALSE){
-  #     return(list(S,L,LSQ,R2,Use_Life = relplotoutput$Luse,plotoutput=plotoutput,relplotoutput=relplotoutput$relationplot))
-  #   }
-  # } else{
-  #   return(list(S,L,LSQ,R2,plotoutput=plotoutput))
-  # }
-
+  if(ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
+    if(is.null(Suse)==TRUE){
+      return(list(S,L,LSQ,R2,plotoutput=plotoutput,relplotoutput=relplotoutput$relationplot))
+    }
+    if(is.null(Suse)==FALSE){
+      return(list(S,L,LSQ,R2,Use_Life = relplotoutput$Luse,plotoutput=plotoutput,relplotoutput=relplotoutput$relationplot))
+    }
+  } else{
+    return(list(S,L,LSQ,R2,plotoutput=plotoutput))
+  }
+  #
   # if(is.null(Suse)==TRUE){
   #   return(list(S,L,LSQ,R2,plotoutput=plotoutput,relplotoutput=relplotoutput$relationplot))
   # }

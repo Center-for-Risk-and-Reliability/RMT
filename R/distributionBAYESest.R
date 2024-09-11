@@ -52,6 +52,20 @@ distribution.BAYESest <- function(pt_est,dist,TTF,Tc=NULL,confid=0.95,priors,nsa
     outputparamset <- c("\U03B1 (Scale)","\U03B2 (Shape)")
     priors <- paste(c(distpriors),collapse = " ")
   }
+  if (dist=="3PWeibull") {
+    distparam <-"real<lower=0> alpha; real<lower=0> beta; real gamma;"
+    distpriors<-paste(c("alpha ~ ",priors[1],";","beta ~ ",priors[2],";","gamma ~ ",priors[3],";"),collapse = "")
+
+    if(missing(Tc)){
+      loglik <- paste(c("for(i in 1:n){	target += log(beta) + (beta-1)*log(TTF[i] - gamma) - beta*log(alpha) - (((TTF[i] -gamma)/alpha)^beta);}"),collapse = "")
+    } else{
+      loglik <- paste(c("for(i in 1:n){	target += log(beta) + (beta-1)*log(TTF[i] - gamma) - beta*log(alpha) - (((TTF[i] -gamma)/alpha)^beta);} for(j in 1:m){	target += - (((TTS[j] - gamma)/alpha)^beta);}"),collapse = "")
+    }
+    params <- paste(c(distparam),collapse = " ")
+    paramsvec <- c("alpha","beta","gamma")
+    outputparamset <- c("\U03B1 (Scale)","\U03B2 (Shape)","\U03B3 (Location)")
+    priors <- paste(c(distpriors),collapse = " ")
+  }
   if (dist=="Lognormal") {
     distparam <-"real mu_t; real<lower=0> sigma_t;"
     distpriors<-paste(c("mu_t ~ ",priors[1],";","sigma_t ~ ",priors[2],";"),collapse = "")
@@ -140,6 +154,7 @@ distribution.BAYESest <- function(pt_est,dist,TTF,Tc=NULL,confid=0.95,priors,nsa
   # Print results.  I need to get this as an output
   # stats <- print(fit, pars = paramsvec, probs=c((1-confid)/2,.5,1-(1-confid)/2))
   # dataout <- fit@.MISC[["summary"]][["msd"]]
+  conflim_txt<-c(paste(c("Lower ",100*conf.level,"%"),collapse = ""),paste(c("Upper ",100*conf.level,"%"),collapse = ""))
   stats <- fit$summary(variables = paramsvec)
   dataout <- fit$draws(format = "df")
   confidbounds <- mcmc_intervals_data(fit$draws(variables = paramsvec),prob_outer = confid)

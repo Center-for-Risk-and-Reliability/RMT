@@ -121,18 +121,22 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
 
   if (ls=="Eyring") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b
+    # shift b to log b
+    # positivity_v[ishift+2]<-1
+    LSQest[ishift+2] <- log(LSQest[ishift+2])
+
     lifeF <- function(theta) {
-      (theta[ishift+2]/SF)*exp(theta[ishift+1]/SF)
+      (exp(theta[ishift+2])/SF)*exp(theta[ishift+1]/SF)
     }
     loglifeF <- function(theta) {
-      log(theta[ishift+2]) - log(SF) + theta[ishift+1]/SF
+      theta[ishift+2] - log(SF) + theta[ishift+1]/SF
     }
     if(is.null(Tc)==FALSE){
       lifeC <- function(theta) {
-        (theta[ishift+2]/Sc)*exp(theta[ishift+1]/Sc)
+        (exp(theta[ishift+2])/Sc)*exp(theta[ishift+1]/Sc)
       }
       loglifeC <- function(theta) {
-        log(theta[ishift+2]) - log(Sc) + theta[ishift+1]/Sc
+        theta[ishift+2] - log(Sc) + theta[ishift+1]/Sc
       }
     }
     ls_txt<-ls
@@ -480,45 +484,70 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
 
   # Fit to log-likelihood distributions
   if (dist=="Weibull") {
-    positivity_v[1]<-1
+    # positivity_v[1]<-1
+    # First redefine beta parameter as logbeta
+    LSQest[1] <- log(LSQest[1])
 
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(log(theta[1]) + (theta[1]-1)*log(TTF) - theta[1]*loglifeF(theta) - ((TTF/lifeF(theta))^theta[1]))
+        -sum(theta[1] + (exp(theta[1])-1)*log(TTF) - exp(theta[1])*loglifeF(theta) - ((TTF/lifeF(theta))^exp(theta[1])))
       }
     } else{
       loglik <- function(theta){
-        -sum(log(theta[1]) + (theta[1]-1)*log(TTF) - theta[1]*loglifeF(theta) - ((TTF/lifeF(theta))^theta[1])) - sum(- ((Tc/lifeC(theta))^theta[1]))
+        -sum(theta[1] + (exp(theta[1])-1)*log(TTF) - exp(theta[1])*loglifeF(theta) - ((TTF/lifeF(theta))^exp(theta[1]))) - sum(- ((Tc/lifeC(theta))^exp(theta[1])))
       }
     }
     dist_txt<-dist
     distparam_txt<-"\U03B2"
   }
-  if (dist=="Lognormal") {
-    positivity_v[1]<-1
+
+  if (dist=="3PWeibull") {
+    # positivity_v[1]<-1
+    # First redefine beta parameter as logbeta
+    LSQest[1] <- log(LSQest[1])
 
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(-log(theta[1]) - 0.5*log(2*pi) - log(TTF) - 0.5*(theta[1]^-2)*((log(TTF) - loglifeF(theta))^2))
+        -sum(theta[1] + (exp(theta[1])-1)*log(TTF-theta[2]) - exp(theta[1])*loglifeF(theta) - (((TTF-theta[2])/lifeF(theta))^exp(theta[1])))
       }
     } else{
       loglik <- function(theta){
-        -sum(-log(theta[1]) - 0.5*log(2*pi) - log(TTF) - 0.5*(theta[1]^-2)*((log(TTF) - loglifeF(theta))^2)) - sum(log(0.5 - 0.5*erf((2^-0.5)*(theta[1]^-1)*(log(Tc) - loglifeC(theta)))))
+        -sum(theta[1] + (exp(theta[1])-1)*log(TTF-theta[2]) - exp(theta[1])*loglifeF(theta) - (((TTF-theta[2])/lifeF(theta))^exp(theta[1]))) - sum(- (((Tc-theta[1])/lifeC(theta))^exp(theta[1])))
+      }
+    }
+    dist_txt<-"Three-Parameter Weibull"
+    distparam_txt<-c("\U03B2","\U03B3")
+  }
+
+  if (dist=="Lognormal") {
+    # positivity_v[1]<-1
+    # First redefine sigmat parameter as logsigmat
+    LSQest[1] <- log(LSQest[1])
+
+    if(is.null(Tc)){
+      loglik <- function(theta){
+        -sum(-theta[1] - 0.5*log(2*pi) - log(TTF) - 0.5*(exp(theta[1])^-2)*((log(TTF) - loglifeF(theta))^2))
+      }
+    } else{
+      loglik <- function(theta){
+        -sum(-theta[1] - 0.5*log(2*pi) - log(TTF) - 0.5*(exp(theta[1])^-2)*((log(TTF) - loglifeF(theta))^2)) - sum(log(0.5 - 0.5*erf((2^-0.5)*(exp(theta[1])^-1)*(log(Tc) - loglifeC(theta)))))
       }
     }
     dist_txt<-dist
     distparam_txt<-"\U03C3_t"
   }
   if (dist=="Normal") {
-    positivity_v[1]<-1
+    # positivity_v[1]<-1
+    # First redefine sigma parameter as logsigma
+    LSQest[1] <- log(LSQest[1])
 
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(-log(theta[1]) - 0.5*log(2*pi) - 0.5*(theta[1]^-2)*((TTF - lifeF(theta))^2))
+        -sum(-theta[1] - 0.5*log(2*pi) - 0.5*(exp(theta[1])^-2)*((TTF - lifeF(theta))^2))
       }
     } else{
       loglik <- function(theta){
-        -sum(-log(theta[1]) - 0.5*log(2*pi) - 0.5*(theta[1]^-2)*((TTF - lifeF(theta))^2)) - sum(log(0.5 - 0.5*erf((2^-0.5)*(theta[1]^-1)*(Tc - lifeC(theta)))))
+        -sum(-theta[1] - 0.5*log(2*pi) - 0.5*(exp(theta[1])^-2)*((TTF - lifeF(theta))^2)) - sum(log(0.5 - 0.5*erf((2^-0.5)*(exp(theta[1])^-1)*(Tc - lifeC(theta)))))
       }
     }
     dist_txt<-dist
@@ -537,15 +566,17 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
     dist_txt<-dist
   }
   if (dist=="2PExponential") {
-    positivity_v[1]<-1
+    # positivity_v[1]<-1
+    # First redefine sigmat parameter as logsigmat
+    LSQest[1] <- log(LSQest[1])
 
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(-log(theta[1]) - (theta[1]^-1)*(TTF - lifeF(theta)) - 1)
+        -sum(-theta[1] - (exp(theta[1])^-1)*(TTF - lifeF(theta)) - 1)
       }
     } else{
       loglik <- function(theta){
-        -sum(-log(theta[1]) - (theta[1]^-1)*(TTF - lifeF(theta)) - 1) - sum(-(theta[1])*(Tc - lifeC(theta)) - 1)
+        -sum(-theta[1] - (exp(theta[1])^-1)*(TTF - lifeF(theta)) - 1) - sum(-(theta[1])*(Tc - lifeC(theta)) - 1)
       }
     }
     dist_txt<-"Two-Parameter Exponential"
@@ -561,7 +592,10 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
     params_txt<-c(distparam_txt,params_txt)
   }
 
+  return(list(loglik,LSQest))
+
   MLEandvar <- MLE.var.covar.select(loglik,LSQest)
+  # return(MLEandvar)
   theta.hat <- MLEandvar[[1]]
   inv.fish  <- MLEandvar[[2]]
 
@@ -579,10 +613,13 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
         conflim[[i]]<-theta.hat[i]*exp(c(-1, 1) * crit * (sqrt(inv.fish[i, i])/theta.hat[i]))
       }
       # Computes back the original scale
-      if((ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius"|| ls=="Power" || ls=="InversePower" || ls=="InversePower2") && i == (ishift+2)){
+      if((dist=="Weibull" || dist=="3PWeibull" || dist=="Lognormal" || dist=="Normal" || dist=="2PExponential") && i == 1){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
       if(ls=="TempHumidity" && i == (ishift+1)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if((ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Power" || ls=="InversePower" || ls=="InversePower2") && i == (ishift+2)){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
       if (ls=="TempNonthermal" && i == (ishift+3)){
@@ -596,10 +633,13 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
       } else if(positivity_v[i]==1){
         conflim[[i]]<-theta.hat[i]*exp(-crit2 * (sqrt(inv.fish[i, i])/theta.hat[i]))
       }
-      if((ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius"|| ls=="Power" || ls=="InversePower" || ls=="InversePower2") && i == (ishift+2)){
+      if((dist=="Weibull" || dist=="3PWeibull" || dist=="Lognormal" || dist=="Normal" || dist=="2PExponential") && i == 1){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
       if(ls=="TempHumidity" && i == (ishift+1)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if((ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Power" || ls=="InversePower" || ls=="InversePower2") && i == (ishift+2)){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
       if (ls=="TempNonthermal" && i == (ishift+3)){
@@ -613,10 +653,13 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
       } else if(positivity_v[i]==1){
         conflim[[i]]<-theta.hat[i]*exp(crit2 * (sqrt(inv.fish[i, i])/theta.hat[i]))
       }
-      if((ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius"|| ls=="Power" || ls=="InversePower" || ls=="InversePower2") && i == (ishift+2)){
+      if((dist=="Weibull" || dist=="3PWeibull" || dist=="Lognormal" || dist=="Normal" || dist=="2PExponential") && i == 1){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
       if(ls=="TempHumidity" && i == (ishift+1)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if((ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" ||  ls=="Power" || ls=="InversePower" || ls=="InversePower2") && i == (ishift+2)){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
       if (ls=="TempNonthermal" && i == (ishift+3)){
@@ -626,10 +669,13 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
     }
     fulllimset[[i]]<-c(theta.hat[i],conflim[[i]])
 
-    if((ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius"|| ls=="Power" || ls=="InversePower" || ls=="InversePower2") && i == (ishift+2)){
+    if((dist=="Weibull" || dist=="3PWeibull" || dist=="Lognormal" || dist=="Normal" || dist=="2PExponential") && i == 1){
       fulllimset[[i]] <- c(exp(theta.hat[i]),conflim[[i]])
     }
     if(ls=="TempHumidity" && i == (ishift+1)){
+      fulllimset[[i]] <- c(exp(theta.hat[i]),conflim[[i]])
+    }
+    if((ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Power" || ls=="InversePower" || ls=="InversePower2") && i == (ishift+2)){
       fulllimset[[i]] <- c(exp(theta.hat[i]),conflim[[i]])
     }
     if (ls=="TempNonthermal" && i == (ishift+3)){
@@ -649,6 +695,12 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
   print(matrix(unlist(fulllimset), nrow = length(unlist(fulllimset))/length(LSQest), ncol = length(LSQest), byrow = FALSE,dimnames = list(c("Life-Stress Parameters Mean",conflim_txt),params_txt)))
 
   # Recompute necessary output
+  if(dist=="Weibull" || dist=="3PWeibull" || dist=="Lognormal" || dist=="Normal" || dist=="2PExponential"){
+    theta.hat[1] <- exp(theta.hat[1])
+  }
+  if(ls=="TempHumidity"){
+    theta.hat[ishift+1] <- exp(theta.hat[ishift+1])
+  }
   if(ls=="Exponential"){
     theta.hat[ishift+2] <- exp(theta.hat[ishift+2])
   }
@@ -658,11 +710,8 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
   if(ls=="Arrhenius"){
     theta.hat[ishift+2] <- exp(theta.hat[ishift+2])
   }
-  if(ls=="Power" || ls=="InversePower" || ls=="InversePower2"){
+  if(ls=="Power"  || ls=="Eyring" || ls=="InversePower" || ls=="InversePower2"){
     theta.hat[ishift+2] <- exp(theta.hat[ishift+2])
-  }
-  if(ls=="TempHumidity"){
-    theta.hat[ishift+1] <- exp(theta.hat[ishift+1])
   }
   if (ls=="TempNonthermal"){
     theta.hat[ishift+3] <- exp(theta.hat[ishift+3])

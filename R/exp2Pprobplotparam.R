@@ -17,6 +17,7 @@ probplotparam.exp2P <- function(xi,F) {
     pb2 <- lm(yfit ~ poly(xfit, 1, raw=TRUE))
     sigma <- 1/summary(pb2)$coefficients[2,1]
     theta <- -sigma*summary(pb2)$coefficients[1,1]
+    SSE <- sum((fitted(pb2) - yfit)^2)
     R2 <- summary(pb2)$r.squared
     # Calculate upper and lower bound of best fit line
     ttfc <- c((theta-sigma*log(1-0.001)),(theta-sigma*log(1-0.999)))
@@ -24,10 +25,11 @@ probplotparam.exp2P <- function(xi,F) {
   if(length(xi) == 1){
     sigma <- 1/xi
     theta <- 0
+    SSE <- 0
     R2 <- 0
     ttfc <- rep(xi,2)
   }
 
   exp2Presults <- matrix(c(theta,sigma), nrow = 1, ncol = 2, byrow = TRUE,dimnames = list(c("2P Exponential Parameter"),c("theta","sigma")))
-  return(list(ttfc,fcB,exp2Presults,R2))
+  return(list(ttfc,fcB,exp2Presults,R2,SSE=SSE))
 }

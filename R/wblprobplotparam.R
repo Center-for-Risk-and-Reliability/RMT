@@ -17,6 +17,7 @@ probplotparam.wbl <- function(xi,R) {
     wblparm  <- lm(yfit ~ poly(xfit, 1, raw=TRUE))
     beta <- summary(wblparm)$coefficients[2,1]
     alpha <- exp(-summary(wblparm)$coefficients[1,1]/beta)
+    SSE <- sum((fitted(wblparm) - yfit)^2)
     R2 <- summary(wblparm)$r.squared
     # Calculate upper and lower bound of best fit line
     intercept <- summary(wblparm)$coefficients[1,1]
@@ -25,10 +26,11 @@ probplotparam.wbl <- function(xi,R) {
   if(length(xi) == 1){
     alpha <- xi
     beta <- NA
+    SSE <- 0
     R2 <- 0
     ttfc <- rep(xi,2)
   }
   wblresults <- matrix(c(alpha,beta), nrow = 1, ncol = 2, byrow = TRUE,dimnames = list(c("Wbl Parameters"),c("alpha", "beta")))
 
-  return(list(ttfc,fcB,wblresults,R2))
+  return(list(ttfc,fcB,wblresults,R2,SSE=SSE))
 }
