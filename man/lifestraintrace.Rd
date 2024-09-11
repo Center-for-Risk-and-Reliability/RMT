@@ -35,17 +35,17 @@ lifestrain.life.trace(strain_amp,E,b,c,sig_f,eps_f,stressunits,options)
   }
   \item{options}{
     Optional input list made up of information known about the mean-stress correction model primarily.  This heading may be left blank if the \emph{Coffin-Mason model} is assumed (default).
-    \deqn{\epsilon_a = \sigma_f'/E (2 N_f)^b + \epsilon_f' (2 N_f)^c}
+    \deqn{\epsilon_a = \frac{\sigma_f'}{E} (2 N_f)^b + \epsilon_f' (2 N_f)^c}
     Other models may be applied by entering one of the following as \code{mean_stress_corr} along with other necessary properites such as mean stress \eqn{\sigma_m} (enter as \code{Sm}), stress amplitude \eqn{\sigma_a} (enter as \code{stress_amp}, the Walker parameter \eqn{\gamma} (enter as \code{gam}, and load ratio \eqn{R} (enter as \code{R} or you may enter stress range as a vector \code{stressrange})).  These options include:
     \enumerate{
         \item \strong{Morrow mean-stress correction} - (enter as "Morrow")
-            \deqn{\epsilon_a = (\sigma_f' - \sigma_m)/E (2 N_f)^b + \epsilon_f' (2 N_f)^c}
+            \deqn{\epsilon_a = \frac{\sigma_f' - \sigma_m}{E} (2 N_f)^b + \epsilon_f' (2 N_f)^c}
         \item \strong{Modified Morrow mean-stress correction} - (enter as "ModifiedMorrow")
-            \deqn{\epsilon_a = (\sigma_f' - \sigma_m)/E (2 N_f)^b + \epsilon_f' ((\sigma_f' - \sigma_m)/\sigma_f')^(c/b) (2 N_f)^c}
+            \deqn{\epsilon_a = \frac{\sigma_f' - \sigma_m}{E} (2 N_f)^b + \epsilon_f' (\frac{\sigma_f' - \sigma_m}{\sigma_f'})^{\frac{c}{b}} (2 N_f)^c}
         \item \strong{Smith-Watson-Topper mean-stress correction} - (enter as "SWT")
-            \deqn{\sigma_max \epsilon_a = (\sigma_a + \sigma_m) \epsilon_a = (\sigma_f'^2)/E (2 N_f)^2b + \sigma_f'\epsilon_f' (2 N_f)^(b+c)}
+            \deqn{\sigma_{max} \epsilon_a = (\sigma_a + \sigma_m) \epsilon_a = \frac{\sigma_f'^2}{E} (2 N_f)^{2b} + \sigma_f'\epsilon_f' (2 N_f)^{b+c}}
         \item \strong{Walker mean-stress correction} - (enter as "Walker")
-            \deqn{\epsilon_a = (\sigma_f'/E) ((1 - R)/2)^(1-\gamma) (2 N_f)^b + \epsilon_f' ((1 - R)/2)^((c/b)(1-\gamma)) (2 N_f)^c}
+            \deqn{\epsilon_a = \left(\frac{\sigma_f'}{E}\right) \left(\frac{1 - R}{2}\right)^{1-\gamma} (2 N_f)^b + \epsilon_f' \left(\frac{1 - R}{2}\right)^{\frac{c}{b}\left(1-\gamma\right)} (2 N_f)^c}
     }
   }
 }
@@ -62,7 +62,9 @@ Outputs the strain-life estimates as a list.
   }
 }
 \references{
-%% ~put references to the literature/web site here ~
+Modarres, M., Amiri, M., Jackson, C.  (2017)  Probabilistic Physics of Failure Approach to Reliability: Modeling, Accelerated Testing, Prognosis and Reliability Assessment.  Center for Risk and Reliability
+
+Banantine, J., Corner, J., & Handrock, J. (1990). Fundamentals of Metal Fatigue Analysis. Prentice Hall
 }
 \author{
 Reuel Smith, (2022)

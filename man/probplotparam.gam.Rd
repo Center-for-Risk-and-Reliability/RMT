@@ -69,7 +69,7 @@ Dr. Reuel Smith (2023)
 Xi1 <- c(70,71,75,78,89)
 Rc1 <- c(80,80,84)
 x_R <- plotposit.blom(i = rankcalc(xi = Xi1, rc = Rc1), xi = Xi1, rc = Rc1)
-probplotparam.gam(x_R[,1], x_R[,3])
+probplotparam.gam(x_R[,1], x_R[,2])
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory (show via RShowDoc("KEYWORDS")):
