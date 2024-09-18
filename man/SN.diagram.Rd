@@ -8,7 +8,7 @@ Stress-Life (S-N) Diagram
 Generates the stress-life (or S-N) diagram based on various stress and fatigue life input data.
 }
 \usage{
-SN.diagram(input_type,dat,stressunits,options)
+SN.diagram(input_type,dat,stressunits,options,confid)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -79,13 +79,19 @@ The code will produce the S-N diagram with a 95\% confidence bound about the mea
   The given value for the stress for which a life estimate is required.  When \code{input_type} is \code{2} or \code{3}, this value defaults to the equivalent stress amplitude \eqn{Sar} for non-zero mean stress.
 }
 \item{Nequiv}{
-  The estimated value of life in cycles at \code{Strace} or \eqn{S_{ar}} \code{Sar}.
+  The estimated value of stress-life in cycles-to-failure at \code{Strace} or \eqn{S_{ar}} \code{Sar}.
+}
+\item{Nequivbounds}{
+  The estimated confidence bounds of stress-life in cycles-to-failure at \code{Strace} or \eqn{S_{ar}} \code{Sar} stress-life in cycles-to-failure.
 }
 \item{Ntrace}{
   The given value for the fatigue life cycle for which an alternating stress estimate is required.
 }
 \item{Sequiv}{
   The estimated value of alternating stress at \code{Ntrace}.
+}
+\item{Sequivbounds}{
+  The estimated confidence bounds of alternating stress at \code{Ntrace} stress-life in cycles-to-failure.
 }
 }
 \references{
@@ -94,7 +100,7 @@ Modarres, M., Amiri, M., Jackson, C.  (2017)  Probabilistic Physics of Failure A
 Banantine, J., Corner, J., & Handrock, J. (1990). Fundamentals of Metal Fatigue Analysis. Prentice Hall
 }
 \author{
-Reuel Smith (2022)
+Reuel Smith (2022-2024)
 }
 \note{}
 
