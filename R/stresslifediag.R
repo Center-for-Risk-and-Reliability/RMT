@@ -391,54 +391,78 @@ SN.diagram <- function(input_type,dat,stressunits=1,options=NULL,confid = 0.95){
     }
 
     if(sum(length(Ncurve_trace1),length(Ncurve_trace2))==0){
-      df<-data.frame(S=c(S_,rep(NA,length(runoff_S)+length(Ncurve))), N = c(N_,rep(NA,length(runoff_S)+length(Ncurve))), Srunoff=c(rep(NA,length(S_)),runoff_S,rep(NA,length(Ncurve))), Nrunoff = c(rep(NA,length(N_)),runoff_N,rep(NA,length(Ncurve))), Sline = c(rep(NA,length(S_)+length(runoff_N)),Scurve), Slineupper = c(rep(NA,length(S_)+length(runoff_N)),Scurvehigh), Slinelower = c(rep(NA,length(S_)+length(runoff_N)),Scurvelow), Nline = c(rep(NA,length(S_)+length(runoff_N)),Ncurve), data_points = c(rep("failed",length(S_)),rep("survived",length(runoff_N)),rep(NA,length(Ncurve))), datapt_or_curvefit = c(rep(NA,length(S_)+length(runoff_N)),rep("curvefit",length(Ncurve))))
+      df1<-data.frame(S = S_,N = N_)
+      df2<-data.frame(Srunoff = runoff_S,Nrunoff = runoff_N)
+      df3<-data.frame(Sline = Scurve,Slinelower = Scurvelow,Slineupper = Scurvehigh,Nline = Ncurve)
     }
     if(length(Ncurve_trace1)>0 && length(Ncurve_trace2)>0){
-      df<-data.frame(S=c(S_,rep(NA,6+length(runoff_S)+length(Ncurve))), N = c(N_,rep(NA,6+length(runoff_S)+length(Ncurve))), Srunoff=c(rep(NA,length(S_)),runoff_S,rep(NA,6+length(Ncurve))), Nrunoff = c(rep(NA,length(N_)),runoff_N,rep(NA,6+length(Ncurve))), Sline = c(rep(NA,length(S_)+length(runoff_N)),Scurve,rep(NA,6)), Slineupper = c(rep(NA,length(S_)+length(runoff_N)),Scurvehigh,rep(NA,6)), Slinelower = c(rep(NA,length(S_)+length(runoff_N)),Scurvelow,rep(NA,6)), Nline = c(rep(NA,length(S_)+length(runoff_N)),Ncurve,rep(NA,6)), Straceline1 = c(rep(NA,length(S_)+length(runoff_N)+length(Scurve)),Scurve_trace1,rep(NA,3)), Ntraceline1 = c(rep(NA,length(S_)+length(runoff_N)+length(Ncurve)),Ncurve_trace1,rep(NA,3)), Straceline2 = c(rep(NA,3+length(S_)+length(runoff_N)+length(Scurve)),Scurve_trace2), Ntraceline2 = c(rep(NA,3+length(S_)+length(runoff_N)+length(Ncurve)),Ncurve_trace2), data_points = c(rep("failed",length(S_)),rep("survived",length(runoff_N)),rep(NA,6+length(Ncurve))), datapt_or_curvefit = c(rep(NA,length(S_)+length(runoff_N)),rep("curvefit",length(Ncurve)),rep(NA,6)))
+      df1<-data.frame(S = S_,N = N_)
+      df2<-data.frame(Srunoff = runoff_S,Nrunoff = runoff_N)
+      df3<-data.frame(Sline = Scurve,Slinelower = Scurvelow,Slineupper = Scurvehigh,Nline = Ncurve)
+      df4<-data.frame(Straceline1 = Scurve_trace1,Ntraceline1 = Ncurve_trace1)
+      df5<-data.frame(Straceline2 = Scurve_trace2,Ntraceline2 = Ncurve_trace2)
     }
     if(length(Ncurve_trace1)>0 && length(Ncurve_trace2)==0){
-      df<-data.frame(S=c(S_,rep(NA,3+length(runoff_S)+length(Ncurve))), N = c(N_,rep(NA,3+length(runoff_S)+length(Ncurve))), Srunoff=c(rep(NA,length(S_)),runoff_S,rep(NA,3+length(Ncurve))), Nrunoff = c(rep(NA,length(N_)),runoff_N,rep(NA,3+length(Ncurve))), Sline = c(rep(NA,length(S_)+length(runoff_N)),Scurve,rep(NA,3)), Slineupper = c(rep(NA,length(S_)+length(runoff_N)),Scurvehigh,rep(NA,3)), Slinelower = c(rep(NA,length(S_)+length(runoff_N)),Scurvelow,rep(NA,3)), Nline = c(rep(NA,length(S_)+length(runoff_N)),Ncurve,rep(NA,3)), Straceline1 = c(rep(NA,length(S_)+length(runoff_N)+length(Scurve)),Scurve_trace1), Ntraceline1 = c(rep(NA,length(S_)+length(runoff_N)+length(Ncurve)),Ncurve_trace1), data_points = c(rep("failed",length(S_)),rep("survived",length(runoff_N)),rep(NA,3+length(Ncurve))), datapt_or_curvefit = c(rep(NA,length(S_)+length(runoff_N)),rep("curvefit",length(Ncurve)),rep(NA,3)))
+      df1<-data.frame(S = S_,N = N_)
+      df2<-data.frame(Srunoff = runoff_S,Nrunoff = runoff_N)
+      df3<-data.frame(Sline = Scurve,Slinelower = Scurvelow,Slineupper = Scurvehigh,Nline = Ncurve)
+      df4<-data.frame(Straceline1 = Scurve_trace1,Ntraceline1 = Ncurve_trace1)
     }
     if(length(Ncurve_trace1)==0 && length(Ncurve_trace2)>0){
-      df<-data.frame(S=c(S_,rep(NA,3+length(runoff_S)+length(Ncurve))), N = c(N_,rep(NA,3+length(runoff_S)+length(Ncurve))), Srunoff=c(rep(NA,length(S_)),runoff_S,rep(NA,3+length(Ncurve))), Nrunoff = c(rep(NA,length(N_)),runoff_N,rep(NA,3+length(Ncurve))), Sline = c(rep(NA,length(S_)+length(runoff_N)),Scurve,rep(NA,3)), Slineupper = c(rep(NA,length(S_)+length(runoff_N)),Scurvehigh,rep(NA,3)), Slinelower = c(rep(NA,length(S_)+length(runoff_N)),Scurvelow,rep(NA,3)), Nline = c(rep(NA,length(S_)+length(runoff_N)),Ncurve,rep(NA,3)), Straceline2 = c(rep(NA,length(S_)+length(runoff_N)+length(Scurve)),Scurve_trace2), Ntraceline2 = c(rep(NA,length(S_)+length(runoff_N)+length(Ncurve)),Ncurve_trace2), data_points = c(rep("failed",length(S_)),rep("survived",length(runoff_N)),rep(NA,3+length(Ncurve))), datapt_or_curvefit = c(rep(NA,length(S_)+length(runoff_N)),rep("curvefit",length(Ncurve)),rep(NA,3)))
+      df1<-data.frame(S = S_,N = N_)
+      df2<-data.frame(Srunoff = runoff_S,Nrunoff = runoff_N)
+      df3<-data.frame(Sline = Scurve,Slinelower = Scurvelow,Slineupper = Scurvehigh,Nline = Ncurve)
+      df5<-data.frame(Straceline2 = Scurve_trace2,Ntraceline2 = Ncurve_trace2)
     }
   } else {
     # No upper and lower bounds for two points
     if(sum(length(Ncurve_trace1),length(Ncurve_trace2))==0){
-      df<-data.frame(S=c(S_,rep(NA,length(runoff_S)+length(Ncurve))), N = c(N_,rep(NA,length(runoff_S)+length(Ncurve))), Srunoff=c(rep(NA,length(S_)),runoff_S,rep(NA,length(Ncurve))), Nrunoff = c(rep(NA,length(N_)),runoff_N,rep(NA,length(Ncurve))), Sline = c(rep(NA,length(S_)+length(runoff_N)),Scurve), Nline = c(rep(NA,length(S_)+length(runoff_N)),Ncurve), data_points = c(rep("failed",length(S_)),rep("survived",length(runoff_N)),rep(NA,length(Ncurve))), datapt_or_curvefit = c(rep(NA,length(S_)+length(runoff_N)),rep("curvefit",length(Ncurve))))
+      df1<-data.frame(S = S_,N = N_)
+      df2<-data.frame(Srunoff = runoff_S,Nrunoff = runoff_N)
+      df3<-data.frame(Sline = Scurve,Nline = Ncurve)
     }
     if(length(Ncurve_trace1)>0 && length(Ncurve_trace2)>0){
-      df<-data.frame(S=c(S_,rep(NA,6+length(runoff_S)+length(Ncurve))), N = c(N_,rep(NA,6+length(runoff_S)+length(Ncurve))), Srunoff=c(rep(NA,length(S_)),runoff_S,rep(NA,6+length(Ncurve))), Nrunoff = c(rep(NA,length(N_)),runoff_N,rep(NA,6+length(Ncurve))), Sline = c(rep(NA,length(S_)+length(runoff_N)),Scurve,rep(NA,6)), Nline = c(rep(NA,length(S_)+length(runoff_N)),Ncurve,rep(NA,6)), Straceline1 = c(rep(NA,length(S_)+length(runoff_N)+length(Scurve)),Scurve_trace1,rep(NA,3)), Ntraceline1 = c(rep(NA,length(S_)+length(runoff_N)+length(Ncurve)),Ncurve_trace1,rep(NA,3)), Straceline2 = c(rep(NA,3+length(S_)+length(runoff_N)+length(Scurve)),Scurve_trace2), Ntraceline2 = c(rep(NA,3+length(S_)+length(runoff_N)+length(Ncurve)),Ncurve_trace2), data_points = c(rep("failed",length(S_)),rep("survived",length(runoff_N)),rep(NA,6+length(Ncurve))), datapt_or_curvefit = c(rep(NA,length(S_)+length(runoff_N)),rep("curvefit",length(Ncurve)),rep(NA,6)))
+      df1<-data.frame(S = S_,N = N_)
+      df2<-data.frame(Srunoff = runoff_S,Nrunoff = runoff_N)
+      df3<-data.frame(Sline = Scurve,Nline = Ncurve)
+      df4<-data.frame(Straceline1 = Scurve_trace1,Ntraceline1 = Ncurve_trace1)
+      df5<-data.frame(Straceline2 = Scurve_trace2,Ntraceline2 = Ncurve_trace2)
     }
     if(length(Ncurve_trace1)>0 && length(Ncurve_trace2)==0){
-      df<-data.frame(S=c(S_,rep(NA,3+length(runoff_S)+length(Ncurve))), N = c(N_,rep(NA,3+length(runoff_S)+length(Ncurve))), Srunoff=c(rep(NA,length(S_)),runoff_S,rep(NA,3+length(Ncurve))), Nrunoff = c(rep(NA,length(N_)),runoff_N,rep(NA,3+length(Ncurve))), Sline = c(rep(NA,length(S_)+length(runoff_N)),Scurve,rep(NA,3)), Nline = c(rep(NA,length(S_)+length(runoff_N)),Ncurve,rep(NA,3)), Straceline1 = c(rep(NA,length(S_)+length(runoff_N)+length(Scurve)),Scurve_trace1), Ntraceline1 = c(rep(NA,length(S_)+length(runoff_N)+length(Ncurve)),Ncurve_trace1), data_points = c(rep("failed",length(S_)),rep("survived",length(runoff_N)),rep(NA,3+length(Ncurve))), datapt_or_curvefit = c(rep(NA,length(S_)+length(runoff_N)),rep("curvefit",length(Ncurve)),rep(NA,3)))
+      df1<-data.frame(S = S_,N = N_)
+      df2<-data.frame(Srunoff = runoff_S,Nrunoff = runoff_N)
+      df3<-data.frame(Sline = Scurve,Nline = Ncurve)
+      df4<-data.frame(Straceline1 = Scurve_trace1,Ntraceline1 = Ncurve_trace1)
     }
     if(length(Ncurve_trace1)==0 && length(Ncurve_trace2)>0){
-      df<-data.frame(S=c(S_,rep(NA,3+length(runoff_S)+length(Ncurve))), N = c(N_,rep(NA,3+length(runoff_S)+length(Ncurve))), Srunoff=c(rep(NA,length(S_)),runoff_S,rep(NA,3+length(Ncurve))), Nrunoff = c(rep(NA,length(N_)),runoff_N,rep(NA,3+length(Ncurve))), Sline = c(rep(NA,length(S_)+length(runoff_N)),Scurve,rep(NA,3)), Nline = c(rep(NA,length(S_)+length(runoff_N)),Ncurve,rep(NA,3)), Straceline2 = c(rep(NA,length(S_)+length(runoff_N)+length(Scurve)),Scurve_trace2), Ntraceline2 = c(rep(NA,length(S_)+length(runoff_N)+length(Ncurve)),Ncurve_trace2), data_points = c(rep("failed",length(S_)),rep("survived",length(runoff_N)),rep(NA,3+length(Ncurve))), datapt_or_curvefit = c(rep(NA,length(S_)+length(runoff_N)),rep("curvefit",length(Ncurve)),rep(NA,3)))
+      df1<-data.frame(S = S_,N = N_)
+      df2<-data.frame(Srunoff = runoff_S,Nrunoff = runoff_N)
+      df3<-data.frame(Sline = Scurve,Nline = Ncurve)
+      df5<-data.frame(Straceline2 = Scurve_trace2,Ntraceline2 = Ncurve_trace2)
     }
   }
 
-  plotout<-suppressWarnings(ggplot() +
-    geom_point(data=df, aes(N,S), colour = 'red', size = 1.9) +
-    geom_point(data=df, aes(Nrunoff,Srunoff), colour = 'green4', shape=17, size = 1.9) +
-    geom_line(data=df, aes(Nline,Sline), colour = "black", size = 0.9) +
+  plotout<-ggplot() +
+    geom_point(data=df1, aes(N,S), colour = 'red', size = 1.9) +
+    geom_point(data=df2, aes(Nrunoff,Srunoff), colour = 'green4', shape=17, size = 1.9) +
+    geom_line(data=df3, aes(Nline,Sline), colour = "black", size = 0.9) +
     scale_x_continuous(trans = 'log10') +
     scale_y_continuous(trans = 'log10') +
     annotation_logticks() +
     xlab(Xlab) +
-    ylab(Ylab))
+    ylab(Ylab)
 
   # Plot boundary line if data is greater than 2
   if(length(S_)>2){
-    plotout<-plotout + geom_ribbon(data=df, aes(ymin = Slinelower,ymax = Slineupper,x=Nline), alpha=0.25,fill = "red")
+    plotout<-plotout + geom_ribbon(data=df3, aes(ymin = Slinelower,ymax = Slineupper,x=Nline), alpha=0.25,fill = "red")
   }
   # Plot stress trace if provided
   if(length(Ncurve_trace1)>0){
-    plotout<-plotout + geom_line(data=df, aes(Ntraceline1,Straceline1), colour = "red", size = 0.9, linetype = "dashed")
+    plotout<-plotout + geom_line(data=df4, aes(Ntraceline1,Straceline1), colour = "red", size = 0.9, linetype = "dashed")
   }
   # Plot cycle trace if provided
   if(length(Ncurve_trace2)>0){
-    plotout<-plotout + geom_line(data=df, aes(Ntraceline2,Straceline2), colour = "blue", size = 0.9, linetype = "dashed")
+    plotout<-plotout + geom_line(data=df5, aes(Ntraceline2,Straceline2), colour = "blue", size = 0.9, linetype = "dashed")
   }
 
   # Produce some output text that summarizes the results
@@ -448,14 +472,14 @@ SN.diagram <- function(input_type,dat,stressunits=1,options=NULL,confid = 0.95){
   if(is.na(dat)[1]==TRUE && length(options$A)==1 && length(options$b)==1){
     cat(c("The given S-N curve is S = ",A," x N_f^",b,".\n"),sep = "")
   }
-  if((length(runoff_S)>=2 && length(S_)<=2)|| (length(options$Su)==1 && length(options$Se)<1)){
+  if((length(runoff_S)>=2 && length(S_)==2)|| (length(options$Su)==1 && length(options$Se)<1)){
     cat(c("The estimate for endurance limit is S_e = ",Se," ",stressunits,".\n\n"),sep = "")
   }
-  if((length(runoff_S)>=2 && length(S_)>2)|| (length(options$Su)==1 && length(options$Se)<1)){
+  if((length(runoff_S)>=2 && length(S_) > 2)|| (length(options$Su)==1 && length(options$Se)<1)){
     cat(c("The estimate for endurance limit is S_e = ",Se," ",stressunits," (",100*confid,"%: ",min(Se_bounds)," ",stressunits,", ",max(Se_bounds)," ",stressunits,").\n\n"),sep = "")
   }
   if(isFALSE(missing(options))){
-    if(length(options$Se)==1 && length(S_)<=2){
+    if(length(options$Se)==1 && length(S_)==2){
       cat(c("The given endurance limit is S_e = ",Se," ",stressunits,".\n\n"),sep = "")
     }
     if(length(options$Se)==1 && length(S_)>2){
@@ -480,25 +504,34 @@ SN.diagram <- function(input_type,dat,stressunits=1,options=NULL,confid = 0.95){
   }
 
 
+  # RETURN: S-N diagram, A, b, Se, and Su only
   if(sum(length(S_trace),length(N_trace),length(Sar))==0){
     return(list(SNdiag = plotout,A = A,b = b,Se = Se,Su = Su))
   }
 
-  if(length(options$Ntrace)==1 && length(S_)<=2){
+  # RETURN: S-N diagram, A, b, Se, Su, and Sequiv if Ntrace and only Ntrace exists
+  if(length(options$Ntrace)==1 && length(S_trace)==0 && length(S_)<=2){
     return(list(SNdiag = plotout,A = A,b = b,Se = Se,Su = Su, Ntrace = N_trace, Sequiv = Sar1))
   }
-  if(length(options$Ntrace)==1 && length(S_)>2){
+  # RETURN: S-N diagram, A, b, Se, Su, and Sequiv & Sequiv bounds if Ntrace and only Ntrace exists and length(S_) > 2
+  # Set Strace as NULL or length(0)
+  if(length(options$Ntrace)==1 && length(S_trace)==0 && length(S_)>2){
     return(list(SNdiag = plotout,A = A,b = b,Se = Se,Su = Su, Ntrace = N_trace, Sequiv = Sar1, Sequivbounds = Sar1_bounds))
   }
-  if((length(options$Strace)==1 && options$Strace > Se && length(S_)<=2) || (input_type==2 || input_type==3)){
+  # RETURN: S-N diagram, A, b, Se, Su, and Nequiv if Strace and only Strace exists
+  if((length(options$Strace)==1 && options$Strace > Se && length(N_trace)==0 && length(S_)<=2) || (input_type==2 || input_type==3)){
     return(list(SNdiag = plotout,A = A,b = b,Se = Se,Su = Su, Strace = S_trace, Nequiv = N_Sar1))
   }
-  if((length(options$Strace)==1 && options$Strace > Se && length(S_)>2) || (input_type==2 || input_type==3)){
+  # RETURN: S-N diagram, A, b, Se, Su, and Nequiv & Nequiv bounds if Strace and only Strace exists and length(S_) > 2
+  # Set Ntrace as NULL or length(0)
+  if((length(options$Strace)==1 && options$Strace > Se && length(N_trace)==0 && length(S_)>2) || (input_type==2 || input_type==3)){
     return(list(SNdiag = plotout,A = A,b = b,Se = Se,Su = Su, Strace = S_trace, Nequiv = N_Sar1, Nequivbounds = N_Sar1_bounds))
   }
-  if(length(options$Ntrace)==1 && length(options$Strace)==1 && options$Strace > Se && length(S_)<=2){
+  # RETURN: S-N diagram, A, b, Se, Su, Sequiv, and Nequiv if Strace and Ntrace exists
+  if(length(options$Ntrace)==1 && length(options$Strace)==1 && options$Strace > Se && length(S_)==2){
     return(list(SNdiag = plotout,A = A,b = b,Se = Se,Su = Su, Ntrace = N_trace, Sequiv = Sar1, Strace = S_trace, Nequiv = N_Sar1))
   }
+  # RETURN: S-N diagram, A, b, Se, Su, and Nequiv & Nequiv bounds if Strace and Ntrace exists and length(S_) > 2
   if(length(options$Ntrace)==1 && length(options$Strace)==1 && options$Strace > Se && length(S_)>2){
     return(list(SNdiag = plotout,A = A,b = b,Se = Se,Su = Su, Ntrace = N_trace, Sequiv = Sar1, Sequivbounds = Sar1_bounds, Strace = S_trace, Nequiv = N_Sar1, Nequivbounds = N_Sar1_bounds))
   }
