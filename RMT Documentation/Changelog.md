@@ -1,6 +1,7 @@
 # Change Log for RMT
 **Version 1.3.0.1** (September 18th, 2024)
 * Bug fix update to the S-N diagram tool (**SN.diagram**). An issue with the **Ntrace** and **Strace** upper and lower estimates for equivalent alternating stress and equivalent fatigue cycle output respectively has been resolved.  Also an issue causing several unnecessary warnings has been resolved. 
+
 **Version 1.3.0.0** (September 11th, 2024)
 * Minor update to the S-N diagram tool (**SN.diagram**).  Tool now includes a confidence bound input (confid) which determines the upper and lower bounds of the S-N curve per the given data.  Tool also can calculate the upper and lower estimates of a given stress and/or fatigue cycle-to-failure trace.  That is, a fatigue cycle trace (**Ntrace**) will compute the equivalent alternating stress and its upper and lower confidence bounds and an alternating stress trace (**Strace**) will do likewise with the equivalent fatigue cycle and its upper and lower confidence bounds.
 * Major update to probability plotting tools.  RMT can now estimate Three Parameter or Generalized Gamma Life Distribution (probplot.gam3P and probplotparam.gam3P) making eleven probability plot types total.  Some estimate refinements were performed on the Gamma and Three Parameter Weibull plotting and estimation tools.  Notably for the Gamma probability plot it is now a single probability plot.  Finally, all probability plots can be toggled between least square estimates and maximum likelihood estimates.
