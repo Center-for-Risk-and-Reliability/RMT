@@ -1,4 +1,7 @@
 # Change Log for RMT
+**Version 1.3.0.2** (September 19th, 2024)
+* Bug fix update to the Stress-Strain Parameters tool (**stress_strain.params**). An issue causing several unnecessary warnings has been resolved.  Also the tool no longer calls nls.multstart library.
+  
 **Version 1.3.0.1** (September 18th, 2024)
 * Bug fix update to the S-N diagram tool (**SN.diagram**). An issue with the **Ntrace** and **Strace** upper and lower estimates for equivalent alternating stress and equivalent fatigue cycle output respectively has been resolved.  Also an issue causing several unnecessary warnings has been resolved. 
 
