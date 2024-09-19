@@ -1,10 +1,9 @@
 # Stress-Strain Parameters
-# Developed by Reuel Smith, 2022
+# Developed by Reuel Smith, 2022-2024
 
 stress_strain.params <- function(dat,E,stressunits,options){
   # dat is entered as a list made up of stress, strain, and cycles in that order
   library(pracma)
-  library(nls.multstart)
   library(ggplot2)
 
   if(missing(dat)){
@@ -70,13 +69,20 @@ stress_strain.params <- function(dat,E,stressunits,options){
   # Plotting Output
   # =======================================
   # For stress-strain curve
-  stressline <- linspace(0,max(stress),100)
+  # Locate a better maximum stress that overlays the data
+  if(max(strain) < ((max(stress)/E) + (max(stress)/K)^(1/n))){
+    stressline <- linspace(0,max(stress),100)
+  } else{
+    maxstress <- hysteresisloop.plot(E,K,n,stressunits,list(maxstrain = max(strain)))$maxstress
+    stressline <- linspace(0,maxstress,100)
+  }
   strainline <- (stressline/E) + (stressline/K)^(1/n)
-  df1 <- data.frame(strain_ = c(strainline,rep(NA,length(strain))), stress_ = c(stressline,rep(NA,length(stress))), strain_data = c(rep(NA,length(strainline)),strain), stress_data = c(rep(NA,length(stressline)),stress), data_points = c(rep("curve",length(stressline)),rep("data",length(stress))))
+  df1 <- data.frame(strain_data = strain, stress_data = stress)
+  df2 <- data.frame(strain_ = strainline, stress_ = stressline)
 
   plotout1<-ggplot() +
     geom_point(data=df1, aes(strain_data,stress_data), colour = 'red', size = 1.9) +
-    geom_line(data=df1, aes(strain_,stress_), colour = "black", size = 0.9) +
+    geom_line(data=df2, aes(strain_,stress_), colour = "black", size = 0.9) +
     xlab(Xlab1) +
     ylab(Ylab1)
 
@@ -146,10 +152,11 @@ stress_strain.params <- function(dat,E,stressunits,options){
   }
   totalstrain <- elasticstrain + plasticstrain
 
-  df2 <- data.frame(reversals_dat = c(2*cycles,rep(NA,300)), totstrain_dat = c(strain,rep(NA,300)), reversals = c(rep(NA,length(cycles)),revline,revline,revline), totstrain = c(rep(NA,length(strain)),totalstrain,elasticstrain,plasticstrain), strain_lines = c(rep(NA,length(strain)),rep("Total Strain",length(totalstrain)),rep("Elastic Strain",length(elasticstrain)),rep("Plastic Strain",length(plasticstrain))))
+  df3 <- data.frame(reversals_dat = 2*cycles, totstrain_dat = strain)
+  df4 <- data.frame(reversals = c(revline,revline,revline), totstrain = c(totalstrain,elasticstrain,plasticstrain), strain_lines = c(rep("Total Strain",length(totalstrain)),rep("Elastic Strain",length(elasticstrain)),rep("Plastic Strain",length(plasticstrain))))
   plotout2<-ggplot() +
-    geom_point(data=df2, aes(reversals_dat,totstrain_dat), colour = 'red', size = 1.9) +
-    geom_line(data=df2, aes(reversals, totstrain, colour = strain_lines), size = 0.9) +
+    geom_point(data=df3, aes(reversals_dat,totstrain_dat), colour = 'red', size = 1.9) +
+    geom_line(data=df4, aes(reversals, totstrain, colour = strain_lines), size = 0.9) +
     scale_x_continuous(trans = 'log10') +
     scale_y_continuous(trans = 'log10') +
     annotation_logticks() +
