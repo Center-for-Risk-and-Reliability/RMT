@@ -1,5 +1,5 @@
 # Stress Concentration Factor Calculator
-# Developed by Reuel Smith, 2022
+# Developed by Reuel Smith, 2022-2024
 
 stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
   # Calculates stress concentration factor Kt based on Peterson's Stress Concentration Factors
@@ -10,9 +10,9 @@ stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
   # RB1. Rectangular Bar with a Semi-circle Edge Notch (input width W and radius r)
   # Chart 2.9, 2.30a in Peterson's Stress Concentration Factors
   if(geometry == "rect_1semicirc_edge" && length(dimensions$W) == 1 && length(dimensions$r) == 1){
-    if(dimensions$r/dimensions$W >= 0.3){
-      stop('r/W must be less than 0.3 for this geometry.')
-    }
+    # if(dimensions$r/dimensions$W >= 0.3){
+    #   stop('r/W must be less than 0.3 for this geometry.')
+    # }
     x <- dimensions$r/dimensions$W
 
     if(loadtype == 1){
@@ -34,9 +34,9 @@ stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
     if(2*dimensions$r >= dimensions$W){
       stop('Radius exceeds the width of this geometry.')
     }
-    if(dimensions$r > 0.25*dimensions$W){
-      stop('r/W must be less than 0.5 for this geometry.')
-    }
+    # if(dimensions$r > 0.25*dimensions$W){
+    #   stop('r/W must be less than 0.5 for this geometry.')
+    # }
 
     if(loadtype == 1){
       # Tension
@@ -112,17 +112,20 @@ stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
   # RB4. Rectangular Bar with Opposite Edge U-Notches (input width W, radius r, and U depth d)
   # Chart 2.4, 2.25 in Peterson's Stress Concentration Factors
   if(geometry == "rect_2U_edge" && length(dimensions$W) == 1 && length(dimensions$r) == 1 && length(dimensions$d) == 1){
-    if(dimensions$d/dimensions$W > 0.25 || dimensions$d/dimensions$W < 0.02 || dimensions$d/dimensions$r < 0.1 || dimensions$d/dimensions$r > 50) {
-      stop('0.02 < d/W < 0.25 and 0.1 < d/r < 50 for this geometry.')
+    # if(dimensions$d/dimensions$W > 0.25 || dimensions$d/dimensions$W < 0.02 || dimensions$d/dimensions$r < 0.1 || dimensions$d/dimensions$r > 50) {
+    #   stop('0.02 < d/W < 0.25 and 0.1 < d/r < 50 for this geometry.')
+    # }
+    if(dimensions$d/dimensions$r < 0.1 || dimensions$d/dimensions$r > 50) {
+      stop('0.1 < d/r < 50 for this geometry.')
     }
     x <- (2*dimensions$d)/dimensions$W
     y <- dimensions$d/dimensions$r
 
     if(loadtype == 1){
       # Tension
-      if(dimensions$d/dimensions$W > 0.25 || dimensions$d/dimensions$W < 0.02 || y < 0.1 || y > 50) {
-        stop('0.02 < d/W < 0.25 and 0.1 < d/r < 50 for this geometryy.')
-      }
+      # if(dimensions$d/dimensions$W > 0.25 || dimensions$d/dimensions$W < 0.02 || y < 0.1 || y > 50) {
+      #   stop('0.02 < d/W < 0.25 and 0.1 < d/r < 50 for this geometryy.')
+      # }
       if(y == 1){
         C1 <- 3.065
         C2 <- -3.472
@@ -145,7 +148,7 @@ stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
     if(loadtype == 2){
       # Bending
       if(dimensions$d/dimensions$W > 0.25 || dimensions$d/dimensions$W < 0.02 || y < 0.1 || y > 50) {
-        stop('0.02 < d/W < 0.25 and 0.1 < d/r < 50 for this geometryy.')
+        stop('0.02 < d/W < 0.25 and 0.1 < d/r < 50 for this geometry.')
       }
       if(y == 1){
         C1 <- 3.065
@@ -181,48 +184,60 @@ stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
     if(dimensions$alp > 150  || !(setequal((2*dimensions$d/dimensions$w),0.4) || !(setequal((2*dimensions$d/dimensions$w),2/3))) || dimensions$d/dimensions$r <= 1 || dimensions$d/dimensions$r > 50){
       stop('alpha < 150, 2d/w = 0.4 or 0.667, and 1 < d/r < 50 for this geometry.')
     }
-    if(dimensions$d/dimensions$r < 2){
-      C1 <- 0.955 + 2.169*sqrt(dimensions$d/dimensions$r) + 0.081*(dimensions$d/dimensions$r)
-      C2 <- -1.557 - 4.046*sqrt(dimensions$d/dimensions$r) + 1.032*(dimensions$d/dimensions$r)
-      C3 <- 4.013 + 0.424*sqrt(dimensions$d/dimensions$r) - 0.748*(dimensions$d/dimensions$r)
-      C4 <- -2.461 + 1.538*sqrt(dimensions$d/dimensions$r) - 0.236*(dimensions$d/dimensions$r)
+
+    if(loadtype == 1){
+      # Tension
+      if(dimensions$d/dimensions$r < 2){
+        C1 <- 0.955 + 2.169*sqrt(dimensions$d/dimensions$r) + 0.081*(dimensions$d/dimensions$r)
+        C2 <- -1.557 - 4.046*sqrt(dimensions$d/dimensions$r) + 1.032*(dimensions$d/dimensions$r)
+        C3 <- 4.013 + 0.424*sqrt(dimensions$d/dimensions$r) - 0.748*(dimensions$d/dimensions$r)
+        C4 <- -2.461 + 1.538*sqrt(dimensions$d/dimensions$r) - 0.236*(dimensions$d/dimensions$r)
+      }
+      if(dimensions$d/dimensions$r >= 2){
+        C1 <- 1.037 + 1.991*sqrt(dimensions$d/dimensions$r) + 0.002*(dimensions$d/dimensions$r)
+        C2 <- -1.886 - 2.181*sqrt(dimensions$d/dimensions$r) - 0.048*(dimensions$d/dimensions$r)
+        C3 <- 0.649 + 1.086*sqrt(dimensions$d/dimensions$r) + 0.142*(dimensions$d/dimensions$r)
+        C4 <- 1.218 - 0.922*sqrt(dimensions$d/dimensions$r) - 0.086*(dimensions$d/dimensions$r)
+      }
+      x <- (2*dimensions$d)/dimensions$W
+      Ktu <- C1 + C2*x + C3*(x^2) + C4*(x^3)
+
+      if(2*dimensions$d/dimensions$w == 0.4){
+        if(Ktu > 3.5 || Ktu < 1.6){
+          stop('1.6 < Ktu < 3.5 for these parameters.')
+        }
+        if(dimensions$alp < 90){
+          Kt <- Ktu
+        }
+
+        CC1 <- 5.294 - 0.1225*dimensions$alp + 0.000523*(dimensions$alp^2)
+        CC2 <--5.0002 + 0.1171*dimensions$alp - 0.000434*(dimensions$alp^2)
+        CC3 <-1.423 - 0.00197*dimensions$alp - 0.000004*(dimensions$alp^2)
+
+        Kt <- CC1 + CC2*(Ktu^0.5) + CC3*Ktu
+      }
+
+      if(2*dimensions$d/dimensions$w == 2/3){
+        if(Ktu > 2.8 || Ktu < 1.6){
+          stop('1.6 < Ktu < 2.8 for these parameters.')
+        }
+        if(dimensions$alp < 60){
+          Kt <- Ktu
+        }
+        CC1 <- -10.01 + 0.1534*dimensions$alp - 0.000647*(dimensions$alp^2)
+        CC2 <- 13.60 - 0.2140*dimensions$alp + 0.000973*(dimensions$alp^2)
+        CC3 <- -3.781 + 0.07875*dimensions$alp - 0.000392*(dimensions$alp^2)
+
+        Kt <- CC1 + CC2*(Ktu^0.5) + CC3*Ktu
+      }
     }
-    if(dimensions$d/dimensions$r >= 2){
-      C1 <- 1.037 + 1.991*sqrt(dimensions$d/dimensions$r) + 0.002*(dimensions$d/dimensions$r)
-      C2 <- -1.886 - 2.181*sqrt(dimensions$d/dimensions$r) - 0.048*(dimensions$d/dimensions$r)
-      C3 <- 0.649 + 1.086*sqrt(dimensions$d/dimensions$r) + 0.142*(dimensions$d/dimensions$r)
-      C4 <- 1.218 - 0.922*sqrt(dimensions$d/dimensions$r) - 0.086*(dimensions$d/dimensions$r)
+    if(loadtype == 2){
+      # Bending
+      stop('Bending calculation unavailable for this geometry')
     }
-    x <- (2*dimensions$d)/dimensions$W
-    Ktu <- C1 + C2*x + C3*(x^2) + C4*(x^3)
-
-    if(2*dimensions$d/dimensions$w == 0.4){
-      if(Ktu > 3.5 || Ktu < 1.6){
-        stop('1.6 < Ktu < 3.5 for these parameters.')
-      }
-      if(dimensions$alp < 90){
-        Kt <- Ktu
-      }
-
-      CC1 <- 5.294 - 0.1225*dimensions$alp + 0.000523*(dimensions$alp^2)
-      CC2 <--5.0002 + 0.1171*dimensions$alp - 0.000434*(dimensions$alp^2)
-      CC3 <-1.423 - 0.00197*dimensions$alp - 0.000004*(dimensions$alp^2)
-
-      Kt <- CC1 + CC2*(Ktu^0.5) + CC3*Ktu
-    }
-
-    if(2*dimensions$d/dimensions$w == 2/3){
-      if(Ktu > 2.8 || Ktu < 1.6){
-        stop('1.6 < Ktu < 2.8 for these parameters.')
-      }
-      if(dimensions$alp < 60){
-        Kt <- Ktu
-      }
-      CC1 <- -10.01 + 0.1534*dimensions$alp - 0.000647*(dimensions$alp^2)
-      CC2 <- 13.60 - 0.2140*dimensions$alp + 0.000973*(dimensions$alp^2)
-      CC3 <- -3.781 + 0.07875*dimensions$alp - 0.000392*(dimensions$alp^2)
-
-      Kt <- CC1 + CC2*(Ktu^0.5) + CC3*Ktu
+    if(loadtype == 3){
+      # Torsion
+      stop('Torsion calculation unavailable for this geometry')
     }
   }
 
@@ -406,9 +421,12 @@ stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
     if(x < 0.25 || x > 50){
       stop('0.25 < t/r < 50 for this geometry.')
     }
-    if(loadtype == 1){
+    if(loadtype == 1 && dimensions$t == dimensions$r){
       # Tension
-      stop('Tension calculation unavailable for this geometry')
+      C1 <- 3.02355888095581
+      C2 <- -4.79623997372538
+      C3 <- 4.64010298684958
+      C4 <- -1.00930131841631
     }
     if(loadtype == 2){
       # Bending
@@ -452,8 +470,16 @@ stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
         C4 <- 1.056 - 1.104*(x^0.5) - 0.059*x
       }
     }
-    y <- 2*dimensions$t/dimensions$D
-    Kt <- C1 + C2*y + C3*(y^2) + C4*(y^3)
+    if((dimensions$t == dimensions$r && loadtype == 1) || loadtype == 2 || loadtype == 3){
+      y <- 2*dimensions$t/dimensions$D
+      Kt <- C1 + C2*y + C3*(y^2) + C4*(y^3)
+    }
+    if(dimensions$t != dimensions$r && loadtype == 1){
+      y <- (dimensions$D - 2*dimensions$t)/dimensions$D
+      Kp <- sqrt(x)*sqrt(1/(1-y)) - 1
+      Kq <- dimensions$t*sqrt(x)
+      Kt <- 1 + 1/sqrt((1/(1.197*Kp))^2 + (1/(1.871*Kq))^2)
+    }
   }
 
   #RS5. Shaft with a V-Shaped Groove, Torsion (input diameter D, radius r, V depth d, and V angle alp)
@@ -595,7 +621,7 @@ stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
   # =========================================
   # Infinite/Semi-Infinite Plate Options
   # =========================================
-  #	Infinite Plate with Two Circular Holes (input distance between two holes a and radius r),
+  #	ISI2. Infinite Plate with Two Circular Holes (input distance between two holes a and radius r),
   # Chart 4.21b and 4.22 in Peterson's Stress Concentration Factors (COLIN)
   if(geometry == "inf_plate_two_circ_holes" && length(dimensions$r) == 1 && length(dimensions$a) == 1){
     x <- (2*dimensions$r)/dimensions$a
@@ -629,6 +655,69 @@ stress.concentration.factor <- function(dimensions,geometry,loadtype = 1){
     }
 
     Kt <- K_tgb*((1 - x)/sqrt(1 - x^2))
+  }
+  # ISI5. Infinite Plate with Elliptical hole (input major radius (a) and minor radius (b) of elliptical hole)
+  # Chart 4.50 in Peterson's Stress Concentration Factors (MATT THOMAS) RCS - 09192024
+  if(geometry == "inf_plate_ellips_hole" && length(dimensions$a) == 1 && length(dimensions$b) == 1){
+    x <- (dimensions$a/dimensions$b)
+    if(x < 0 || x > 10){
+      stop('a/b must be between 0 and 10 for this geometry.')
+    }
+    if(loadtype == 1){
+      # Tension
+      K_tg <- 1 + 2*x
+    }
+    if(loadtype == 2){
+      # Bending
+      stop('Bending calculation unavailable for this geometry')
+    }
+    if(loadtype == 3){
+      # Torsion
+      stop('Torsion calculation unavailable for this geometry.  Check next update.')
+    }
+    Kt <- K_tg
+  }
+
+  # ISI6. Semi-Infinite Plate with a U-shaped notch on one edge (input radius r and U-depth d)
+  # Chart 2.2 in Peterson's Stress Concentration Factors (can also be for elliptical edge notches)
+  if(geometry == "semi_inf_plate_1U_edge" && length(dimensions$d) == 1 && length(dimensions$r) == 1){
+    x <- (dimensions$d/dimensions$r)
+    if(x < 1){
+      stop('r <= d for this geometry.')
+    }
+    if(loadtype == 1){
+      # Tension
+      K_t <- 0.855 + 2.21*sqrt(x)
+    }
+    if(loadtype == 2){
+      # Bending
+      stop('Bending calculation unavailable for this geometry')
+    }
+    if(loadtype == 3){
+      # Torsion
+      stop('Torsion calculation unavailable for this geometry.')
+    }
+  }
+
+  # ISI7. Semi-Infinite Plate with a elliptical-shaped notch on one edge (input smallest radius r and elliptical depth d)
+  # Chart 2.2, 2.37 in Peterson's Stress Concentration Factors (can also be for elliptical edge notches)
+  if(geometry == "semi_inf_plate_ellips_edge" && length(dimensions$d) == 1 && length(dimensions$r) == 1){
+    x <- (dimensions$d/dimensions$r)
+    if(x < 1){
+      stop('r <= d for this geometry.')
+    }
+    if(loadtype == 1){
+      # Tension
+      K_t <- 0.855 + 2.21*sqrt(x)
+    }
+    if(loadtype == 2){
+      # Bending
+      K_t <- 0.998 + 0.79*sqrt(x)
+    }
+    if(loadtype == 3){
+      # Torsion
+      stop('Torsion calculation unavailable for this geometry.')
+    }
   }
 
   # =========================================

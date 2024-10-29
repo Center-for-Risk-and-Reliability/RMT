@@ -1,5 +1,5 @@
 # Least-Squares Life-Stress Estimator
-# Developed by Dr. Reuel Smith, 2021-2023
+# Developed by Dr. Reuel Smith, 2021-2024
 
 lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab=NULL,Slab=NULL) {
   #Load pracma library for pseudoinverse
@@ -250,6 +250,7 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
     params  <- lm(L ~ poly(S, 1, raw=TRUE))
     lsparams <- c(summary(params)$coefficients[2,1],summary(params)$coefficients[1,1])
     R2 <- summary(params)$r.squared
+    SSE <- deviance(params)
     params_txt<-c("a","b")
     # Writeup for the output text
     ls_txt<-ls
@@ -262,6 +263,7 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
     params  <- lm(log(L) ~ poly(S, 1, raw=TRUE))
     lsparams <- c(summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
     R2 <- summary(params)$r.squared
+    SSE <- deviance(params)
     params_txt<-c("a","b")
     # Writeup for the output text
     ls_txt<-ls
@@ -273,6 +275,7 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
     params  <- lm(log(L) ~ poly(1/S, 1, raw=TRUE))
     lsparams <- c(summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
     R2 <- summary(params)$r.squared
+    SSE <- deviance(params)
     params_txt<-c("a","b")
     # Writeup for the output text
     ls_txt<-ls
@@ -286,6 +289,7 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
     params  <- lm(log(L) ~ poly(1/S, 1, raw=TRUE))
     lsparams <- c(K*summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
     R2 <- summary(params)$r.squared
+    SSE <- deviance(params)
     params_txt<-c("E_a","b")
     # Writeup for the output text
     ls_txt<-ls
@@ -325,6 +329,7 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
     params  <- lm(log(L) ~ poly(log(S), 1, raw=TRUE))
     lsparams <- c(summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
     R2 <- summary(params)$r.squared
+    SSE <- deviance(params)
     # Writeup for the output text
     params_txt<-c("a","b")
     ls_txt<-ls
@@ -336,6 +341,7 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
     params  <- lm(log(L) ~ poly(log(S), 1, raw=TRUE))
     lsparams <- c(-summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
     R2 <- summary(params)$r.squared
+    SSE <- deviance(params)
     params_txt<-c("a","b")
     # Writeup for the output text
     ls_txt<-"Inverse Power"
@@ -348,6 +354,7 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
     params  <- lm(log(L) ~ poly(log(S), 1, raw=TRUE))
     lsparams <- c(-summary(params)$coefficients[2,1],exp(-summary(params)$coefficients[1,1]))
     R2 <- summary(params)$r.squared
+    SSE <- deviance(params)
     params_txt<-c("a","b")
     # Writeup for the output text
     ls_txt<-"Inverse Power"
@@ -359,6 +366,7 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
     params  <- lm(L ~ poly(log(S), 1, raw=TRUE))
     lsparams <- c(summary(params)$coefficients[2,1],summary(params)$coefficients[1,1])
     R2 <- summary(params)$r.squared
+    SSE <- deviance(params)
     params_txt<-c("a","b")
     # Writeup for the output text
     ls_txt<-ls
@@ -379,6 +387,7 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
     params  <- pinv(Svals)%*%Lvals
     lsparams <- c(params)
     lnLmodel <- Svals%*%lsparams
+    SSE <- sum((Lvals - lnLmodel)^2)
     R2 <- 1 - sum((Lvals - lnLmodel)^2)/sum((Lvals - mean(Lvals))^2)
     params_txt<-paste("a_",c(0:length(S[1,])),sep="")
     # Writeup for the output text
@@ -402,6 +411,7 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
     Lmodel <- lsparams[1]*exp(lsparams[2]/S[,therm] + lsparams[3]/S[,alttherm])
     lnLmodel <- log(Lmodel)
     R2 <- 1 - sum((Lvals - lnLmodel)^2)/sum((Lvals - mean(Lvals))^2)
+    SSE <- sum((Lvals - lnLmodel)^2)
     params_txt<-c("A","a","b")
     # Writeup for the output text
     ls_txt<-"Temperature-Humidity"
@@ -423,6 +433,7 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
     lsparams <- c(params)
     lnLmodel <- lsparams[1]*(1/S[,therm]) - lsparams[2]*log(S[,alttherm]) + log(lsparams[3])
     R2 <- 1 - sum((Lvals - lnLmodel)^2)/sum((Lvals - mean(Lvals))^2)
+    SSE <- sum((Lvals - lnLmodel)^2)
     params_txt<-c("a","b","c")
     # Writeup for the output text
     ls_txt<-"Temperature-Non-thermal"
@@ -444,6 +455,7 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
     lsparams <- c(params)
     lnLmodel <- -log(S[,therm]) + lsparams[1] + lsparams[2]/S[,therm] + lsparams[3]*S[,alttherm] + lsparams[4]*(S[,alttherm]/S[,therm])
     R2 <- 1 - sum((log(L) - lnLmodel)^2)/sum((log(L) - mean(log(L)))^2)
+    SSE <- sum((Lvals - lnLmodel)^2)
     params_txt<-c("a","b","c","d")
     # Writeup for the output text
     ls_txt<-"Eyring (Type 3)"
@@ -469,6 +481,7 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
     lsparams[3]<-K*lsparams[3]
     lnLmodel <- log(lsparams[1]) - lsparams[2]*log(S[,alttherm]) + (lsparams[3]/K)*(1/S[,therm])
     R2 <- 1 - sum((log(L) - lnLmodel)^2)/sum((log(L) - mean(log(L)))^2)
+    SSE <- sum((Lvals - lnLmodel)^2)
     params_txt<-c("A","b","E_a")
     # Writeup for the output text
     ls_txt<-"Eyring (Type 3)"
@@ -491,6 +504,7 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
     Lmodel <- exp(-lsparams[1])*exp(-lsparams[2]/S[,therm] - lsparams[3]/S[,alttherm])
     lnLmodel <- log(Lmodel)
     R2 <- 1 - sum((Lvals - lnLmodel)^2)/sum((Lvals - mean(Lvals))^2)
+    SSE <- sum((Lvals - lnLmodel)^2)
     params_txt<-c("\U03B2\U2080","\U03B2\U2081","\U03B2\U2082")
     # Writeup for the output text
     ls_txt<-"Proportional-Hazard"
@@ -629,13 +643,13 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
   # FOR USE WITH RELATION PLOT UPDATE
   if(ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
     if(is.null(Suse)==TRUE){
-      return(list(S,L,LSQ,R2,plotoutput=plotoutput,relplotoutput=relplotoutput$relationplot))
+      return(list(S,L,LSQ,R2,SSE,relplotoutput=relplotoutput$relationplot,plotoutput=plotoutput))
     }
     if(is.null(Suse)==FALSE){
-      return(list(S,L,LSQ,R2,Use_Life = relplotoutput$Luse,plotoutput=plotoutput,relplotoutput=relplotoutput$relationplot))
+      return(list(S,L,LSQ,R2,SSE,Use_Life = relplotoutput$Luse,relplotoutput=relplotoutput$relationplot,plotoutput=plotoutput))
     }
   } else{
-    return(list(S,L,LSQ,R2,plotoutput=plotoutput))
+    return(list(S,L,LSQ,R2,SSE,plotoutput=plotoutput))
   }
   #
   # if(is.null(Suse)==TRUE){
