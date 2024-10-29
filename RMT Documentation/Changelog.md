@@ -1,4 +1,13 @@
 # Change Log for RMT
+**Version 1.3.0.3** (October 29th, 2024)
+* to the ALT least squared, maximum likelihood, and Bayesian tools (**lifestress.LSQest**, **lifestress.MLEest**, and **lifestress.BAYESest**).
+  * The **lifestress.LSQest** tool now outputs the sum of square error
+  * The **lifestress.MLEest** tool now calculates the MLE of the use life when use stress is input.  It also produces a probability plot based on the MLE estimates.  A bug fix was also applied so that output is consistent with the help file.
+  * The **lifestress.BAYESest** tool had a bug fix applied so the new posterior use life and acceleration factor feature works with all life-stress models.
+* The acceleration factor tool (**accelfactor**) can now compute several acceleration factors at once.
+* The stress concentration factor tool (**stress.concentration.factor**) has some minor updates as well as some additional geometries.
+* Help files for these tools have been updated.
+
 **Version 1.3.0.2** (September 19th, 2024)
 * Bug fix update to the Stress-Strain Parameters tool (**stress_strain.params**). An issue causing several unnecessary warnings has been resolved.  Also the tool no longer calls nls.multstart library.
   
