@@ -93,6 +93,19 @@ Definition of the sample geometry from which a stress concentration factor is so
       \item \strong{ISI4. Semi-Infinite Plate with a Circular Offset Hole} - Enter as \code{"semi_inf_plate_circ_offset_hole"} with dimensions edge to hole center distance \code{a} and radius \code{r}.  Available \code{loadtype}: Tension (\code{1}).  (\emph{CONSTRAINT}: \eqn{r < a})
 
       \figure{ISI4.png}{options: alt="ISI4 - Semi-Infinite Plate with a Circular Offset Hole"}
+
+      \item \strong{ISI5. Infinite Plate with Elliptical Hole} - Enter as \code{"inf_plate_ellips_hole"} with dimensions major radius  \code{a} and minor radius \code{b}.  Available \code{loadtype}: Tension (\code{1}).  (\emph{CONSTRAINT}: \eqn{0 < a/b < 10})
+
+      \figure{ISI5.png}{options: alt="ISI5 - Infinite Plate with Elliptical Hole"}
+
+      \item \strong{ISI6. Semi-Infinite Plate with a U-Shaped Edge Notch} - Enter as \code{"semi_inf_plate_1U_edge"} with dimensions radius \code{r} and U-depth \code{d}.  Available \code{loadtype}: Tension (\code{1}).  (\emph{CONSTRAINT}: \eqn{r \leq d})
+
+      \figure{ISI6.png}{options: alt="ISI6 - Semi-Infinite Plate with a U-Shaped Edge Notch"}
+
+      \item \strong{ISI7. Semi-Infinite Plate with Elliptical Edge Notch} - Enter as \code{"semi_inf_plate_ellips_edge"} with dimensions smallest radius \code{r} and elliptical depth \code{d}.  Available \code{loadtype}: Tension (\code{1}) and Bending (\code{2}).  (\emph{CONSTRAINT}: \eqn{r \leq d})
+
+      \figure{ISI7.png}{options: alt="ISI7 - Semi-Infinite Plate with Elliptical Edge Notch"}
+
   }
 
   \strong{Pressurized Round or Shaft Options}

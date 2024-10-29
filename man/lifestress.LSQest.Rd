@@ -8,7 +8,7 @@ Least-Squares Life-Stress Estimator
 Computes least-squares estimate of Life-Stress model parameters for a given set of data assigned a specific life distribution.
 }
 \usage{
-lifestress.LSQest(data,ls,dist,pp,xlabel1="X",therm=1)
+lifestress.LSQest(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab=NULL,Slab=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -53,9 +53,18 @@ Label for the x-axis for the plot.  If left blank, the default label is "X".
   \item{therm}{
 Designation of the primary thermal stress in the original data.  If it is the first column after the censored column then the value is 1 and the alternate is 2 (this is set to default).  If it is the second column after the censored column then the value is 2 and the alternate is 1.  Only necessary to input for dual-stress life-stress models.
 }
+  \item{Suse}{
+(optional) The use or nominal stress level for the accletated life test scenario.  If dual or multiple stress, enter as a vector starting with temperature based stress.  Default input is NULL.
+}
+  \item{Llab}{
+Label for the characteristic life axis of the relationship plot.  Default label is "Characteristic Life - S"
+}
+  \item{Slab}{
+Label for the charateristic stress axis or axes of the relationship plot.  When the Arrhenius or Eyring life-stress model is selected, this label defaults to \eqn{K^{-1}} where \eqn{K} is the temperature notation for Kelvin.  Dual-stresses must be entered as vectors (Example: For "Temperature" and "Humidity" enter \code{c("Temperature", "Humidity")}).
+}
 }
 \details{
-The least-squares estimate of an entered life-stress distribution model is based primarily of the stress-based probability plot of the entered data (usually in the \code{probplot} subfunction).  The life-stress parameters are estimated by the relationship linear analysis between stress and a parameter that is based on life (for Weibull or three-parameter Weibull that is \eqn{\alpha}, for normal that is \eqn{\mu}, for lognormal that is \eqn{\mu_t}, for exponential that is \eqn{\lambda}, and for two parameter exponential that is \eqn{\sigma}).  The final distribution paramter is obtained by averaging through the multiple stress lines.
+The least-squares estimate of an entered life-stress distribution model is based primarily of the stress-based probability plot of the entered data (usually in the \code{probplot} subfunction).  The life-stress parameters are estimated by linear regression analysis based on the relationship between stress and life-based parameter (for Weibull or three-parameter Weibull that is \eqn{\alpha}, for normal that is \eqn{\mu}, for lognormal that is \eqn{\mu_t}, for exponential that is \eqn{\lambda}, and for two parameter exponential that is \eqn{\sigma}).  The final distribution paramter is obtained by averaging through the multiple stress lines.
 }
 \value{
 Outputs a printed summary of the life-stress distribution model, its least-squares estimate, the average life at each stress level, and a probability plot of all stress levels.  The list output includes the following:
@@ -72,12 +81,25 @@ Outputs a printed summary of the life-stress distribution model, its least-squar
 \item{R2}{
   The coefficient of determination.
 }
+\item{SSE}{
+  The sum of square error.
+}
+\item{Use_Life}{
+  The use level life or life at nominal/use stress.  This output will only be presented if \data{Suse} is set as an input.
+}
+\item{$relplotoutput}{
+  The relationship plot between characteristic life and characteristic stress.  Plot contains all the data and it's median fit to the chosen life-stress model.  If \data{Suse} is input, then the plot will include the use life estimate.
+}
+\item{$plotoutput}{
+  The probability plot of the data by stress level.
+}
+
 }
 \references{
 Modarres, M., Amiri, M., Jackson, C.  (2017)  Probabilistic Physics of Failure Approach to Reliability: Modeling, Accelerated Testing, Prognosis and Reliability Assessment.  Center for Risk and Reliability
 }
 \author{
-Dr. Reuel Smith (2021-2023)
+Dr. Reuel Smith (2021-2024)
 }
 \note{
 This function can \strong{only} operate for accelerated stress test data.  For step-stress test data use \code{stepstress.LSQest}.  Data matrix \code{mat} may also be loaded from an Excel .CSV file by \code{mat1 <-read.csv("c:/.../Data.csv")}.  This would be used to provide the \code{pp} output needed to run this function (by way of \code{probplot.NAME(mat,"plotposition","Xlabel")}).
@@ -94,7 +116,7 @@ time <- c(52, 80, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 20, 28, 35, 
 cens <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0)
 temp <- c(175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 250, 250, 250, 250, 250, 250, 250) + 273.15
 mat1 <- matrix(c(time, cens, temp), nrow = length(time), ncol = 3, byrow = FALSE,dimnames = list(NULL,c("time (hrs)","cens","temp")))
-lifestress.LSQest(mat1,"Arrhenius","Weibull","Blom")
+lifestress.LSQest(mat1,"Arrhenius","Weibull","Blom",xlabel = "Time (hrs)")
 
 ## Example 2: Dual Stress values (Temperature in Kelvin and Relative Humidity (RH))
 time <- c(102, 115, 151, 196, 210, 184, 193, 244, 265, 281, 298, 311, 337, 347, 405)
