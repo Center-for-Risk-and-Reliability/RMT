@@ -1,6 +1,9 @@
 # Change Log for RMT
+**Version 1.3.0.4** (November 8th, 2024)
+* Minor update to the ALT least squared tool (**lifestress.LSQest**).  The Eyring life-stress model should no longer have issues with estimations for parameter ***b***
+  
 **Version 1.3.0.3** (October 29th, 2024)
-* to the ALT least squared, maximum likelihood, and Bayesian tools (**lifestress.LSQest**, **lifestress.MLEest**, and **lifestress.BAYESest**).
+* Update to the ALT least squared, maximum likelihood, and Bayesian tools (**lifestress.LSQest**, **lifestress.MLEest**, and **lifestress.BAYESest**).
   * The **lifestress.LSQest** tool now outputs the sum of square error
   * The **lifestress.MLEest** tool now calculates the MLE of the use life when use stress is input.  It also produces a probability plot based on the MLE estimates.  A bug fix was also applied so that output is consistent with the help file.
   * The **lifestress.BAYESest** tool had a bug fix applied so the new posterior use life and acceleration factor feature works with all life-stress models.
