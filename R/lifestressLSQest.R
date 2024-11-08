@@ -299,8 +299,9 @@ lifestress.LSQest <- function(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab
   if (ls=="Eyring"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
     Lvals<-log(L)
-    params  <- nls(Lvals ~ log(b) -log(S) + (a/S),start = list(a = 1,b = 3))
+    params  <- nls(Lvals ~ logb -log(S) + (a/S),start = list(a = 1,logb = log(3)))
     lsparams <- c(summary(params)$coefficients[1,1],summary(params)$coefficients[2,1])
+    lsparams[2] <- exp(lsparams[2])
     SST <- sum((Lvals - mean(Lvals))^2)
     SSE <- deviance(params)
     R2 <- 1 - (SSE/SST)
