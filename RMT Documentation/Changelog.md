@@ -1,4 +1,7 @@
 # Change Log for RMT
+**Version 1.3.0.5** (November 13th, 2024)
+* Update to the ALT step-stress estimation tools (**stepstress.LSQest**, **stepstress.MLEest**, and **stepstress.BAYESest**).  Are now able to process use life estimations based on use stress input.
+
 **Version 1.3.0.4** (November 8th, 2024)
 * Minor update to the ALT least squared tool (**lifestress.LSQest**).  The Eyring life-stress model should no longer have issues with estimations for parameter ***b***
   
