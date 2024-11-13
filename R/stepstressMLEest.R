@@ -1,7 +1,7 @@
 # MLE Step-Stress Estimator
 # Developed by Dr. Reuel Smith, 2021-2022
 
-stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,sided="twosided"){
+stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,Suse=NULL,confid=0.95,sided="twosided"){
   #Load pracma library for erf
   library(pracma)
   library(dplyr)
@@ -107,6 +107,18 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       log(theta[ishift+2] + Sc*theta[ishift+1])
     }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        theta[ishift+2] + Suse*theta[ishift+1]
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        VARCOV[ishift+2,ishift+2] +
+          (Suse^2)*VARCOV[ishift+1,ishift+1] +
+          2*Suse*VARCOV[ishift+1,ishift+2]
+      }
+    }
     ls_txt<-ls
     params_txt<-c("a","b")
   }
@@ -139,6 +151,18 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       theta[ishift+2] + Sc*theta[ishift+1]
     }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        exp(theta[ishift+2])*exp(Suse*theta[ishift+1])
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        (lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
+          (Suse^2)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] +
+          2*Suse*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2]
+      }
+    }
     ls_txt<-ls
     params_txt<-c("a","b")
   }
@@ -170,6 +194,18 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     }
     loglifeC <- function(theta) {
       theta[ishift+2] + (theta[ishift+1]/Sc)
+    }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        exp(theta[ishift+2])*exp(theta[ishift+1]/Suse)
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        (lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
+          (1/Suse^2)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] +
+          2*(1/Suse)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2]
+      }
     }
     ls_txt<-ls
     params_txt<-c("a","b")
@@ -206,6 +242,18 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       theta[ishift+2] + theta[ishift+1]/(K*Sc)
     }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        exp(theta[ishift+2])*exp(theta[ishift+1]/(K*Suse))
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        (lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
+          (1/(K*Suse)^2)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] +
+          2*(1/(K*Suse))*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2]
+      }
+    }
     ls_txt<-ls
     params_txt<-c("E_a","b")
   }
@@ -234,6 +282,18 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       log(theta[ishift+2]) - log(Sc) + theta[ishift+1]/Sc
     }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        (exp(theta[ishift+2])/Suse)*exp(theta[ishift+1]/Suse)
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        (lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
+          (1/Suse^2)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] +
+          2*(1/Suse)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2]
+      }
+    }
     ls_txt<-ls
     params_txt<-c("a","b")
   }
@@ -261,6 +321,18 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     }
     loglifeC <- function(theta) {
       - log(Sc) - theta[ishift+1] + theta[ishift+2]/Sc
+    }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        (1/Suse)*exp(-(theta[ishift+1] - (theta[ishift+2]/Suse)))
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        (1/Suse^2)*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
+          (lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] -
+          2*(1/Suse)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2]
+      }
     }
     ls_txt<-ls
     params_txt<-c("a","b")
@@ -294,6 +366,18 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       theta[ishift+2] + theta[ishift+1]*log(Sc)
     }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        exp(theta[ishift+2])*(Suse^theta[ishift+1])
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        (lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
+          (log(Suse)^2)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] +
+          2*log(Suse)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2]
+      }
+    }
     ls_txt<-ls
     params_txt<-c("a","b")
   }
@@ -326,6 +410,18 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       theta[ishift+2] - theta[ishift+1]*log(Sc)
     }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        exp(theta[ishift+2])*(Suse^-theta[ishift+1])
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        (lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
+          (log(Suse)^2)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] -
+          2*log(Suse)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2]
+      }
+    }
     ls_txt<-"Inverse-Power"
     params_txt<-c("a","b")
   }
@@ -357,6 +453,18 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     }
     loglifeC <- function(theta) {
       -theta[ishift+2] - theta[ishift+1]*log(Sc)
+    }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        1/(exp(theta[ishift+2])*(Suse^theta[ishift+1]))
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        (lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
+          (log(Suse)^2)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] +
+          2*log(Suse)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2]
+      }
     }
     ls_txt<-"Inverse-Power"
     params_txt<-c("a","b")
@@ -393,6 +501,16 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       theta[ishift+1] - (1/0.09)*log(Sc)
     }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        exp(theta[ishift+1])*(Suse^-(1/0.09))
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        (lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1]
+      }
+    }
     ls_txt<-"Inverse-Power"
     params_txt<-c("b")
   }
@@ -421,6 +539,18 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     }
     loglifeC <- function(theta) {
       log(theta[ishift+1]*log(Sc) + theta[ishift+2])
+    }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        theta[ishift+1]*log(Suse) + theta[ishift+2]
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        VARCOV[ishift+2,ishift+2] +
+          (log(Suse)^2)*VARCOV[ishift+1,ishift+1] +
+          2*log(Suse)*VARCOV[ishift+1,ishift+2]
+      }
     }
     ls_txt<-ls
     params_txt<-c("a","b")
@@ -561,6 +691,338 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
         return(eqn4)
       }
     }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        if(length(Suse)==2){
+          eqn5<-exp(theta[ishift+1]+theta[ishift+2]*Suse[1]+theta[ishift+3]*Suse[2])
+        }
+        if(length(Suse)==3){
+          eqn5<-exp(theta[ishift+1]+theta[ishift+2]*Suse[1]+theta[ishift+3]*Suse[2]+theta[ishift+4]*Suse[3])
+        }
+        if(length(Suse)==4){
+          eqn5<-exp(theta[ishift+1]+theta[ishift+2]*Suse[1]+theta[ishift+3]*Suse[2]+theta[ishift+4]*Suse[3]+theta[ishift+5]*Suse[4])
+        }
+        if(length(Suse)==5){
+          eqn5<-exp(theta[ishift+1]+theta[ishift+2]*Suse[1]+theta[ishift+3]*Suse[2]+theta[ishift+4]*Suse[3]+theta[ishift+5]*Suse[4]+theta[ishift+6]*Suse[5])
+        }
+        if(length(Suse)==6){
+          eqn5<-exp(theta[ishift+1]+theta[ishift+2]*Suse[1]+theta[ishift+3]*Suse[2]+theta[ishift+4]*Suse[3]+theta[ishift+5]*Suse[4]+theta[ishift+6]*Suse[5]+theta[ishift+7]*Suse[6])
+        }
+        if(length(Suse)==7){
+          eqn5<-exp(theta[ishift+1]+theta[ishift+2]*Suse[1]+theta[ishift+3]*Suse[2]+theta[ishift+4]*Suse[3]+theta[ishift+5]*Suse[4]+theta[ishift+6]*Suse[5]+theta[ishift+7]*Suse[6]+theta[ishift+8]*Suse[7])
+        }
+        if(length(Suse)==8){
+          eqn5<-exp(theta[ishift+1]+theta[ishift+2]*Suse[1]+theta[ishift+3]*Suse[2]+theta[ishift+4]*Suse[3]+theta[ishift+5]*Suse[4]+theta[ishift+6]*Suse[5]+theta[ishift+7]*Suse[6]+theta[ishift+8]*Suse[7]+theta[ishift+9]*Suse[8])
+        }
+        if(length(Suse)==9){
+          eqn5<-exp(theta[ishift+1]+theta[ishift+2]*Suse[1]+theta[ishift+3]*Suse[2]+theta[ishift+4]*Suse[3]+theta[ishift+5]*Suse[4]+theta[ishift+6]*Suse[5]+theta[ishift+7]*Suse[6]+theta[ishift+8]*Suse[7]+theta[ishift+9]*Suse[8]+theta[ishift+10]*Suse[9])
+        }
+        if(length(Suse)==10){
+          eqn5<-exp(theta[ishift+1]+theta[ishift+2]*Suse[1]+theta[ishift+3]*Suse[2]+theta[ishift+4]*Suse[3]+theta[ishift+5]*Suse[4]+theta[ishift+6]*Suse[5]+theta[ishift+7]*Suse[6]+theta[ishift+8]*Suse[7]+theta[ishift+9]*Suse[8]+theta[ishift+10]*Suse[9]+theta[ishift+11]*Suse[10])
+        }
+        return(eqn5)
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        VARCOV[ishift+2,ishift+2] +
+          (log(Suse)^2)*VARCOV[ishift+1,ishift+1] +
+          2*log(Suse)*VARCOV[ishift+1,ishift+2]
+        if(length(Suse)==2){
+          eqn6<-(Suse[2]^2)*VARCOV[ishift+3,ishift+3] +
+            (Suse[1]^2)*VARCOV[ishift+2,ishift+2] +
+            VARCOV[ishift+1,ishift+1] +
+            2*Suse[1]*VARCOV[ishift+1,ishift+2] + 2*Suse[2]*VARCOV[ishift+1,ishift+3] +
+            2*Suse[1]*Suse[2]*VARCOV[ishift+2,ishift+3]
+        }
+        if(length(Suse)==3){
+          eqn6<-(Suse[3]^2)*VARCOV[ishift+4,ishift+4] +
+            (Suse[2]^2)*VARCOV[ishift+3,ishift+3] +
+            (Suse[1]^2)*VARCOV[ishift+2,ishift+2] +
+            VARCOV[ishift+1,ishift+1] +
+            2*Suse[1]*VARCOV[ishift+1,ishift+2] + 2*Suse[2]*VARCOV[ishift+1,ishift+3] + 2*Suse[3]*VARCOV[ishift+1,ishift+4] +
+            2*Suse[1]*Suse[2]*VARCOV[ishift+2,ishift+3] + 2*Suse[1]*Suse[3]*VARCOV[ishift+2,ishift+4] +
+            2*Suse[2]*Suse[3]*VARCOV[ishift+3,ishift+4]
+        }
+        if(length(Suse)==4){
+          eqn6<-(Suse[4]^2)*VARCOV[ishift+5,ishift+5] +
+            (Suse[3]^2)*VARCOV[ishift+4,ishift+4] +
+            (Suse[2]^2)*VARCOV[ishift+3,ishift+3] +
+            (Suse[1]^2)*VARCOV[ishift+2,ishift+2] +
+            VARCOV[ishift+1,ishift+1] +
+            2*Suse[1]*VARCOV[ishift+1,ishift+2] +
+            2*Suse[2]*VARCOV[ishift+1,ishift+3] +
+            2*Suse[3]*VARCOV[ishift+1,ishift+4] +
+            2*Suse[4]*VARCOV[ishift+1,ishift+5] +
+            2*Suse[1]*Suse[2]*VARCOV[ishift+2,ishift+3] +
+            2*Suse[1]*Suse[3]*VARCOV[ishift+2,ishift+4] +
+            2*Suse[1]*Suse[4]*VARCOV[ishift+2,ishift+5] +
+            2*Suse[2]*Suse[3]*VARCOV[ishift+3,ishift+4] +
+            2*Suse[2]*Suse[4]*VARCOV[ishift+3,ishift+5] +
+            2*Suse[3]*Suse[4]*VARCOV[ishift+4,ishift+5]
+        }
+        if(length(Suse)==5){
+          eqn6<-(Suse[5]^2)*VARCOV[ishift+6,ishift+6] +
+            (Suse[4]^2)*VARCOV[ishift+5,ishift+5] +
+            (Suse[3]^2)*VARCOV[ishift+4,ishift+4] +
+            (Suse[2]^2)*VARCOV[ishift+3,ishift+3] +
+            (Suse[1]^2)*VARCOV[ishift+2,ishift+2] +
+            VARCOV[ishift+1,ishift+1] +
+            2*Suse[1]*VARCOV[ishift+1,ishift+2] +
+            2*Suse[2]*VARCOV[ishift+1,ishift+3] +
+            2*Suse[3]*VARCOV[ishift+1,ishift+4] +
+            2*Suse[4]*VARCOV[ishift+1,ishift+5] +
+            2*Suse[5]*VARCOV[ishift+1,ishift+6] +
+            2*Suse[1]*Suse[2]*VARCOV[ishift+2,ishift+3] +
+            2*Suse[1]*Suse[3]*VARCOV[ishift+2,ishift+4] +
+            2*Suse[1]*Suse[4]*VARCOV[ishift+2,ishift+5] +
+            2*Suse[1]*Suse[5]*VARCOV[ishift+2,ishift+6] +
+            2*Suse[2]*Suse[3]*VARCOV[ishift+3,ishift+4] +
+            2*Suse[2]*Suse[4]*VARCOV[ishift+3,ishift+5] +
+            2*Suse[2]*Suse[5]*VARCOV[ishift+3,ishift+6] +
+            2*Suse[3]*Suse[4]*VARCOV[ishift+4,ishift+5] +
+            2*Suse[3]*Suse[5]*VARCOV[ishift+4,ishift+6] +
+            2*Suse[4]*Suse[5]*VARCOV[ishift+5,ishift+6]
+        }
+        if(length(Suse)==6){
+          eqn6<-(Suse[6]^2)*VARCOV[ishift+7,ishift+7] +
+            (Suse[5]^2)*VARCOV[ishift+6,ishift+6] +
+            (Suse[4]^2)*VARCOV[ishift+5,ishift+5] +
+            (Suse[3]^2)*VARCOV[ishift+4,ishift+4] +
+            (Suse[2]^2)*VARCOV[ishift+3,ishift+3] +
+            (Suse[1]^2)*VARCOV[ishift+2,ishift+2] +
+            VARCOV[ishift+1,ishift+1] +
+            2*Suse[1]*VARCOV[ishift+1,ishift+2] +
+            2*Suse[2]*VARCOV[ishift+1,ishift+3] +
+            2*Suse[3]*VARCOV[ishift+1,ishift+4] +
+            2*Suse[4]*VARCOV[ishift+1,ishift+5] +
+            2*Suse[5]*VARCOV[ishift+1,ishift+6] +
+            2*Suse[6]*VARCOV[ishift+1,ishift+7] +
+            2*Suse[1]*Suse[2]*VARCOV[ishift+2,ishift+3] +
+            2*Suse[1]*Suse[3]*VARCOV[ishift+2,ishift+4] +
+            2*Suse[1]*Suse[4]*VARCOV[ishift+2,ishift+5] +
+            2*Suse[1]*Suse[5]*VARCOV[ishift+2,ishift+6] +
+            2*Suse[1]*Suse[6]*VARCOV[ishift+2,ishift+7] +
+            2*Suse[2]*Suse[3]*VARCOV[ishift+3,ishift+4] +
+            2*Suse[2]*Suse[4]*VARCOV[ishift+3,ishift+5] +
+            2*Suse[2]*Suse[5]*VARCOV[ishift+3,ishift+6] +
+            2*Suse[2]*Suse[6]*VARCOV[ishift+3,ishift+7] +
+            2*Suse[3]*Suse[4]*VARCOV[ishift+4,ishift+5] +
+            2*Suse[3]*Suse[5]*VARCOV[ishift+4,ishift+6] +
+            2*Suse[3]*Suse[6]*VARCOV[ishift+4,ishift+7] +
+            2*Suse[4]*Suse[5]*VARCOV[ishift+5,ishift+6] +
+            2*Suse[4]*Suse[6]*VARCOV[ishift+5,ishift+7] +
+            2*Suse[5]*Suse[6]*VARCOV[ishift+6,ishift+7]
+        }
+        if(length(Suse)==7){
+          eqn6<-(Suse[7]^2)*VARCOV[ishift+8,ishift+8] +
+            (Suse[6]^2)*VARCOV[ishift+7,ishift+7] +
+            (Suse[5]^2)*VARCOV[ishift+6,ishift+6] +
+            (Suse[4]^2)*VARCOV[ishift+5,ishift+5] +
+            (Suse[3]^2)*VARCOV[ishift+4,ishift+4] +
+            (Suse[2]^2)*VARCOV[ishift+3,ishift+3] +
+            (Suse[1]^2)*VARCOV[ishift+2,ishift+2] +
+            VARCOV[ishift+1,ishift+1] +
+            2*Suse[1]*VARCOV[ishift+1,ishift+2] +
+            2*Suse[2]*VARCOV[ishift+1,ishift+3] +
+            2*Suse[3]*VARCOV[ishift+1,ishift+4] +
+            2*Suse[4]*VARCOV[ishift+1,ishift+5] +
+            2*Suse[5]*VARCOV[ishift+1,ishift+6] +
+            2*Suse[6]*VARCOV[ishift+1,ishift+7] +
+            2*Suse[7]*VARCOV[ishift+1,ishift+8] +
+            2*Suse[1]*Suse[2]*VARCOV[ishift+2,ishift+3] +
+            2*Suse[1]*Suse[3]*VARCOV[ishift+2,ishift+4] +
+            2*Suse[1]*Suse[4]*VARCOV[ishift+2,ishift+5] +
+            2*Suse[1]*Suse[5]*VARCOV[ishift+2,ishift+6] +
+            2*Suse[1]*Suse[6]*VARCOV[ishift+2,ishift+7] +
+            2*Suse[1]*Suse[7]*VARCOV[ishift+2,ishift+8] +
+            2*Suse[2]*Suse[3]*VARCOV[ishift+3,ishift+4] +
+            2*Suse[2]*Suse[4]*VARCOV[ishift+3,ishift+5] +
+            2*Suse[2]*Suse[5]*VARCOV[ishift+3,ishift+6] +
+            2*Suse[2]*Suse[6]*VARCOV[ishift+3,ishift+7] +
+            2*Suse[2]*Suse[7]*VARCOV[ishift+3,ishift+8] +
+            2*Suse[3]*Suse[4]*VARCOV[ishift+4,ishift+5] +
+            2*Suse[3]*Suse[5]*VARCOV[ishift+4,ishift+6] +
+            2*Suse[3]*Suse[6]*VARCOV[ishift+4,ishift+7] +
+            2*Suse[3]*Suse[7]*VARCOV[ishift+4,ishift+8] +
+            2*Suse[4]*Suse[5]*VARCOV[ishift+5,ishift+6] +
+            2*Suse[4]*Suse[6]*VARCOV[ishift+5,ishift+7] +
+            2*Suse[4]*Suse[7]*VARCOV[ishift+5,ishift+8] +
+            2*Suse[5]*Suse[6]*VARCOV[ishift+6,ishift+7] +
+            2*Suse[5]*Suse[7]*VARCOV[ishift+6,ishift+8] +
+            2*Suse[6]*Suse[7]*VARCOV[ishift+7,ishift+8]
+        }
+        if(length(Suse)==8){
+          eqn6<-(Suse[8]^2)*VARCOV[ishift+9,ishift+9] +
+            (Suse[7]^2)*VARCOV[ishift+8,ishift+8] +
+            (Suse[6]^2)*VARCOV[ishift+7,ishift+7] +
+            (Suse[5]^2)*VARCOV[ishift+6,ishift+6] +
+            (Suse[4]^2)*VARCOV[ishift+5,ishift+5] +
+            (Suse[3]^2)*VARCOV[ishift+4,ishift+4] +
+            (Suse[2]^2)*VARCOV[ishift+3,ishift+3] +
+            (Suse[1]^2)*VARCOV[ishift+2,ishift+2] +
+            VARCOV[ishift+1,ishift+1] +
+            2*Suse[1]*VARCOV[ishift+1,ishift+2] +
+            2*Suse[2]*VARCOV[ishift+1,ishift+3] +
+            2*Suse[3]*VARCOV[ishift+1,ishift+4] +
+            2*Suse[4]*VARCOV[ishift+1,ishift+5] +
+            2*Suse[5]*VARCOV[ishift+1,ishift+6] +
+            2*Suse[6]*VARCOV[ishift+1,ishift+7] +
+            2*Suse[7]*VARCOV[ishift+1,ishift+8] +
+            2*Suse[8]*VARCOV[ishift+1,ishift+9] +
+            2*Suse[1]*Suse[2]*VARCOV[ishift+2,ishift+3] +
+            2*Suse[1]*Suse[3]*VARCOV[ishift+2,ishift+4] +
+            2*Suse[1]*Suse[4]*VARCOV[ishift+2,ishift+5] +
+            2*Suse[1]*Suse[5]*VARCOV[ishift+2,ishift+6] +
+            2*Suse[1]*Suse[6]*VARCOV[ishift+2,ishift+7] +
+            2*Suse[1]*Suse[7]*VARCOV[ishift+2,ishift+8] +
+            2*Suse[1]*Suse[8]*VARCOV[ishift+2,ishift+9] +
+            2*Suse[2]*Suse[3]*VARCOV[ishift+3,ishift+4] +
+            2*Suse[2]*Suse[4]*VARCOV[ishift+3,ishift+5] +
+            2*Suse[2]*Suse[5]*VARCOV[ishift+3,ishift+6] +
+            2*Suse[2]*Suse[6]*VARCOV[ishift+3,ishift+7] +
+            2*Suse[2]*Suse[7]*VARCOV[ishift+3,ishift+8] +
+            2*Suse[2]*Suse[8]*VARCOV[ishift+3,ishift+9] +
+            2*Suse[3]*Suse[4]*VARCOV[ishift+4,ishift+5] +
+            2*Suse[3]*Suse[5]*VARCOV[ishift+4,ishift+6] +
+            2*Suse[3]*Suse[6]*VARCOV[ishift+4,ishift+7] +
+            2*Suse[3]*Suse[7]*VARCOV[ishift+4,ishift+8] +
+            2*Suse[3]*Suse[8]*VARCOV[ishift+4,ishift+9] +
+            2*Suse[4]*Suse[5]*VARCOV[ishift+5,ishift+6] +
+            2*Suse[4]*Suse[6]*VARCOV[ishift+5,ishift+7] +
+            2*Suse[4]*Suse[7]*VARCOV[ishift+5,ishift+8] +
+            2*Suse[4]*Suse[8]*VARCOV[ishift+5,ishift+9] +
+            2*Suse[5]*Suse[6]*VARCOV[ishift+6,ishift+7] +
+            2*Suse[5]*Suse[7]*VARCOV[ishift+6,ishift+8] +
+            2*Suse[5]*Suse[8]*VARCOV[ishift+6,ishift+9] +
+            2*Suse[6]*Suse[7]*VARCOV[ishift+7,ishift+8] +
+            2*Suse[6]*Suse[8]*VARCOV[ishift+7,ishift+9] +
+            2*Suse[7]*Suse[8]*VARCOV[ishift+8,ishift+9]
+        }
+        if(length(Suse)==9){
+          eqn6<-(Suse[9]^2)*VARCOV[ishift+10,ishift+10] +
+            (Suse[8]^2)*VARCOV[ishift+9,ishift+9] +
+            (Suse[7]^2)*VARCOV[ishift+8,ishift+8] +
+            (Suse[6]^2)*VARCOV[ishift+7,ishift+7] +
+            (Suse[5]^2)*VARCOV[ishift+6,ishift+6] +
+            (Suse[4]^2)*VARCOV[ishift+5,ishift+5] +
+            (Suse[3]^2)*VARCOV[ishift+4,ishift+4] +
+            (Suse[2]^2)*VARCOV[ishift+3,ishift+3] +
+            (Suse[1]^2)*VARCOV[ishift+2,ishift+2] +
+            VARCOV[ishift+1,ishift+1] +
+            2*Suse[1]*VARCOV[ishift+1,ishift+2] +
+            2*Suse[2]*VARCOV[ishift+1,ishift+3] +
+            2*Suse[3]*VARCOV[ishift+1,ishift+4] +
+            2*Suse[4]*VARCOV[ishift+1,ishift+5] +
+            2*Suse[5]*VARCOV[ishift+1,ishift+6] +
+            2*Suse[6]*VARCOV[ishift+1,ishift+7] +
+            2*Suse[7]*VARCOV[ishift+1,ishift+8] +
+            2*Suse[8]*VARCOV[ishift+1,ishift+9] +
+            2*Suse[9]*VARCOV[ishift+1,ishift+10] +
+            2*Suse[1]*Suse[2]*VARCOV[ishift+2,ishift+3] +
+            2*Suse[1]*Suse[3]*VARCOV[ishift+2,ishift+4] +
+            2*Suse[1]*Suse[4]*VARCOV[ishift+2,ishift+5] +
+            2*Suse[1]*Suse[5]*VARCOV[ishift+2,ishift+6] +
+            2*Suse[1]*Suse[6]*VARCOV[ishift+2,ishift+7] +
+            2*Suse[1]*Suse[7]*VARCOV[ishift+2,ishift+8] +
+            2*Suse[1]*Suse[8]*VARCOV[ishift+2,ishift+9] +
+            2*Suse[1]*Suse[9]*VARCOV[ishift+2,ishift+10] +
+            2*Suse[2]*Suse[3]*VARCOV[ishift+3,ishift+4] +
+            2*Suse[2]*Suse[4]*VARCOV[ishift+3,ishift+5] +
+            2*Suse[2]*Suse[5]*VARCOV[ishift+3,ishift+6] +
+            2*Suse[2]*Suse[6]*VARCOV[ishift+3,ishift+7] +
+            2*Suse[2]*Suse[7]*VARCOV[ishift+3,ishift+8] +
+            2*Suse[2]*Suse[8]*VARCOV[ishift+3,ishift+9] +
+            2*Suse[2]*Suse[9]*VARCOV[ishift+3,ishift+10] +
+            2*Suse[3]*Suse[4]*VARCOV[ishift+4,ishift+5] +
+            2*Suse[3]*Suse[5]*VARCOV[ishift+4,ishift+6] +
+            2*Suse[3]*Suse[6]*VARCOV[ishift+4,ishift+7] +
+            2*Suse[3]*Suse[7]*VARCOV[ishift+4,ishift+8] +
+            2*Suse[3]*Suse[8]*VARCOV[ishift+4,ishift+9] +
+            2*Suse[3]*Suse[9]*VARCOV[ishift+4,ishift+10] +
+            2*Suse[4]*Suse[5]*VARCOV[ishift+5,ishift+6] +
+            2*Suse[4]*Suse[6]*VARCOV[ishift+5,ishift+7] +
+            2*Suse[4]*Suse[7]*VARCOV[ishift+5,ishift+8] +
+            2*Suse[4]*Suse[8]*VARCOV[ishift+5,ishift+9] +
+            2*Suse[4]*Suse[9]*VARCOV[ishift+5,ishift+10] +
+            2*Suse[5]*Suse[6]*VARCOV[ishift+6,ishift+7] +
+            2*Suse[5]*Suse[7]*VARCOV[ishift+6,ishift+8] +
+            2*Suse[5]*Suse[8]*VARCOV[ishift+6,ishift+9] +
+            2*Suse[6]*Suse[7]*VARCOV[ishift+7,ishift+8] +
+            2*Suse[6]*Suse[8]*VARCOV[ishift+7,ishift+9] +
+            2*Suse[6]*Suse[9]*VARCOV[ishift+7,ishift+10] +
+            2*Suse[7]*Suse[8]*VARCOV[ishift+8,ishift+9] +
+            2*Suse[7]*Suse[9]*VARCOV[ishift+8,ishift+10] +
+            2*Suse[8]*Suse[9]*VARCOV[ishift+9,ishift+10]
+        }
+        if(length(Suse)==10){
+          eqn6<-(Suse[10]^2)*VARCOV[ishift+11,ishift+11] +
+            (Suse[9]^2)*VARCOV[ishift+10,ishift+10] +
+            (Suse[8]^2)*VARCOV[ishift+9,ishift+9] +
+            (Suse[7]^2)*VARCOV[ishift+8,ishift+8] +
+            (Suse[6]^2)*VARCOV[ishift+7,ishift+7] +
+            (Suse[5]^2)*VARCOV[ishift+6,ishift+6] +
+            (Suse[4]^2)*VARCOV[ishift+5,ishift+5] +
+            (Suse[3]^2)*VARCOV[ishift+4,ishift+4] +
+            (Suse[2]^2)*VARCOV[ishift+3,ishift+3] +
+            (Suse[1]^2)*VARCOV[ishift+2,ishift+2] +
+            VARCOV[ishift+1,ishift+1] +
+            2*Suse[1]*VARCOV[ishift+1,ishift+2] +
+            2*Suse[2]*VARCOV[ishift+1,ishift+3] +
+            2*Suse[3]*VARCOV[ishift+1,ishift+4] +
+            2*Suse[4]*VARCOV[ishift+1,ishift+5] +
+            2*Suse[5]*VARCOV[ishift+1,ishift+6] +
+            2*Suse[6]*VARCOV[ishift+1,ishift+7] +
+            2*Suse[7]*VARCOV[ishift+1,ishift+8] +
+            2*Suse[8]*VARCOV[ishift+1,ishift+9] +
+            2*Suse[9]*VARCOV[ishift+1,ishift+10] +
+            2*Suse[10]*VARCOV[ishift+1,ishift+11] +
+            2*Suse[1]*Suse[2]*VARCOV[ishift+2,ishift+3] +
+            2*Suse[1]*Suse[3]*VARCOV[ishift+2,ishift+4] +
+            2*Suse[1]*Suse[4]*VARCOV[ishift+2,ishift+5] +
+            2*Suse[1]*Suse[5]*VARCOV[ishift+2,ishift+6] +
+            2*Suse[1]*Suse[6]*VARCOV[ishift+2,ishift+7] +
+            2*Suse[1]*Suse[7]*VARCOV[ishift+2,ishift+8] +
+            2*Suse[1]*Suse[8]*VARCOV[ishift+2,ishift+9] +
+            2*Suse[1]*Suse[9]*VARCOV[ishift+2,ishift+10] +
+            2*Suse[1]*Suse[10]*VARCOV[ishift+2,ishift+11] +
+            2*Suse[2]*Suse[3]*VARCOV[ishift+3,ishift+4] +
+            2*Suse[2]*Suse[4]*VARCOV[ishift+3,ishift+5] +
+            2*Suse[2]*Suse[5]*VARCOV[ishift+3,ishift+6] +
+            2*Suse[2]*Suse[6]*VARCOV[ishift+3,ishift+7] +
+            2*Suse[2]*Suse[7]*VARCOV[ishift+3,ishift+8] +
+            2*Suse[2]*Suse[8]*VARCOV[ishift+3,ishift+9] +
+            2*Suse[2]*Suse[9]*VARCOV[ishift+3,ishift+10] +
+            2*Suse[2]*Suse[10]*VARCOV[ishift+3,ishift+11] +
+            2*Suse[3]*Suse[4]*VARCOV[ishift+4,ishift+5] +
+            2*Suse[3]*Suse[5]*VARCOV[ishift+4,ishift+6] +
+            2*Suse[3]*Suse[6]*VARCOV[ishift+4,ishift+7] +
+            2*Suse[3]*Suse[7]*VARCOV[ishift+4,ishift+8] +
+            2*Suse[3]*Suse[8]*VARCOV[ishift+4,ishift+9] +
+            2*Suse[3]*Suse[9]*VARCOV[ishift+4,ishift+10] +
+            2*Suse[3]*Suse[10]*VARCOV[ishift+4,ishift+11] +
+            2*Suse[4]*Suse[5]*VARCOV[ishift+5,ishift+6] +
+            2*Suse[4]*Suse[6]*VARCOV[ishift+5,ishift+7] +
+            2*Suse[4]*Suse[7]*VARCOV[ishift+5,ishift+8] +
+            2*Suse[4]*Suse[8]*VARCOV[ishift+5,ishift+9] +
+            2*Suse[4]*Suse[9]*VARCOV[ishift+5,ishift+10] +
+            2*Suse[4]*Suse[10]*VARCOV[ishift+5,ishift+11] +
+            2*Suse[5]*Suse[6]*VARCOV[ishift+6,ishift+7] +
+            2*Suse[5]*Suse[7]*VARCOV[ishift+6,ishift+8] +
+            2*Suse[5]*Suse[8]*VARCOV[ishift+6,ishift+9] +
+            2*Suse[6]*Suse[7]*VARCOV[ishift+7,ishift+8] +
+            2*Suse[6]*Suse[8]*VARCOV[ishift+7,ishift+9] +
+            2*Suse[6]*Suse[9]*VARCOV[ishift+7,ishift+10] +
+            2*Suse[6]*Suse[10]*VARCOV[ishift+7,ishift+11] +
+            2*Suse[7]*Suse[8]*VARCOV[ishift+8,ishift+9] +
+            2*Suse[7]*Suse[9]*VARCOV[ishift+8,ishift+10] +
+            2*Suse[8]*Suse[9]*VARCOV[ishift+9,ishift+10] +
+            2*Suse[8]*Suse[10]*VARCOV[ishift+9,ishift+11] +
+            2*Suse[9]*Suse[10]*VARCOV[ishift+10,ishift+11]
+        }
+        return(eqn6)
+      }
+    }
     ls_txt<-ls
     params_txt<-c("a","b")
   }
@@ -592,6 +1054,21 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     }
     loglifeC <- function(theta) {
       theta[ishift+1] + (theta[ishift+2]/Sc[,1]) + (theta[ishift+3]/Sc[,2])
+    }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        exp(theta[ishift+1])*exp((theta[ishift+2]/Suse[1]) + (theta[ishift+3]/Suse[2]))
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        (1/Suse[2]^2)*(lifeUSE(theta)^2)*VARCOV[ishift+3,ishift+3] +
+          (1/Suse[1]^2)*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
+          (lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] +
+          2*(1/Suse[1])*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2] +
+          2*(1/Suse[2])*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+3] +
+          2*(1/Suse[1])*(1/Suse[2])*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+3]
+      }
     }
     ls_txt<-"Temperature-Humidity"
     params_txt<-c("A","a","b")
@@ -625,6 +1102,25 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
       theta[ishift+3] - theta[ishift+2]*log(Sc[,2]) + (theta[ishift+1]/Sc[,1])
     }
 
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        exp(theta[ishift+3])/((Suse[2]^theta[ishift+2])*exp(-theta[ishift+1]/Suse[1]))
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        # (lifeUSE(theta)^2)*VARCOV[ishift+3,ishift+3] +
+        #   (log(Suse[2])^2)*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
+        #   (1/Suse[1]^2)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1]
+
+        (lifeUSE(theta)^2)*VARCOV[ishift+3,ishift+3] +
+          (log(Suse[2])^2)*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
+          (1/Suse[1]^2)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] -
+          2*(1/Suse[1])*log(Suse[2])*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2] +
+          2*(1/Suse[2])*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+3] -
+          2*log(Suse[2])*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+3]
+      }
+    }
+
     ls_txt<-"Temperature-Non-thermal"
     params_txt<-c("a","b","c")
   }
@@ -655,6 +1151,25 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     loglifeC <- function(theta) {
       -log(Sc[,1]) + theta[ishift+1] + (theta[ishift+2]/Sc[,1]) + (theta[ishift+3] + (theta[ishift+4]/Sc[,1]))*Sc[,2]
     }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        (1/Suse[1])*exp((theta[ishift+1] + (theta[ishift+2]/Suse[1])) + (theta[ishift+3] + (theta[ishift+4]/Suse[1]))*Suse[2])
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        ((Suse[2]/Suse[1])^2)*(lifeUSE(theta)^2)*VARCOV[ishift+4,ishift+4] +
+          (Suse[2]^2)*VARCOV[ishift+3,ishift+3] +
+          (1/Suse[1]^2)*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
+          (lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] +
+          2*(1/Suse[1])*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2] +
+          2*Suse[2]*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+3] +
+          2*(Suse[2]/Suse[1])*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+3] +
+          2*(Suse[2]/Suse[1])*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+3] +
+          2*(Suse[2]/(Suse[1]^2))*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+4] +
+          2*((Suse[2]^2)/Suse[1])*(lifeUSE(theta)^2)*VARCOV[ishift+3,ishift+4]
+      }
+    }
     ls_txt<-ls
     params_txt<-c("a","b","c","d")
   }
@@ -682,6 +1197,21 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     }
     loglifeC <- function(theta) {
       -theta[ishift+1] - (theta[ishift+2]/Sc[,1]) - (theta[ishift+3]/Sc[,2])
+    }
+
+    # Use life and Variance
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        exp(-theta[ishift+1])*exp(-(theta[ishift+2]/Suse[1]) - (theta[ishift+3]/Suse[2]))
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        (lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] +
+          (1/Suse[1]^2)*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
+          (1/Suse[2]^2)*(lifeUSE(theta)^2)*VARCOV[ishift+3,ishift+3] -
+          2*(1/Suse[1])*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2] -
+          2*(1/Suse[2])*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+3] +
+          2*(1/Suse[1])*(1/Suse[2])*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+3]
+      }
     }
     ls_txt<-ls
     params_txt<-c("\U03B2\U2080","\U03B2\U2081","\U03B2\U2082")
@@ -1515,6 +2045,13 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
   theta.hat <- MLEandvar[[1]]
   inv.fish  <- MLEandvar[[2]]
 
+  if(is.null(Suse) == FALSE){
+    # Compute use life and variance with untransformed parameters
+    uselife <- lifeUSE(theta.hat)
+    uselife_VAR <- lifeUSEVAR(theta.hat,inv.fish)
+    uselifelim <- vector(mode = "list", length = 1)
+  }
+
   # return(list(theta.hat,inv.fish))
 
   crit <- qnorm((1 + conf.level)/2)
@@ -1641,14 +2178,36 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
   AIC = 2*length(theta.hat) + 2*loglik(theta.hat)
   BIC = 2*log(length(tF)+length(tc)) + 2*loglik(theta.hat)
 
-  # if(is.null(Suse) == FALSE){
-  #   # Generate some data
-  # }
+  if(is.null(Suse) == FALSE){
+    if(sided == "twosided"){
+      uselifelim <- uselife + c(-1, 1) * crit * sqrt(uselife_VAR)
+      if(min(uselifelim) < 0){
+        uselifelim <- uselife*exp(c(-1, 1) * crit * (sqrt(uselife_VAR)/uselife))
+      }
+    }
+    if(sided == "onesidedlow"){
+      uselifelim <- uselife - crit2 * sqrt(uselife_VAR)
+      if(uselifelim < 0){
+        uselifelim <- uselife*exp(-crit2 * (sqrt(uselife_VAR)/uselife))
+      }
+    }
+    if(sided == "onesidedhigh"){
+      uselifelim <- uselife + crit2 * sqrt(uselife_VAR)
+    }
+  }
 
   # Produce some output text that summarizes the results
   cat(c("Maximum-Likelihood estimates for the ",ls_txt,"-",dist_txt," Step-Stress Life-Stress model.\n\n"),sep = "")
-  print(matrix(unlist(fulllimset), nrow = length(unlist(fulllimset))/length(LSQest), ncol = length(LSQest), byrow = FALSE,dimnames = list(c("Step-Stress Life-Stress Parameters Mean",conflim_txt),params_txt)))
 
+  if(is.null(Suse) == TRUE){
+    print(matrix(unlist(fulllimset), nrow = length(unlist(fulllimset))/length(LSQest), ncol = length(LSQest), byrow = FALSE,dimnames = list(c("Step-Stress Life-Stress Parameters Mean",conflim_txt),params_txt)))
+  }
+  if(is.null(Suse) == FALSE){
+    # Add column for use life mean and confidence bounds
+    fulllimset2<-fulllimset
+    fulllimset2[[length(LSQest)+1]] <- c(uselife,uselifelim)
+    print(matrix(unlist(fulllimset2), nrow = length(unlist(fulllimset))/length(LSQest), ncol = (length(LSQest)+1), byrow = FALSE,dimnames = list(c("Step-Stress Life-Stress Parameters Mean",conflim_txt),c(params_txt,"Use Life"))))
+  }
   #return(list(ti(LSQest),tj(LSQest),theta.hat,conflim))
   # Add a plot for the LSQ and MLE here as well (CDF)
 
@@ -1681,5 +2240,10 @@ stepstress.MLEest <- function(LSQest,data,stepstresstable,ls,dist,confid=0.95,si
     theta.hat[ishift+3] <- exp(theta.hat[ishift+3])
   }
 
-  return(list(theta.hat,inv.fish,conflim,AIC=AIC,BIC=BIC))
+  if(is.null(Suse) == TRUE){
+    return(list(theta.hat,inv.fish,conflim,AIC=AIC,BIC=BIC))
+  }
+  if(is.null(Suse) == FALSE){
+    return(list(theta.hat,inv.fish,uselife,conflim,uselifelim,AIC=AIC,BIC=BIC))
+  }
 }

@@ -1,7 +1,7 @@
 # Bayesian Step-Stress Estimator
-# Developed by Dr. Reuel Smith, 2021-2022
+# Developed by Dr. Reuel Smith, 2021-2024
 
-stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,priors,nsamples,burnin,nchains=4){
+stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,SUSE=NULL,SACC=NULL,confid=0.95,priors,nsamples,burnin,nchains=4){
   #Load pracma library for erf
   library(pracma)
   library(StanHeaders)
@@ -144,6 +144,18 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,
     loglifeF <- "Lifei[i] = log(b + Si[i]*a);"
     lifeC <- "Lifej[j] = b + Sj[j]*a;"
     loglifeC <- "Lifej[j] = log(b + Sj[j]*a);"
+
+    if(missing(SUSE)==FALSE){
+      lifeU <- "b + Suse*a;"
+      complifeU <- pt_est[ishift+2] + SUSE*pt_est[ishift+1]
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
+      AF <- "(b + Suse*a)/(b + Sacc*a);"
+      complifeU <- pt_est[ishift+2] + SUSE*pt_est[ishift+1]
+      compAF <- (pt_est[ishift+2] + SUSE*pt_est[ishift+1])/(pt_est[ishift+2] + SACC*pt_est[ishift+1])
+    }
   }
 
   if (ls=="Exponential"){
@@ -164,6 +176,18 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,
     loglifeF <- "Lifei[i] = log(b) + a*Si[i];"
     lifeC <- "Lifej[j] = b*exp(a*Sj[j]);"
     loglifeC <- "Lifej[j] = log(b) + a*Sj[j];"
+
+    if(missing(SUSE)==FALSE){
+      lifeU <- "b*exp(a*Suse);"
+      complifeU <- pt_est[ishift+2]*exp(SUSE*pt_est[ishift+1])
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
+      AF <- "exp(a*(Suse - Sacc));"
+      complifeU <- pt_est[ishift+2]*exp(SUSE*pt_est[ishift+1])
+      compAF <- exp((SUSE - SACC)*pt_est[ishift+1])
+    }
   }
 
   if (ls=="Exponential2"){
@@ -184,6 +208,18 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,
     loglifeF <- "Lifei[i] = log(b) + (a/Si[i]);"
     lifeC <- "Lifej[j] = b*exp(a/Sj[j]);"
     loglifeC <- "Lifej[j] = log(b) + (a/Sj[j]);"
+
+    if(missing(SUSE)==FALSE){
+      lifeU <- "b*exp(a/Suse);"
+      complifeU <- pt_est[ishift+2]*exp(pt_est[ishift+1]/SUSE)
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
+      AF <- "exp(a*((1/Suse) - (1/Sacc)));"
+      complifeU <- pt_est[ishift+2]*exp(pt_est[ishift+1]/SUSE)
+      compAF <- exp(((1/SUSE) - (1/SACC))*pt_est[ishift+1])
+    }
   }
 
   if (ls=="Arrhenius") {
@@ -204,6 +240,18 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,
     loglifeF <- "Lifei[i] = log(b) + (Ea/((8.617385e-5)*Si[i]));"
     lifeC <- "Lifej[j] = b*exp(Ea/((8.617385e-5)*Sj[j]));"
     loglifeC <- "Lifej[j] = log(b) + (Ea/((8.617385e-5)*Sj[j]));"
+
+    if(missing(SUSE)==FALSE){
+      lifeU <- "b*exp(Ea/((8.617385e-5)*Suse));"
+      complifeU <- pt_est[ishift+2]*exp(pt_est[ishift+1]/(8.617385e-5*SUSE))
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
+      AF <- "exp((Ea/8.617385e-5)*((1/Suse) - (1/Sacc)));"
+      complifeU <- pt_est[ishift+2]*exp(pt_est[ishift+1]/(8.617385e-5*SUSE))
+      compAF <- exp(((1/SUSE) - (1/SACC))*(pt_est[ishift+1]/8.617385e-5))
+    }
   }
 
   if (ls=="Eyring") {
@@ -223,6 +271,18 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,
     loglifeF <- "Lifei[i] = log(b) - log(Si[i]) + (a/Si[i]);"
     lifeC <- "Lifej[j] = (b/Sj[j])*exp(a/Sj[j]);"
     loglifeC <- "Lifej[j] = log(b) - log(Sj[j]) + (a/Sj[j]);"
+
+    if(missing(SUSE)==FALSE){
+      lifeU <- "(b/Suse)*exp(a/Suse);"
+      complifeU <- (pt_est[ishift+2]/SUSE)*exp(pt_est[ishift+1]/SUSE)
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
+      AF <- "(Sacc/Suse)*exp(a*((1/Suse) - (1/Sacc)));"
+      complifeU <- (pt_est[ishift+2]/SUSE)*exp(pt_est[ishift+1]/SUSE)
+      compAF <- (SACC/SUSE)*exp(((1/SUSE) - (1/SACC))*pt_est[ishift+1])
+    }
   }
 
   if (ls=="Eyring2") {
@@ -242,6 +302,18 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,
     loglifeF <- "Lifei[i] = -log(Si[i]) - a + (b/Si[i]);"
     lifeC <- "Lifej[j] = (1/Sj[j])*exp(-(a - (b/Sj[j])));"
     loglifeC <- "Lifej[j] = -log(Sj[j]) - a + (b/Sj[j]);"
+
+    if(missing(SUSE)==FALSE){
+      lifeU <- "(1/Suse)*exp(-(a - (b/Suse)));"
+      complifeU <- (1/SUSE)*exp(-(pt_est[ishift+1] - (pt_est[ishift+2]/SUSE)))
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
+      AF <- "(Sacc/Suse)*exp(b*((1/Suse) - (1/Sacc)));"
+      complifeU <- (1/SUSE)*exp(-(pt_est[ishift+1] - (pt_est[ishift+2]/SUSE)))
+      compAF <- (SACC/SUSE)*exp(((1/SUSE) - (1/SACC))*pt_est[ishift+2])
+    }
   }
 
   if (ls=="Power") {
@@ -261,6 +333,18 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,
     loglifeF <- "Lifei[i] = log(b) + a*log(Si[i]);"
     lifeC <- "Lifej[j] = b*(Sj[j]^a);"
     loglifeC <- "Lifej[j] = log(b) + a*log(Sj[j]);"
+
+    if(missing(SUSE)==FALSE){
+      lifeU <- "b*(Suse^a);"
+      complifeU <- pt_est[ishift+2]*(SUSE^pt_est[ishift+1])
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
+      AF <- "(Suse/Sacc)^a;"
+      complifeU <- pt_est[ishift+2]*(SUSE^pt_est[ishift+1])
+      compAF <- (SUSE/SACC)^pt_est[ishift+1]
+    }
   }
 
   if (ls=="InversePower") {
@@ -280,6 +364,49 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,
     loglifeF <- "Lifei[i] = log(b) - a*log(Si[i]);"
     lifeC <- "Lifej[j] = b*(Sj[j]^-a);"
     loglifeC <- "Lifej[j] = log(b) - a*log(Sj[j]);"
+
+    if(missing(SUSE)==FALSE){
+      lifeU <- "b*(Suse^-a);"
+      complifeU <- pt_est[ishift+2]*(SUSE^-pt_est[ishift+1])
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
+      AF <- "(Sacc/Suse)^a;"
+      complifeU <- pt_est[ishift+2]*(SUSE^-pt_est[ishift+1])
+      compAF <- (SACC/SUSE)^pt_est[ishift+1]
+    }
+  }
+
+  if (ls=="InversePower2") {
+    # lsparams[1] - parameter a, lsparams[2] - parameter b
+    lsparams <- "real a; real<lower=0> b;"
+    lsparamsvec <- c("a","b")
+    pr1<-paste(c("a ~ ",priors[ishift+1],";"),collapse = "")
+    pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
+    lspriors <- paste(c(pr1,pr2),collapse = " ")
+
+    # Adjusted Times
+    Ti_adj <- "tiadj[i] = (Ti[i] - Tendi[i])*((Sni[i]/Si[i])^a);"
+    Tj_adj <- "tjadj[j] = (Tj[j] - Tendj[j])*((Snj[j]/Sj[j])^a);"
+
+    # Life functions
+    lifeF <- "Lifei[i] = 1/(b *(Si[i]^a));"
+    loglifeF <- "Lifei[i] = -log(b) - a*log(Si[i]);"
+    lifeC <- "Lifej[j] = 1/(b*(Sj[j]^a));"
+    loglifeC <- "Lifej[j] = -log(b) - a*log(Sj[j]);"
+
+    if(missing(SUSE)==FALSE){
+      lifeU <- "1/(b*(Suse^a));"
+      complifeU <- 1/(pt_est[ishift+2]*(SUSE^pt_est[ishift+1]))
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
+      AF <- "(Sacc/Suse)^a;"
+      complifeU <- 1/(pt_est[ishift+2]*(SUSE^pt_est[ishift+1]))
+      compAF <- (SACC/SUSE)^pt_est[ishift+1]
+    }
   }
 
   if (ls=="Logarithmic") {
@@ -299,6 +426,18 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,
     loglifeF <- "Lifei[i] = log(a*log(Si[i]) + b);"
     lifeC <- "Lifej[j] = a*log(Sj[j]) + b;"
     loglifeC <- "Lifej[j] = log(a*log(Sj[j]) + b);"
+
+    if(missing(SUSE)==FALSE){
+      lifeU <- "a*log(Suse) + b;"
+      complifeU <- pt_est[ishift+2] + log(SUSE)*pt_est[ishift+1]
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
+      AF <- "(a*log(Suse) + b)/(a*log(Sacc) + b);"
+      complifeU <- pt_est[ishift+2] + log(SUSE)*pt_est[ishift+1]
+      compAF <- (pt_est[ishift+2] + log(SUSE)*pt_est[ishift+1])/(pt_est[ishift+2] + log(SACC)*pt_est[ishift+1])
+    }
   }
 
   if (ls=="MultiStress") {
@@ -346,6 +485,19 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,
     loglifeF <- "Lifei[i] = log(A) + (a/Sf[,1]) + (b/Sf[,2]);"
     lifeC <- "Lifej[j] = A*exp((a/Sc[,1]) + (b/Sc[,2]));"
     loglifeC <- "Lifej[j] = log(A) + (a/Sc[,1]) + (b/Sc[,2]);"
+
+    if(missing(SUSE)==FALSE){
+      lifeU <- "A*exp((a/Suse[1]) + (b/Suse[2]));"
+      complifeU <- pt_est[ishift+1]*exp((pt_est[ishift+2]/SUSE[1]) + (pt_est[ishift+3]/SUSE[2]))
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
+      # AFheading <- paste(c("AFat",SACC[1],"_",SACC[2]),collapse = "")
+      AF <- "exp(a*((1/Suse[1]) - (1/Sacc[1])) + b*((1/Suse[2]) - (1/Sacc[2])));"
+      complifeU <- pt_est[ishift+1]*exp((pt_est[ishift+2]/SUSE[1]) + (pt_est[ishift+3]/SUSE[2]))
+      compAF <- exp(pt_est[ishift+2]*(1/SUSE[1] - 1/SACC[1]) + pt_est[ishift+3]*(1/SUSE[2] - 1/SACC[2]))
+    }
   }
 
   if (ls=="TempNonthermal") {
@@ -366,6 +518,18 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,
     loglifeF <- "Lifei[i] = log(c) - b*log(Sf[,2]) + (a/Sf[,1]);"
     lifeC <- "Lifej[j] = c/((Sc[,2]^b)*exp(-a/Sc[,1]));"
     loglifeC <- "Lifej[j] = log(c) - b*log(Sc[,2]) + (a/Sc[,1]);"
+
+    if(missing(SUSE)==FALSE){
+      lifeU <- "c/((Suse[2]^b)*exp(-a/Suse[1]));"
+      complifeU <- pt_est[ishift+3]/((SUSE[2]^pt_est[ishift+2])*exp(-pt_est[ishift+1]/SUSE[1]))
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
+      AF <- "((Sacc[2]/Suse[2])^b)*exp(-a*((1/Suse[1]) - (1/Sacc[1])));"
+      complifeU <- pt_est[ishift+3]/((SUSE[2]^pt_est[ishift+2])*exp(-pt_est[ishift+1]/SUSE[1]))
+      compAF <- ((SACC[2]/SUSE[2])^pt_est[ishift+2])*exp(-((1/SUSE[1]) - (1/SACC[1]))*pt_est[ishift+1])
+    }
   }
 
   if (ls=="Eyring3") {
@@ -388,6 +552,18 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,
     loglifeF <- "Lifei[i] = -log(Sf[,1]) + a + (b/Sf[,1]) + (c + (d/Sf[,1]))*Sf[,2];"
     lifeC <- "Lifej[j] = (1/Sc[,1])*exp((a + (b/Sc[,1])) + (c + (d/Sc[,1]))*Sc[,2]);"
     loglifeC <- "Lifej[j] = -log(Sc[,1]) + a + (b/Sc[,1]) + (c + (d/Sc[,1]))*Sc[,2];"
+
+    if(missing(SUSE)==FALSE){
+      lifeU <- "(1/Suse[1])*exp((a + (b/Suse[1])) + (c + (d/Suse[1]))*Suse[2]);"
+      complifeU <- (1/SUSE[1])*exp((pt_est[ishift+1] + (pt_est[ishift+2]/SUSE[1])) + (pt_est[ishift+3] + (pt_est[ishift+4]/SUSE[1]))*SUSE[2])
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
+      AF <- "(Sacc[1]/Suse[1])*exp(b*((1/Suse[1]) - (1/Sacc[1])) + c*(Suse[2] - Sacc[2]) + d*((Suse[2]/Suse[1]) - (Sacc[2]/Sacc[1])));"
+      complifeU <- (1/SUSE[1])*exp((pt_est[ishift+1] + (pt_est[ishift+2]/SUSE[1])) + (pt_est[ishift+3] + (pt_est[ishift+4]/SUSE[1]))*SUSE[2])
+      compAF <- (SACC[1]/SUSE[1])*exp(pt_est[ishift+2]*((1/SUSE[1]) - (1/SACC[1])) + pt_est[ishift+3]*(SUSE[2] - SACC[2]) + pt_est[ishift+4]*((SUSE[2]/SUSE[1]) - (SACC[2]/SACC[1])))
+    }
   }
 
   # Fit to log-likelihood distributions
@@ -441,21 +617,50 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,
   }
 
   # Define stancode here
+  # Modified for Use life and AF posterior calculation
   # Data Block
-  # block1 <- paste(c("data {int<lower=0> n; int<lower=0> m; vector[n] Ti; vector[m] Tj; vector[n] Tendi; vector[m] Tendj; vector[n] Si; vector[m] Sj; vector[n] Sni; vector[m] Snj; vector[n] tiadj; vector[m] tjadj; vector[n] Lifei; vector[m] Lifej; }"),collapse = " ")
   block1 <- paste(c("data {int<lower=0> n; int<lower=0> m; vector[n] Ti; vector[m] Tj; vector[n] Tendi; vector[m] Tendj; vector[n] Si; vector[m] Sj; vector[n] Sni; vector[m] Snj; }"),collapse = " ")
+  # Data Input Block
+  datablock <- list(n = length(TTF), m = length(TTS), Ti = TTF, Tj = TTS, Tendi = tvecti, Tendj = tvectj, Si = SF, Sj = Sc, Sni = SFn, Snj = Scn)
+  if(is.null(SUSE)==FALSE){
+    block1 <- paste(c("data {int<lower=0> n; int<lower=0> m; vector[n] Ti; vector[m] Tj; vector[n] Tendi; vector[m] Tendj; vector[n] Si; vector[m] Sj; vector[n] Sni; vector[m] Snj; real Suse; }"),collapse = " ")
+    datablock <- list(n = length(TTF), m = length(TTS), Ti = TTF, Tj = TTS, Tendi = tvecti, Tendj = tvectj, Si = SF, Sj = Sc, Sni = SFn, Snj = Scn, Suse = SUSE)
+  }
+  if(is.null(SUSE)==FALSE && is.null(SACC)==FALSE){
+    block1 <- paste(c("data {int<lower=0> n; int<lower=0> m; vector[n] Ti; vector[m] Tj; vector[n] Tendi; vector[m] Tendj; vector[n] Si; vector[m] Sj; vector[n] Sni; vector[m] Snj; real Suse; real Sacc; }"),collapse = " ")
+    datablock <- list(n = length(TTF), m = length(TTS), Ti = TTF, Tj = TTS, Tendi = tvecti, Tendj = tvectj, Si = SF, Sj = Sc, Sni = SFn, Snj = Scn, Suse = SUSE, Sacc = SACC)
+  }
+
   # Parameter Block
   block2 <- paste(c("parameters {",params,"}"),collapse = " ")
+
+  # Transformed Parameter Block (for Use Life and Acceleration Factor at SACC)
+  if(is.null(SUSE)==FALSE){
+    block2b <- paste(c("transformed parameters { real<lower=0> Uselife; Uselife = ",lifeU,"}"),collapse = " ")
+    paramsvec0 <- c(paramsvec,"Uselife")
+    # pt_est <- c(pt_est,complifeU)
+  }
+  if(is.null(SUSE)==FALSE && is.null(SACC)==FALSE){
+    block2b <- paste(c("transformed parameters { real<lower=0> Uselife; real<lower=0> ",AFheading,"; Uselife = ",lifeU,AFheading," = ",AF,"}"),collapse = " ")
+    paramsvec0 <- c(paramsvec,"Uselife",AFheading)
+    # pt_est <- c(pt_est,complifeU,compAF)
+  }
+  if(is.null(SUSE)==TRUE && is.null(SACC)==TRUE){
+    paramsvec0 <- paramsvec
+  }
+
   # Model Block
   if (dist=="Lognormal"){
     block3 <- paste(c("model {vector[n] tiadj; vector[m] tjadj; vector[n] Lifei; vector[m] Lifej; ",priors," for(i in 1:n){",Ti_adj,loglifeF,"} for(j in 1:m){",Tj_adj,loglifeC,"}",loglik,"}"),collapse = " ")
   } else{
     block3 <- paste(c("model {vector[n] tiadj; vector[m] tjadj; vector[n] Lifei; vector[m] Lifej; ",priors," for(i in 1:n){",Ti_adj,lifeF,"} for(j in 1:m){",Tj_adj,lifeC,"}",loglik,"}"),collapse = " ")
   }
-  # Data Input Block
-  datablock <- list(n = length(TTF), m = length(TTS), Ti = TTF, Tj = TTS, Tendi = tvecti, Tendj = tvectj, Si = SF, Sj = Sc, Sni = SFn, Snj = Scn)
   # NOT RUN {
   stanlscode <- paste(c(block1,block2,block3),collapse=" ")
+  if(is.null(SUSE)==FALSE || is.null(SACC)==FALSE){
+    stanlscode <- paste(c(block1,block2,block2b,block3),collapse=" ")
+  }
+
   stanlsfile <- write_stan_file(stanlscode)
   print(stanlsfile)
   # Generate initial list (one list per chain)
@@ -480,17 +685,16 @@ stepstress.BAYESest <- function(pt_est,data,stepstresstable,ls,dist,confid=0.95,
   # dataout <- fit@.MISC[["summary"]][["msd"]]
 
   conflim_txt<-c(paste(c("Lower ",100*conf.level,"%"),collapse = ""),paste(c("Upper ",100*conf.level,"%"),collapse = ""))
-  stats <- fit$summary(variables = paramsvec)
+  stats <- fit$summary(variables = paramsvec0)
   dataout <- fit$draws(format = "df")
-  confidbounds <- mcmc_intervals_data(fit$draws(variables = paramsvec),prob_outer = confid)
-  outputtable <- matrix(c(stats[[2]],stats[[4]],confidbounds[[5]],stats[[3]],confidbounds[[9]],stats[[8]]), nrow = length(outputparamset), ncol = 6, byrow = FALSE,dimnames = list(outputparamset,c("Mean","Standard Deviation",conflim_txt[1],"Median",conflim_txt[2],"R\U005E")))
-
+  confidbounds <- mcmc_intervals_data(fit$draws(variables = paramsvec0),prob_outer = confid)
+  outputtable <- matrix(c(stats[[2]],stats[[4]],confidbounds[[5]],stats[[3]],confidbounds[[9]],stats[[8]]), nrow = length(paramsvec0), ncol = 6, byrow = FALSE,dimnames = list(paramsvec0,c("Mean","Standard Deviation",conflim_txt[1],"Median",conflim_txt[2],"R\U005E")))
 
   # Trace the Markov Chains for each parameter
-  plot1_MCtrace <- mcmc_trace(fit$draws(paramsvec))
-  plot2_hist <- mcmc_hist(fit$draws(paramsvec))
-  plot3_density <- mcmc_dens(fit$draws(paramsvec))
-  plot4_densityoverlay <- mcmc_dens_overlay(fit$draws(paramsvec))
+  plot1_MCtrace <- mcmc_trace(fit$draws(paramsvec0))
+  plot2_hist <- mcmc_hist(fit$draws(paramsvec0))
+  plot3_density <- mcmc_dens(fit$draws(paramsvec0))
+  plot4_densityoverlay <- mcmc_dens_overlay(fit$draws(paramsvec0))
 
   # Produce some output text that summarizes the results
   cat(c("Posterior estimates for Bayesian Analysis.\n\n"),sep = "")

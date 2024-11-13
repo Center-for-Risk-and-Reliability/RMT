@@ -62,7 +62,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       complifeU <- pt_est[ishift+2] + SUSE*pt_est[ishift+1]
     }
     if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-      AFheading <- paste(c("AFat",SACC),collapse = "")
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
       AF <- "(b + Suse*a)/(b + Sacc*a);"
       complifeU <- pt_est[ishift+2] + SUSE*pt_est[ishift+1]
       compAF <- (pt_est[ishift+2] + SUSE*pt_est[ishift+1])/(pt_est[ishift+2] + SACC*pt_est[ishift+1])
@@ -88,7 +89,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       complifeU <- pt_est[ishift+2]*exp(SUSE*pt_est[ishift+1])
     }
     if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-      AFheading <- paste(c("AFat",SACC),collapse = "")
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
       AF <- "exp(a*(Suse - Sacc));"
       complifeU <- pt_est[ishift+2]*exp(SUSE*pt_est[ishift+1])
       compAF <- exp((SUSE - SACC)*pt_est[ishift+1])
@@ -114,7 +116,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       complifeU <- pt_est[ishift+2]*exp(pt_est[ishift+1]/SUSE)
     }
     if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-      AFheading <- paste(c("AFat",SACC),collapse = "")
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
       AF <- "exp(a*((1/Suse) - (1/Sacc)));"
       complifeU <- pt_est[ishift+2]*exp(pt_est[ishift+1]/SUSE)
       compAF <- exp(((1/SUSE) - (1/SACC))*pt_est[ishift+1])
@@ -141,7 +144,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       complifeU <- pt_est[ishift+2]*exp(pt_est[ishift+1]/(8.617385e-5*SUSE))
     }
     if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-      AFheading <- paste(c("AFat",SACC),collapse = "")
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
       AF <- "exp((Ea/8.617385e-5)*((1/Suse) - (1/Sacc)));"
       complifeU <- pt_est[ishift+2]*exp(pt_est[ishift+1]/(8.617385e-5*SUSE))
       compAF <- exp(((1/SUSE) - (1/SACC))*(pt_est[ishift+1]/8.617385e-5))
@@ -169,7 +173,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       complifeU <- (pt_est[ishift+2]/SUSE)*exp(pt_est[ishift+1]/SUSE)
     }
     if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-      AFheading <- paste(c("AFat",SACC),collapse = "")
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
       AF <- "(Sacc/Suse)*exp(a*((1/Suse) - (1/Sacc)));"
       complifeU <- (pt_est[ishift+2]/SUSE)*exp(pt_est[ishift+1]/SUSE)
       compAF <- (SACC/SUSE)*exp(((1/SUSE) - (1/SACC))*pt_est[ishift+1])
@@ -196,7 +201,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       complifeU <- (1/SUSE)*exp(-(pt_est[ishift+1] - (pt_est[ishift+2]/SUSE)))
     }
     if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-      AFheading <- paste(c("AFat",SACC),collapse = "")
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
       AF <- "(Sacc/Suse)*exp(b*((1/Suse) - (1/Sacc)));"
       complifeU <- (1/SUSE)*exp(-(pt_est[ishift+1] - (pt_est[ishift+2]/SUSE)))
       compAF <- (SACC/SUSE)*exp(((1/SUSE) - (1/SACC))*pt_est[ishift+2])
@@ -222,7 +228,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       complifeU <- pt_est[ishift+2]*(SUSE^pt_est[ishift+1])
     }
     if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-      AFheading <- paste(c("AFat",SACC),collapse = "")
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
       AF <- "(Suse/Sacc)^a;"
       complifeU <- pt_est[ishift+2]*(SUSE^pt_est[ishift+1])
       compAF <- (SUSE/SACC)^pt_est[ishift+1]
@@ -248,7 +255,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       complifeU <- pt_est[ishift+2]*(SUSE^-pt_est[ishift+1])
     }
     if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-      AFheading <- paste(c("AFat",SACC),collapse = "")
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
       AF <- "(Sacc/Suse)^a;"
       complifeU <- pt_est[ishift+2]*(SUSE^-pt_est[ishift+1])
       compAF <- (SACC/SUSE)^pt_est[ishift+1]
@@ -274,7 +282,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       complifeU <- 1/(pt_est[ishift+2]*(SUSE^pt_est[ishift+1]))
     }
     if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-      AFheading <- paste(c("AFat",SACC),collapse = "")
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
       AF <- "(Sacc/Suse)^a;"
       complifeU <- 1/(pt_est[ishift+2]*(SUSE^pt_est[ishift+1]))
       compAF <- (SACC/SUSE)^pt_est[ishift+1]
@@ -300,7 +309,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       complifeU <- pt_est[ishift+2] + log(SUSE)*pt_est[ishift+1]
     }
     if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-      AFheading <- paste(c("AFat",SACC),collapse = "")
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
       AF <- "(a*log(Suse) + b)/(a*log(Sacc) + b);"
       complifeU <- pt_est[ishift+2] + log(SUSE)*pt_est[ishift+1]
       compAF <- (pt_est[ishift+2] + log(SUSE)*pt_est[ishift+1])/(pt_est[ishift+2] + log(SACC)*pt_est[ishift+1])
@@ -328,7 +338,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
         complifeU <- exp(pt_est[ishift+1] + pt_est[ishift+2]*SUSE)
       }
       if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-        AFheading <- paste(c("AFat"),collapse = "")
+        # AFheading <- paste(c("AFat",SACC),collapse = "")
+        AFheading <- paste(c("AFatSACC"),collapse = "")
         AF <- "exp(a1*(Suse - Sacc));"
         complifeU <- exp(pt_est[ishift+1] + pt_est[ishift+2]*SUSE)
         compAF <- exp((SUSE - SACC)*pt_est[ishift+2])
@@ -353,7 +364,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
         complifeU <- exp(pt_est[ishift+1] + pt_est[ishift+2]*SUSE[1] + pt_est[ishift+3]*SUSE[2])
       }
       if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-        AFheading <- paste(c("AFat"),collapse = "")
+        # AFheading <- paste(c("AFat",SACC),collapse = "")
+        AFheading <- paste(c("AFatSACC"),collapse = "")
         AF <- "exp(a1*(Suse[1] - Sacc[1]) + a2*(Suse[2] - Sacc[2]));"
         complifeU <- exp(pt_est[ishift+1] + pt_est[ishift+2]*SUSE[1] + pt_est[ishift+3]*SUSE[2])
         compAF <- exp((SUSE[1] - SACC[1])*pt_est[ishift+2] + (SUSE[2] - SACC[2])*pt_est[ishift+3])
@@ -406,7 +418,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
         complifeU <- exp(pt_est[ishift+1] + pt_est[ishift+2]*SUSE[1] + pt_est[ishift+3]*SUSE[2] + pt_est[ishift+4]*SUSE[3] + pt_est[ishift+5]*SUSE[4])
       }
       if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-        AFheading <- paste(c("AFat"),collapse = "")
+        # AFheading <- paste(c("AFat",SACC),collapse = "")
+        AFheading <- paste(c("AFatSACC"),collapse = "")
         AF <- "exp(a1*(Suse[1] - Sacc[1]) + a2*(Suse[2] - Sacc[2]) + a3*(Suse[3] - Sacc[3]) + a4*(Suse[4] - Sacc[4]));"
         complifeU <- exp(pt_est[ishift+1] + pt_est[ishift+2]*SUSE[1] + pt_est[ishift+3]*SUSE[2] + pt_est[ishift+4]*SUSE[3] + pt_est[ishift+5]*SUSE[4])
         compAF <- exp((SUSE[1] - SACC[1])*pt_est[ishift+2] + (SUSE[2] - SACC[2])*pt_est[ishift+3] + (SUSE[3] - SACC[3])*pt_est[ishift+4] + (SUSE[4] - SACC[4])*pt_est[ishift+5])
@@ -434,7 +447,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       complifeU <- pt_est[ishift+1]*exp((pt_est[ishift+2]/SUSE[1]) + (pt_est[ishift+3]/SUSE[2]))
     }
     if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-      AFheading <- paste(c("AFat"),collapse = "")
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
       # AFheading <- paste(c("AFat",SACC[1],"_",SACC[2]),collapse = "")
       AF <- "exp(a*((1/Suse[1]) - (1/Sacc[1])) + b*((1/Suse[2]) - (1/Sacc[2])));"
       complifeU <- pt_est[ishift+1]*exp((pt_est[ishift+2]/SUSE[1]) + (pt_est[ishift+3]/SUSE[2]))
@@ -462,7 +476,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       complifeU <- pt_est[ishift+3]/((SUSE[2]^pt_est[ishift+2])*exp(-pt_est[ishift+1]/SUSE[1]))
     }
     if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-      AFheading <- paste(c("AFat"),collapse = "")
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
       AF <- "((Sacc[2]/Suse[2])^b)*exp(-a*((1/Suse[1]) - (1/Sacc[1])));"
       complifeU <- pt_est[ishift+3]/((SUSE[2]^pt_est[ishift+2])*exp(-pt_est[ishift+1]/SUSE[1]))
       compAF <- ((SACC[2]/SUSE[2])^pt_est[ishift+2])*exp(-((1/SUSE[1]) - (1/SACC[1]))*pt_est[ishift+1])
@@ -491,7 +506,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       complifeU <- (1/SUSE[1])*exp((pt_est[ishift+1] + (pt_est[ishift+2]/SUSE[1])) + (pt_est[ishift+3] + (pt_est[ishift+4]/SUSE[1]))*SUSE[2])
     }
     if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-      AFheading <- paste(c("AFat"),collapse = "")
+      # AFheading <- paste(c("AFat",SACC),collapse = "")
+      AFheading <- paste(c("AFatSACC"),collapse = "")
       AF <- "(Sacc[1]/Suse[1])*exp(b*((1/Suse[1]) - (1/Sacc[1])) + c*(Suse[2] - Sacc[2]) + d*((Suse[2]/Suse[1]) - (Sacc[2]/Sacc[1])));"
       complifeU <- (1/SUSE[1])*exp((pt_est[ishift+1] + (pt_est[ishift+2]/SUSE[1])) + (pt_est[ishift+3] + (pt_est[ishift+4]/SUSE[1]))*SUSE[2])
       compAF <- (SACC[1]/SUSE[1])*exp(pt_est[ishift+2]*((1/SUSE[1]) - (1/SACC[1])) + pt_est[ishift+3]*(SUSE[2] - SACC[2]) + pt_est[ishift+4]*((SUSE[2]/SUSE[1]) - (SACC[2]/SACC[1])))
@@ -634,11 +650,11 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
     if(is.null(dim(SF))==TRUE){ # Single stress case Sf treated as vector
       block1 <- "data {int<lower=0> n; vector[n] TTF; vector[n] Sf;}"
       datablock <- list(n = length(TTF), TTF = TTF, Sf = SF)
-      if(missing(SUSE)==FALSE){
+      if(is.null(SUSE)==FALSE){
         block1 <- "data {int<lower=0> n; vector[n] TTF; vector[n] Sf; real Suse;}"
         datablock <- list(n = length(TTF), TTF = TTF, Sf = SF, Suse = SUSE)
       }
-      if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      if(is.null(SUSE)==FALSE && is.null(SACC)==FALSE){
         block1 <- "data {int<lower=0> n; vector[n] TTF; vector[n] Sf; real Suse; real Sacc;}"
         datablock <- list(n = length(TTF), TTF = TTF, Sf = SF, Suse = SUSE, Sacc = SACC)
       }
@@ -646,11 +662,11 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
     if(is.null(dim(SF))==FALSE){ # multi-stress case, Sf treated as matrix
       block1 <- "data {int<lower=0> n; int<lower=0> n2; vector[n] TTF; matrix[n,n2] Sf;}"
       datablock <- list(n = length(TTF),  n2 = dim(SF)[2], TTF = TTF, Sf = SF)
-      if(missing(SUSE)==FALSE){
+      if(is.null(SUSE)==FALSE){
         block1 <- "data {int<lower=0> n; int<lower=0> n2; vector[n] TTF; matrix[n,n2] Sf; vector[n2] Suse;}"
         datablock <- list(n = length(TTF), n2 = dim(SF)[2], TTF = TTF, Sf = SF, Suse = SUSE)
       }
-      if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      if(is.null(SUSE)==FALSE && is.null(SACC)==FALSE){
         block1 <- "data {int<lower=0> n; int<lower=0> n2; vector[n] TTF; matrix[n,n2] Sf; vector[n2] Suse; vector[n2] Sacc;}"
         datablock <- list(n = length(TTF), n2 = dim(SF)[2], TTF = TTF, Sf = SF, Suse = SUSE, Sacc = SACC)
       }
@@ -660,11 +676,11 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
     if(is.null(dim(SF))==TRUE){
       block1 <- "data {int<lower=0> n; int<lower=0> m; vector[n] TTF; vector[m] TTS; vector[n] Sf; vector[m] Sc;}"
       datablock <- list(n = length(TTF), m = length(Tc), TTF = TTF, Sf = SF, TTS = Tc, Sc = Sc)
-      if(missing(SUSE)==FALSE){
+      if(is.null(SUSE)==FALSE){
         block1 <- "data {int<lower=0> n; int<lower=0> m; vector[n] TTF; vector[m] TTS; vector[n] Sf; vector[m] Sc; real Suse;}"
         datablock <- list(n = length(TTF), m = length(Tc), TTF = TTF, Sf = SF, TTS = Tc, Sc = Sc, Suse = SUSE)
       }
-      if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      if(is.null(SUSE)==FALSE && is.null(SACC)==FALSE){
         block1 <- "data {int<lower=0> n; int<lower=0> m; vector[n] TTF; vector[m] TTS; vector[n] Sf; vector[m] Sc; real Suse; real Sacc;}"
         datablock <- list(n = length(TTF), m = length(Tc), TTF = TTF, Sf = SF, TTS = Tc, Sc = Sc, Suse = SUSE, Sacc = SACC)
       }
@@ -672,11 +688,11 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
     if(is.null(dim(SF))==FALSE){
       block1 <- "data {int<lower=0> n; int<lower=0> m; vector[n] TTF; vector[m] TTS; vector[n] Sf; vector[m] Sc;}"
       datablock <- list(n = length(TTF), m = length(Tc), TTF = TTF, Sf = SF, TTS = Tc, Sc = Sc)
-      if(missing(SUSE)==FALSE){
+      if(is.null(SUSE)==FALSE){
         block1 <- "data {int<lower=0> n; int<lower=0> m; vector[n] TTF; vector[m] TTS; vector[n] Sf; vector[m] Sc; real Suse;}"
         datablock <- list(n = length(TTF), m = length(Tc), TTF = TTF, Sf = SF, TTS = Tc, Sc = Sc, Suse = SUSE)
       }
-      if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      if(is.null(SUSE)==FALSE && is.null(SACC)==FALSE){
         block1 <- "data {int<lower=0> n; int<lower=0> m; vector[n] TTF; vector[m] TTS; vector[n] Sf; vector[m] Sc; real Suse; real Sacc;}"
         datablock <- list(n = length(TTF), m = length(Tc), TTF = TTF, Sf = SF, TTS = Tc, Sc = Sc, Suse = SUSE, Sacc = SACC)
       }
@@ -684,17 +700,17 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
 
   }
   block2 <- paste(c("parameters {",params,"}"),collapse = " ")
-  if(missing(SUSE)==FALSE){
+  if(is.null(SUSE)==FALSE){
     block2b <- paste(c("transformed parameters { real<lower=0> Uselife; Uselife = ",lifeU,"}"),collapse = " ")
     paramsvec0 <- c(paramsvec,"Uselife")
     # pt_est <- c(pt_est,complifeU)
   }
-  if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+  if(is.null(SUSE)==FALSE && is.null(SACC)==FALSE){
     block2b <- paste(c("transformed parameters { real<lower=0> Uselife; real<lower=0> ",AFheading,"; Uselife = ",lifeU,AFheading," = ",AF,"}"),collapse = " ")
     paramsvec0 <- c(paramsvec,"Uselife",AFheading)
     # pt_est <- c(pt_est,complifeU,compAF)
   }
-  if(missing(SUSE)==TRUE && missing(SACC)==TRUE){
+  if(is.null(SUSE)==TRUE && is.null(SACC)==TRUE){
     paramsvec0 <- paramsvec
   }
   block3 <- paste(c("model {",priors,loglik,"}"),collapse = " ")

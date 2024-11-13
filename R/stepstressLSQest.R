@@ -1,7 +1,7 @@
 # Least-Squares Step-Stress Estimator
 # Developed by Dr. Reuel Smith, 2021-2023
 
-stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,xlabel1="X",therm=1) {
+stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
   #Load pracma library for pseudo-inverse
   library(pracma)
   library(dplyr)
@@ -43,6 +43,7 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,xlabel1="X",therm=
     # Obtain the number of stresses and pertinent steps in this
     Nstress<-dim(stepstresstable[[1]])[2]-1
   }
+
 
   # Tabulate initial LSQ Estimates starting with the distributions
   if (dist=="Weibull") {
@@ -746,14 +747,28 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,xlabel1="X",therm=
   # return(list(Tequiv,AFAdj,nAdj,del_Tvector))
 
   # Tabulate LSQ optimized estimates
-  output2 <- suppressWarnings(lifestress.LSQest(updatedata,ls,dist,pp,xlabel1))
+  if(is.null(Suse)==TRUE){
+    output2 <- suppressWarnings(lifestress.LSQest(updatedata,ls,dist,pp,xlabel1))
+  }
+  if(is.null(Suse)==FALSE){
+    output2 <- suppressWarnings(lifestress.LSQest(updatedata,ls,dist,pp,xlabel1,Suse=Suse))
+  }
   # return(output2)
 
   paramslast<-output2[[3]]
   lifeest<-output2[[2]]
+  SSE<-output2[[5]]
   plotoutput = output2$plotoutput
 
-  return(list(paramsfirst,paramslast,lifeest,full_stpstrdata,updatedata,indexupdatephysicaldata,AFupdate,plotoutput=plotoutput))
+  if(is.null(Suse)==TRUE){
+    return(list(params_0 = paramsfirst,params_optimized = paramslast,life_estimation = lifeest,SSE=SSE,full_stpstrdata,updatedata,AFupdate,plotoutput=plotoutput))
+  }
+  if(is.null(Suse)==FALSE){
+    return(list(params_0 = paramsfirst,params_optimized = paramslast,life_estimation = lifeest,Use_life = output2$Use_Life,SSE=SSE,full_stpstrdata,updatedata,AFupdate,plotoutput=plotoutput))
+  }
+
+  # return(list(paramsfirst,paramslast,lifeest,SSE=SSE,full_stpstrdata,updatedata,indexupdatephysicaldata,AFupdate,plotoutput=plotoutput))
+
   # return(list(paramsfirst,paramslast,lifeest,full_stpstrdata,updatedata,plotstepstress = output2$plotoutput))
   # return(list(c(distparam0,lsparams0),c(distparam,lsparams),lifeest,Sfrom,Sto,AFn,AFAdj,nAdj,tequiv,Tequiv,del_T,updatedata,c(distparam0,lsparamsfirst),updatedata))
 }

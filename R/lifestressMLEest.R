@@ -1092,6 +1092,93 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
     dist_txt<-"Two-Parameter Exponential"
     distparam_txt<-"\U03C3"
   }
+  if (dist=="Gamma") {
+    # Re-parameterize alpha and beta to mu and lambda
+    LSQest0 <- LSQest
+    # mu = ln beta + ln alpha (-Inf to Inf)
+    # LSQest0[1] <- log(LSQest[2]) + log(LSQest[1])
+    # lambda = 1/sqrt(alpha) (positive so make loglambda)
+    if(is.null(Tc)){
+      LSQest0[1] <- mean(log(1/sqrt(exp(loglifeF(LSQest) - log(LSQest[1])))))
+    } else{
+      LSQest0[1] <- mean(log(1/sqrt(exp((loglifeF(LSQest) + loglifeC(LSQest)) - log(LSQest[1])))))
+    }
+    LSQest <- LSQest0
+
+    if(is.null(Tc)){
+      loglik <- function(theta){
+        -sum(-log(gamma(1/(exp(theta[1]))^2)) - (1/(exp(theta[1]))^2)*(loglifeF(theta) + log((exp(theta[1]))^2)) + ((1/(exp(theta[1]))^2) - 1)*log(TTF) - (1/(exp(theta[1]))^2)*exp(log(TTF) - loglifeF(theta)))
+      }
+    } else{
+      loglik <- function(theta){
+        -sum(-log(gamma(1/(exp(theta[1]))^2)) - (1/(exp(theta[1]))^2)*(loglifeF(theta) + log((exp(theta[1]))^2)) + ((1/(exp(theta[1]))^2) - 1)*log(TTF) - (1/(exp(theta[1]))^2)*exp(log(TTF) - loglifeF(theta))) - sum(log(1 - Rgamma(1/(exp(theta[1]))^2,exp(log(Tc) - loglifeC(theta))/(exp(theta[1]))^2),lower=TRUE))
+      }
+    }
+  }
+  if (dist=="3PGamma") {
+    # Re-parameterize alpha, beta, and gamma to mu, lambda, and sigma
+    LSQest0 <- c(0,0,0)
+    # mu = ln beta + (1/gamma)*ln alpha (-Inf to Inf)
+    LSQest0[1] <- log(LSQest[2]) + (1/LSQest[3])*log(LSQest[1])
+    # lambda = 1/sqrt(alpha) (positive so make loglambda)
+    LSQest0[2] <- log(1/sqrt(LSQest[1]))
+    # sigma = 1/gamma*sqrt(alpha) (positive so make logsigma)
+    LSQest0[3] <- log(1/(LSQest[3]*sqrt(LSQest[1])))
+    LSQest <- LSQest0
+
+    if(is.null(Tc)){
+      loglik <- function(theta){
+        -sum(log(abs(exp(theta[2]))) - log(exp(theta[3])) - log(gamma(1/(exp(theta[2]))^2)) - (1/(exp(theta[2]))^2)*(((theta[1]*exp(theta[2]))/exp(theta[3])) + log((exp(theta[2]))^2)) + ((1/(exp(theta[2])*exp(theta[3]))) - 1)*log(TTF) - (1/(exp(theta[2]))^2)*exp((exp(theta[2])/exp(theta[3]))*(log(TTF) - theta[1])))
+      }
+    } else{
+      loglik <- function(theta){
+        -sum(log(abs(exp(theta[2]))) - log(exp(theta[3])) - log(gamma(1/(exp(theta[2]))^2)) - (1/(exp(theta[2]))^2)*(((theta[1]*exp(theta[2]))/exp(theta[3])) + log((exp(theta[2]))^2)) + ((1/(exp(theta[2])*exp(theta[3]))) - 1)*log(TTF) - (1/(exp(theta[2]))^2)*exp((exp(theta[2])/exp(theta[3]))*(log(TTF) - theta[1]))) - sum(log(1 - Rgamma(1/(exp(theta[2]))^2,exp((exp(theta[2])/exp(theta[3]))*(log(Tc) - theta[1]))/(exp(theta[2]))^2),lower=TRUE))
+      }
+    }
+  }
+  if (dist=="Logistic") {
+    # positivity_v[2]<-1
+    LSQest[1] <- log(LSQest[1])
+
+    if(is.null(Tc)){
+      loglik <- function(theta){
+        -sum(((TTF - lifeF(theta))/exp(theta[1])) - theta[1] - 2*log(1 + exp((TTF - lifeF(theta))/exp(theta[1]))))
+      }
+    } else{
+      loglik <- function(theta){
+        -sum(((TTF - lifeF(theta))/exp(theta[1])) - theta[1] - 2*log(1 + exp((TTF - lifeF(theta))/exp(theta[1])))) + sum(log(1 + exp((Tc - lifeC(theta))/exp(theta[1]))))
+      }
+    }
+  }
+  if (dist=="Loglogistic") {
+    # positivity_v[2]<-1
+    LSQest[1] <- log(LSQest[1])
+
+    if(is.null(Tc)){
+      loglik <- function(theta){
+        -sum(((log(TTF) - loglifeF(theta))/exp(theta[1])) - theta[1] - log(TTF*((1 + exp((log(TTF) - loglifeF(theta))/exp(theta[1])))^2)))
+      }
+    } else{
+      loglik <- function(theta){
+        -sum(((log(TTF) - loglifeF(theta))/exp(theta[1])) - theta[1] - log(TTF*((1 + exp((log(TTF) - loglifeF(theta))/exp(theta[1])))^2))) + sum(log(1 + exp((log(Tc) - loglifeC(theta))/exp(theta[1]))))
+      }
+    }
+  }
+  if (dist=="Gumbel") {
+    # positivity_v[2]<-1
+    # shift sigma to log sigma
+    LSQest[1] <- log(LSQest[1])
+
+    if(is.null(Tc)){
+      loglik <- function(theta){
+        -sum(-theta[1] + ((TTF - lifeF(theta))/exp(theta[1])) - exp((TTF - lifeF(theta))/exp(theta[1])))
+      }
+    } else{
+      loglik <- function(theta){
+        -sum(-theta[1] + ((TTF - lifeF(theta))/exp(theta[1])) - exp((TTF - lifeF(theta))/exp(theta[1]))) + sum(exp((Tc - lifeC(theta))/exp(theta[1])))
+      }
+    }
+  }
 
   # Group all parameters
   # Check to see if any distribution parameters were tabulated
@@ -1207,9 +1294,15 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
   if(is.null(Suse) == FALSE){
     if(sided == "twosided"){
       uselifelim <- uselife + c(-1, 1) * crit * sqrt(uselife_VAR)
+      if(min(uselifelim) < 0){
+        uselifelim <- uselife*exp(c(-1, 1) * crit * (sqrt(uselife_VAR)/uselife))
+      }
     }
     if(sided == "onesidedlow"){
       uselifelim <- uselife - crit2 * sqrt(uselife_VAR)
+      if(uselifelim < 0){
+        uselifelim <- uselife*exp(-crit2 * (sqrt(uselife_VAR)/uselife))
+      }
     }
     if(sided == "onesidedhigh"){
       uselifelim <- uselife + crit2 * sqrt(uselife_VAR)
