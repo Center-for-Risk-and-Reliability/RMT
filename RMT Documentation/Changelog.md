@@ -1,4 +1,7 @@
 # Change Log for RMT
+**Version 1.4.0.1** (October 8th, 2025)
+* Significant updates made to all probability plotting tools.  The Weibull probability plot tool **probplot.wbl** specificially now has a **setbeta** input that allows you to generate the plot and parameter estimates based on a set Weibull shape parameter.  Input structure has been updated so that you may now enter a vector of failure data and produce a single stress level plot.  You can also toggle whether confidence intervals are plotted or not and you may also set the units for the stress in your data field.  The output has also been updated so that the list groups are sorted by stress group.  Help files have been updated accordingly.
+
 **Version 1.3.0.5** (November 13th, 2024)
 * Update to the ALT step-stress estimation tools (**stepstress.LSQest**, **stepstress.MLEest**, and **stepstress.BAYESest**).  Are now able to process use life estimations based on use stress input.
 
