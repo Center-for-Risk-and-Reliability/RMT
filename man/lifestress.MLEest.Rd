@@ -74,13 +74,13 @@ Outputs a printed summary of the life-stress distribution model, its maximum lik
   The variance-covariance matrix as computed by non-linear minimization (in order of \code{LSQest}).
 }
 \item{uselife}{
-  The mean use life based on the use/nominal stress level and the mean maximum likelihood estimate of the parameters.  This output will only be presented if \data{Suse} is set as an input.
+  The mean use life based on the use/nominal stress level and the mean maximum likelihood estimate of the parameters.  This output will only be presented if \code{Suse} is set as an input.
 }
 \item{conflim}{
   Vector-by-vector output of the confidence bounds for each parameter (in order of \code{LSQest}).
 }
 \item{uselifelim}{
-  Thee confidence bounds for the use life based on the use/nominal stress level and the mean maximum likelihood estimate of the parameters.  This output will only be presented if \data{Suse} is set as an input.
+  Thee confidence bounds for the use life based on the use/nominal stress level and the mean maximum likelihood estimate of the parameters.  This output will only be presented if \code{Suse} is set as an input.
 }
 \item{AIC}{
   The Akaike Information Criterion value.

@@ -85,10 +85,10 @@ Outputs a printed summary of the life-stress distribution model, its least-squar
   The sum of square error.
 }
 \item{Use_Life}{
-  The use level life or life at nominal/use stress.  This output will only be presented if \data{Suse} is set as an input.
+  The use level life or life at nominal/use stress.  This output will only be presented if \code{Suse} is set as an input.
 }
 \item{$relplotoutput}{
-  The relationship plot between characteristic life and characteristic stress.  Plot contains all the data and it's median fit to the chosen life-stress model.  If \data{Suse} is input, then the plot will include the use life estimate.
+  The relationship plot between characteristic life and characteristic stress.  Plot contains all the data and it's median fit to the chosen life-stress model.  If \code{Suse} is input, then the plot will include the use life estimate.
 }
 \item{$plotoutput}{
   The probability plot of the data by stress level.
@@ -115,7 +115,7 @@ This function can \strong{only} operate for accelerated stress test data.  For s
 time <- c(52, 80, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 20, 28, 35, 50, 50, 50, 50, 50, 50, 50, 4, 11, 12, 18, 25, 25, 25)
 cens <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0)
 temp <- c(175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 250, 250, 250, 250, 250, 250, 250) + 273.15
-mat1 <- matrix(c(time, cens, temp), nrow = length(time), ncol = 3, byrow = FALSE,dimnames = list(NULL,c("time (hrs)","cens","temp")))
+mat1 <- cbind(time, cens, temp)
 lifestress.LSQest(mat1,"Arrhenius","Weibull","Blom",xlabel = "Time (hrs)")
 
 ## Example 2: Dual Stress values (Temperature in Kelvin and Relative Humidity (RH))
@@ -123,10 +123,10 @@ time <- c(102, 115, 151, 196, 210, 184, 193, 244, 265, 281, 298, 311, 337, 347, 
 cens <- c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
 temp <- c(393, 393, 393, 393, 393, 353, 353, 353, 353, 353, 353, 353, 353, 353, 353)
 RH <- c(0.6, 0.6, 0.6, 0.6, 0.6, 0.85, 0.85, 0.85, 0.85, 0.85, 0.6, 0.6, 0.6, 0.6, 0.6)
-mat2 <- matrix(c(time, cens, temp, RH), nrow = length(time), ncol = 4, byrow = FALSE,dimnames = list(NULL,c("time (hrs)","cens","temp","Relative humidity")))
+mat2 <- cbind(time, cens, temp, RH)
 lifestress.LSQest(mat2,"TempHumidity","Weibull","Blom")
 
-## Data(dat) may also be loaded from an Excel .CSV file by dat <-read.csv("c:/.../Data.csv")
+## Data(data) may also be loaded from an Excel .CSV file by dat <-read.csv("c:/.../Data.csv")
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

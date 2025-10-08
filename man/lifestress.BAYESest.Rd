@@ -49,7 +49,7 @@ A vector consisting of the stress at the right censored data \code{rc} of a give
 The use or nominal stress level for the accletated life test scenario.  If dual or multiple stress, enter as a vector starting with temperature based stress.  Default input is NULL.
 }
 \item{SACC}{
-An accelerated stress level for the accletated life test scenario.  If dual or multiple stress, enter as a vector starting with temperature based stress.  Default input is NULL.  May be entered for a specific posterior acceleration factor but must be entered with an \data{SUSE} value.
+An accelerated stress level for the accletated life test scenario.  If dual or multiple stress, enter as a vector starting with temperature based stress.  Default input is NULL.  May be entered for a specific posterior acceleration factor but must be entered with an \code{SUSE} value.
 }
   \item{confid}{
 The confidence in the Bayesian parameter estimates entered as a probability between \eqn{0} and \eqn{1}.  Default is \eqn{0.95} (or \eqn{95\%})
