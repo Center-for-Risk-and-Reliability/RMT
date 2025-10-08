@@ -1,10 +1,15 @@
 # Three Parameter Weibull Probability Plot Parameters
 # Developed by Dr. Reuel Smith, 2021-2022
 
-probplotparam.wbl3P <- function(xi,R) {
+probplotparam.wbl3P <- function(xi,R,CDFrangesetting = 1) {
   library(nls.multstart)
   # Upper and lower bounds of the Percent Failure axis in percent
-  fcB <- log(log(1/(1-c(.001,0.999))))
+  if(CDFrangesetting == 1){ # Minitab range 1% to 99%
+    fcB <- log(log(1/(1-c(.01,0.99))))
+  }
+  if(CDFrangesetting == 2){ # Weibull++ range 0.1% to 99.9%
+    fcB <- log(log(1/(1-c(.001,0.999))))
+  }
   if(R[length(R)]==0){
     yfit <- log(log(1/R[1:length(R)-1]))
     xfit <- xi[1:length(R)-1]

@@ -1,9 +1,14 @@
 # Gumbel Probability Plot Parameters
 # Developed by Dr. Reuel Smith, 2023
 
-probplotparam.gumb <- function(xi,R) {
+probplotparam.gumb <- function(xi,R,CDFrangesetting = 1) {
   # Upper and lower bounds of the Percent Failure axis in percent
-  fcB <- log(-log(1-c(.001,0.999)))
+  if(CDFrangesetting == 1){ # Minitab range 1% to 99%
+    fcB <- log(-log(1-c(.01,0.99)))
+  }
+  if(CDFrangesetting == 2){ # Weibull++ range 0.1% to 99.9%
+    fcB <- log(-log(1-c(.001,0.999)))
+  }
   # Set up the x and y data for fitting
   if(R[length(R)]==0){
     yfit <- log(-log(R[1:length(R)-1]))
@@ -21,7 +26,12 @@ probplotparam.gumb <- function(xi,R) {
     R2 <- summary(gumbparm)$r.squared
     # Calculate upper and lower bound of best fit line
     intercept <- summary(gumbparm)$coefficients[1,1]
-    ttfc <- c((log(-log(1-0.001))-intercept)*sigma,(log(-log(1-0.999))-intercept)*sigma)
+    if(CDFrangesetting == 1){ # Minitab range 1% to 99%
+      ttfc <- c((log(-log(1-0.01))-intercept)*sigma,(log(-log(1-0.99))-intercept)*sigma)
+    }
+    if(CDFrangesetting == 2){ # Weibull++ range 0.1% to 99.9%
+      ttfc <- c((log(-log(1-0.001))-intercept)*sigma,(log(-log(1-0.999))-intercept)*sigma)
+    }
   }
   if(length(xi) == 1){
     mu <- xi

@@ -1,15 +1,27 @@
 # Gamma Probability Plot
-# Developed by Dr. Reuel Smith, 2022-2024
+# Developed by Dr. Reuel Smith, 2022-2025
 
-probplot.gam <- function(data,pp,xlabel1="X",confid=0.95,stpstr_i=NULL,MLE_i=NULL) {
+probplot.gam <- function(data,pp="Blom",xlabel1="X",confid=0.95,
+                         nobounds = NULL,stpstr_i=NULL,MLE_i=NULL,CDFdata = NULL,CDFrangesetting = 1,
+                         stressunit1 = NULL, stressunit2 = NULL) {
   library(pracma)
   library(zipfR)
   library(ggplot2)
 
   # Legend colors
-  col_legend <- c("red","blue","darkgreen","violet","aquamarine","orange","pink","darkblue","lightgreen","yellow","green")
+  col_legend <- c("red","blue","darkgreen","violet","gold","orange","pink2","darkblue","lightgreen","yellow","green","darkviolet","darkorange","darkred","purple","royalblue","brown","lightpink","tan","darkgray","aquamarine","sienna","limegreen","mediumpurple3","chocolate","red4")
   # Legend shapes
   shape_legend <- c(0:25)
+  # Legend line type
+  linetype_legend <- rep(c(1,2,4,5,6),5)
+
+  # State label for best fit line legend
+  if(is.null(MLE_i)==TRUE){ # Switch off for LSQ
+    best_fit_label <- "Gamma (LSQ) Best-Fit"
+  }
+  if(is.null(MLE_i)==FALSE){ # Switch on for MLE
+    best_fit_label <- "Gamma (MLE) Best-Fit"
+  }
 
   dcount<-checkdatacount(checkstress(data))
   # Error message to check if there is any plots for a life distribution estimate
@@ -24,24 +36,40 @@ probplot.gam <- function(data,pp,xlabel1="X",confid=0.95,stpstr_i=NULL,MLE_i=NUL
   if(identical(dcount[[1]],dcount[[2]])){
     databystress<-checkstress(data)
     singledat<-NULL
+    if(is.null(CDFdata)==FALSE){
+      CDFbystress <- CDFdata
+    }
   } else{
     databystress<-checkstress(data)[which(dcount[[1]] == 1 & dcount[[2]] == 1)]
     singledat<-checkstress(data)[which(!dcount[[1]] == 1 & dcount[[2]] == 1)]
+    if(is.null(CDFdata)==FALSE){
+      CDFbystress <- CDFdata[which(!dcount[[1]] == 1 & dcount[[2]] == 1)]
+    }
   }
 
   # Initialize Percent Failure ticks
-  Pticks1 <- c(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,c(1:10),10*c(2:9),95,99,99.9)
-  Pticks1label <- c(0.1,0.2,0.3,"",0.5,"","","","",1,2,3,"",5,"","","","",10*c(1:9),95,99,99.9)
+  if(CDFrangesetting == 1){ # Minitab range 1% to 99%
+    Fmin <- 0.01
+    Fmax <- 0.99
+    Pticks1 <- c(c(1:10),10*c(2:9),95,99)
+    Pticks1label <- c(1,2,3,"",5,"","","","",10*c(1:9),95,99)
+  }
+  if(CDFrangesetting == 2){ # Weibull++ range 0.1% to 99.9%
+    Fmin <- 0.001
+    Fmax <- 0.999
+    Pticks1 <- c(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,c(1:10),10*c(2:9),95,99,99.9)
+    Pticks1label <- c(0.1,0.2,0.3,"",0.5,"","","","",1,2,3,"",5,"","","","",10*c(1:9),95,99,99.9)
+  }
 
-  # if (!is.null(dim(databystress))){
-  if (is.list(databystress) && length(databystress)==1){
+  if (!is.null(dim(databystress))){
+  # if (is.list(databystress) && length(databystress)==1){
     # Single Stress data
     ixirc<-sort.xircdata(data)
     xiRFblock<-plotposit.select(ixirc[[2]],ixirc[[3]],pp)
     # Data pull
     XB<-xiRFblock[,1]
 
-    ttfc <- probplotparam.gam(xiRFblock[,1],xiRFblock[,2])
+    ttfc <- probplotparam.gam(xiRFblock[,1],xiRFblock[,2],CDFrangesetting)
     ttfcrange <- ttfc[[1]]
     params<-ttfc[[3]]
     FB <- Rgamma.inv(params[1],xiRFblock[,2])
@@ -63,6 +91,7 @@ probplot.gam <- function(data,pp,xlabel1="X",confid=0.95,stpstr_i=NULL,MLE_i=NUL
     ttfc_list<- vector(mode = "list", length = length(databystress))
     ttfc_MLE_list<- vector(mode = "list", length = length(databystress))
     outputpp <- vector(mode = "list", length = 3*length(databystress)+1)
+    outputpp1 <- vector(mode = "list", length = length(databystress))
     Pticks_list <- vector(mode = "list", length = 3*length(databystress)+1)
     SSEtot<-rep(1, length(databystress))
     ttfcrange<-c(1)
@@ -77,19 +106,41 @@ probplot.gam <- function(data,pp,xlabel1="X",confid=0.95,stpstr_i=NULL,MLE_i=NUL
       xiRFblock_list[[i]]<-plotposit.select(ixirc_list[[i]][[2]],ixirc_list[[i]][[3]],pp)
       # Data pull
       XB_list[[i]]<-xiRFblock_list[[i]][,1]
-      ttfc_list[[i]]<-probplotparam.gam(xiRFblock_list[[i]][,1],xiRFblock_list[[i]][,2])
-      if(is.null(MLE_i) == FALSE){
+      ttfc_list[[i]]<-probplotparam.gam(xiRFblock_list[[i]][,1],xiRFblock_list[[i]][,2],CDFrangesetting)
+
+      if(is.null(MLE_i) == TRUE){ # Default for LSQ
+        outputpp[[i*3-1]]<-ttfc_list[[i]][[3]] # LSQ parameters
+        outputpp1[[i]][[2]]<-ttfc_list[[i]][[3]] # LSQ parameters
+      }
+      if(is.null(MLE_i) == FALSE){ # MLE for all parameters
         # Compute MLE
         ttfc_MLE_list[[i]] <- distribution.MLEest(c(ttfc_list[[i]][[3]]),"Gamma",ixirc_list[[i]][[2]],ixirc_list[[i]][[3]])
-      }
-      outputpp[[i*3-2]]<-databystress[[i]][1,3:length(databystress[[i]][1,])]
-      if(is.null(MLE_i) == TRUE){
-        outputpp[[i*3-1]]<-ttfc_list[[i]][[3]] # LSQ parameters
-      } else{
-        outputpp[[i*3-1]]<-ttfc_MLE_list[[i]][[1]] # MLE parameters
+        # Recalculate x-points if MLE
+        outputpp[[i*3-1]]<-matrix(ttfc_MLE_list[[i]][[1]], nrow = 1, ncol = 2, byrow = TRUE,dimnames = list(c("Gamma Parameters"),c("alpha", "beta"))) # MLE parameters
+        outputpp1[[i]][[2]]<-matrix(ttfc_MLE_list[[i]][[1]], nrow = 1, ncol = 2, byrow = TRUE,dimnames = list(c("Gamma Parameters"),c("alpha", "beta"))) # MLE parameters
+        ttfc_MLE_list[[i]][[3]][[1]]<-sort(ttfc_MLE_list[[i]][[3]][[1]])
+        ttfc_MLE_list[[i]][[3]][[2]]<-sort(ttfc_MLE_list[[i]][[3]][[2]])
         ttfc_list[[i]][[3]]<-ttfc_MLE_list[[i]][[1]]
       }
-      outputpp[[i*3]]<-ttfc_list[[i]][[4]]
+      outputpp[[i*3-2]]<-databystress[[i]][1,3:length(databystress[[i]][1,])] # Stress level
+      outputpp[[i*3]]<-ttfc_list[[i]][[4]] # Coefficient of determination
+
+      # Printed Output
+      outputpp1[[i]][[1]]<-databystress[[i]][1,3:length(databystress[[i]][1,])] # Stress level
+      if(is.null(MLE_i) == TRUE){
+        outputpp1[[i]][[3]]<-ttfc_list[[i]]$SSE
+        outputpp1[[i]][[4]]<-ttfc_list[[i]][[4]] # Coefficient of determination
+        names(outputpp1[[i]]) <- c("Stress Level","Parameter Estimates","SSE","Coefficient of Determination (R2)")
+      } else{
+        outputpp1[[i]][[3]]<-matrix(unlist(ttfc_MLE_list[[i]][[3]]), nrow = 2, ncol = 2, byrow = FALSE,dimnames = list(c("Lower CI","Upper CI"),c("alpha", "beta"))) # Confidence
+        outputpp1[[i]][[4]]<-ttfc_list[[i]]$SSE # SSE
+        outputpp1[[i]][[5]]<-ttfc_MLE_list[[i]][[4]] # loglikelihood
+        outputpp1[[i]][[6]]<-ttfc_MLE_list[[i]][[5]] # likelihood
+        outputpp1[[i]][[7]]<-ttfc_MLE_list[[i]][[6]] # AIC
+        outputpp1[[i]][[8]]<-ttfc_MLE_list[[i]][[7]] # BIC
+        names(outputpp1[[i]]) <- c("Stress Level","Parameter Estimates","CI","SSE","loglikelihood","likelihood","AIC","BIC")
+      }
+
       SSEtot[i]<-ttfc_list[[i]]$SSE
       alphatot[i]<-ttfc_list[[i]][[3]][1]
       XBfull<-c(XBfull,XB_list[[i]])
@@ -100,6 +151,13 @@ probplot.gam <- function(data,pp,xlabel1="X",confid=0.95,stpstr_i=NULL,MLE_i=NUL
     alphaavg <- mean(alphatot)
     for(i in 1:length(databystress)){
       FB_list[[i]] <- Rgamma.inv(alphaavg,xiRFblock_list[[i]][,2],lower = TRUE)
+      gammaSSE <- function(theta){
+        SSE <- sum((FB_list[[i]] - Rgamma(alphaavg,xiRFblock_list[[i]][,2], lower = TRUE)))^2
+        return(SSE)
+      }
+      # fitbeta_parm  <- lm(log(FB_list[[i]]) ~ poly(log(xiRFblock_list[[i]][,1]), 1, raw=TRUE))
+      # betatot[i] <- exp(-summary(fitbeta_parm)$coefficients[1,1]/summary(fitbeta_parm)$coefficients[2,1])
+      # betatot[i]<- mean(xiRFblock_list[[i]][,1]/FB_list[[i]])
       betatot[i]<- mean(xiRFblock_list[[i]][,1]/FB_list[[i]])
       FBfull<-c(FBfull,FB_list[[i]])
     }
@@ -109,27 +167,44 @@ probplot.gam <- function(data,pp,xlabel1="X",confid=0.95,stpstr_i=NULL,MLE_i=NUL
     FBfull<-FBfull[2:length(FBfull)]
   }
   Pticks <- Rgamma.inv(alphaavg,Pticks1/100,lower = TRUE)
-  fcB <- Rgamma.inv(alphaavg,c(.001,0.999),lower = TRUE)
+  fcB <- Rgamma.inv(alphaavg,c(Fmin,Fmax),lower = TRUE)
   # if(is.null(MLE_i) == FALSE){
   #   # Recalculate x-points if MLE (to do later after fcB is computed)
   #   ttfc_list[[i]][[1]] <- betatot[i]*Rgamma.inv(alphaavg,fcB,lower = TRUE)
   #     # exp(c(ttfc_MLE_list[[i]][[1]][2])*fcB + c(ttfc_MLE_list[[i]][[1]][1]))
   # }
+  # return(FB_list)
 
   # Calculate the upper and lower bounds
-  Fbound <- c(linspace(0.0001,0.0009,9),linspace(.001,.999,982),linspace(0.9991,0.9999,9))
-  FB_bound <- Rgamma.inv(alphaavg,Fbound,lower = TRUE)
-  N <- dim(data)[1]
   Z <- qnorm(1-(1-confid)/2,0,1)
-  Fdiff <- Z*sqrt((Fbound*(1-Fbound))/N)
-  F_high <- Fbound + Fdiff
-  F_high[which(F_high>1)] <- 0.9999999
-  FB_high <- Rgamma.inv(alphaavg,F_high,lower = TRUE)
-  F_low <- Fbound - Fdiff
-  F_low[which(F_low<0)] <- 0.00000001
-  FB_low <- Rgamma.inv(alphaavg,F_low,lower = TRUE)
 
   for(i in 1:length(databystress)){
+    N <- dim(databystress[[i]])[1] # Compute N for stress level i
+    SSElow <- function(F){
+      (Fmin - F - Z*sqrt((F*(1 - F))/N))^2
+    }
+    SSEhigh <- function(F){
+      (Fmax - F + Z*sqrt((F*(1 - F))/N))^2
+    }
+    # different for each stress level at least outside of the 982 points in the middle.  The upper and lower parts will
+    # have their own value based on approximation
+    A <- nlminb(Fmin,SSElow,hessian=TRUE,lower = 0,upper = 1)$par
+    B <- nlminb(Fmax,SSEhigh,hessian=TRUE,lower = 0,upper = 1)$par
+
+    # Draft Fbound for stress level i
+    Fbound <- c(linspace(A,Fmin,250),linspace(Fmin,Fmax,500),linspace(Fmax,B,250))
+    Fdiff <- Z*sqrt((Fbound*(1-Fbound))/N)
+    F_high <- Fbound + Fdiff
+    F_high[which(F_high<Fmin)] <- Fmin
+    F_high[which(F_high>Fmax)] <- Fmax
+    F_low <- Fbound - Fdiff
+    F_low[which(F_low<Fmin)] <- Fmin
+    F_low[which(F_low>Fmax)] <- Fmax
+
+    FB_bound <- Rgamma.inv(alphaavg,Fbound,lower = TRUE)
+    FB_high <- Rgamma.inv(alphaavg,F_high,lower = TRUE)
+    FB_low <- Rgamma.inv(alphaavg,F_low,lower = TRUE)
+
     Xbound_list[[i]] <- betatot[i]*Rgamma.inv(alphaavg,Fbound,lower = TRUE)
     Fboundlow_list[[i]] <- FB_low
     Xboundlow_list[[i]] <- Xbound_list[[i]]
@@ -155,6 +230,7 @@ probplot.gam <- function(data,pp,xlabel1="X",confid=0.95,stpstr_i=NULL,MLE_i=NUL
   } else {
     # Multi-Stress
     data_legend <- logical(0)
+    data_breaks <- rep(0,length(databystress))
     xlines <- rep(0,length(databystress)*2)
     Flines <- rep(0,length(databystress)*2)
     xlinesconf <- rep(0,length(databystress)*2001)
@@ -164,43 +240,165 @@ probplot.gam <- function(data,pp,xlabel1="X",confid=0.95,stpstr_i=NULL,MLE_i=NUL
     Flinesconf_up <- rep(0,length(databystress)*1000)
     Flinesconf_down <- rep(0,length(databystress)*1000)
     line_legend <- rep(0,length(databystress)*2)
-    conf_legend <- rep(0,length(databystress)*2001)
+    line_breaks <- rep(0,length(databystress))
+    conf_legend <- rep(0,length(databystress)*1000)
+    conf_breaks <- rep(0,length(databystress))
 
     for(i in 1:length(databystress)){
-      xlines[((i*2) - 1):(i*2)] <- betatot[i]*Rgamma.inv(alphaavg,c(0.001,0.999),lower = TRUE)
-      Flines[((i*2) - 1):(i*2)] <- Rgamma.inv(alphaavg,c(0.001,0.999),lower = TRUE)
+      xlines[((i*2) - 1):(i*2)] <- betatot[i]*Rgamma.inv(alphaavg,c(Fmin,Fmax),lower = TRUE)
+      Flines[((i*2) - 1):(i*2)] <- Rgamma.inv(alphaavg,c(Fmin,Fmax),lower = TRUE)
       xlinesconf[((i*2001) - 2000):(i*2001)] <- c(Xboundlow_list[[i]],NA,Xboundhigh_list[[i]])
       Flinesconf[((i*2001) - 2000):(i*2001)] <- c(Fboundlow_list[[i]],NA,Fboundhigh_list[[i]])
       Flinesconf_up[((i*1000) - 999):(i*1000)] <- Fboundhigh_list[[i]]
       Flinesconf_down[((i*1000) - 999):(i*1000)] <- Fboundlow_list[[i]]
       xlinesconf_down[((i*1000) - 999):(i*1000)] <- Xboundlow_list[[i]]
       xlinesconf_up[((i*1000) - 999):(i*1000)] <- Xboundhigh_list[[i]]
-      data_legend<-c(data_legend,rep(paste(c("Data for stress level ",databystress[[i]][1,3:length(databystress[[i]][1,])]),collapse = " "),length(XB_list[[i]])))
-      line_legend[((i*2) - 1):(i*2)] <- rep(paste(c("Best-fit for stress level ",databystress[[i]][1,3:length(databystress[[i]][1,])]),collapse = " "),2)
-      conf_legend[((i*2001) - 2000):(i*2001)] <- rep(paste(c(confid*100,"% Confidence for stress level ",databystress[[i]][1,3:length(databystress[[i]][1,])]),collapse = " "),2001)
+      if(length(3:length(databystress[[i]][1,])) == 1 && is.null(stressunit1) == TRUE){ # When no units then we can negate stress designation
+        if(length(databystress) > 1){ # multiple groups of data
+          data_legend<-c(data_legend,rep(paste(c("Data for",databystress[[i]][1,3:length(databystress[[i]][1,])]," units"),collapse = " "),length(XB_list[[i]])))
+          data_breaks[i] <- paste(c("Data for ",databystress[[i]][1,3:length(databystress[[i]][1,])]," units"),collapse = " ")
+          conf_legend[((i*1000) - 999):(i*1000)] <- rep(paste(c("% CI for ",databystress[[i]][1,3:length(databystress[[i]][1,])]," units"),collapse = " "),1000)
+          conf_breaks[i] <- paste(c("% CI for ",databystress[[i]][1,3:length(databystress[[i]][1,])]," units"),collapse = " ")
+        } else{ # only one group
+          data_legend<-c(data_legend,rep("Data",length(XB_list[[i]])))
+          data_breaks <- waiver()
+          conf_legend[((i*1000) - 999):(i*1000)] <- rep("CI",1000)
+          conf_breaks <- waiver()
+        }
+      }
+      if(length(3:length(databystress[[i]][1,])) == 1 && is.null(stressunit1) == FALSE && (is.null(stressunit2) == TRUE || is.null(stressunit2) == FALSE)){ # When units are given, we state stress and units even when one group is given
+        data_legend<-c(data_legend,rep(paste(c("Data for",databystress[[i]][1,3:length(databystress[[i]][1,])]," ",stressunit1),collapse = " "),length(XB_list[[i]])))
+        data_breaks[i] <- paste(c("Data for",databystress[[i]][1,3:length(databystress[[i]][1,])]," ",stressunit1),collapse = " ")
+        conf_legend[((i*1000) - 999):(i*1000)] <- rep(paste(c("CI for",databystress[[i]][1,3:length(databystress[[i]][1,])],"",stressunit1),collapse = " "),1000)
+        conf_breaks[i] <- paste(c("CI for",databystress[[i]][1,3:length(databystress[[i]][1,])],"",stressunit1),collapse = " ")
+      }
+      if(length(3:length(databystress[[i]][1,])) == 2 && is.null(stressunit1) == TRUE && is.null(stressunit2) == TRUE){  # When no units are given and we have two stresses
+        data_legend<-c(data_legend,rep(paste(c("Data for ",databystress[[i]][1,3]," units/",databystress[[i]][1,4]," units"),collapse = " "),length(XB_list[[i]])))
+        data_breaks[i] <- paste(c("Data for ",databystress[[i]][1,3]," units/",databystress[[i]][1,4]," units"),collapse = " ")
+        conf_legend[((i*1000) - 999):(i*1000)] <- rep(paste(c("CI for ",databystress[[i]][1,3]," units/",databystress[[i]][1,4]," units"),collapse = " "),1000)
+        conf_breaks[i] <- paste(c("CI for ",databystress[[i]][1,3]," units/",databystress[[i]][1,4]," units"),collapse = " ")
+      }
+      if(length(3:length(databystress[[i]][1,])) == 2 && is.null(stressunit1) == FALSE && is.null(stressunit2) == FALSE){ # When units are given and we have two stresses
+        data_legend<-c(data_legend,rep(paste(c("Data for",databystress[[i]][1,3],"",stressunit1,"/",databystress[[i]][1,4],"",stressunit2),collapse = " "),length(XB_list[[i]])))
+        data_breaks[i] <- paste(c("Data for",databystress[[i]][1,3],"",stressunit1,"/",databystress[[i]][1,4],"",stressunit2),collapse = " ")
+        conf_legend[((i*1000) - 999):(i*1000)] <- rep(paste(c("CI for",databystress[[i]][1,3],"",stressunit1,"/",databystress[[i]][1,4],"",stressunit2),collapse = " "),1000)
+        conf_breaks[i] <- paste(c("CI for",databystress[[i]][1,3],"",stressunit1,"/",databystress[[i]][1,4],"",stressunit2),collapse = " ")
+      }
+      if(length(3:length(databystress[[i]][1,])) == 2 && is.null(stressunit1) == FALSE && is.null(stressunit2) == TRUE){ # When units are given for ONLY stress 1 and we have two stresses
+        data_legend<-c(data_legend,rep(paste(c("Data for",databystress[[i]][1,3],"",stressunit1,"/",databystress[[i]][1,4]," units"),collapse = " "),length(XB_list[[i]])))
+        data_breaks[i] <- paste(c("Data for",databystress[[i]][1,3],"",stressunit1,"/",databystress[[i]][1,4]," units"),collapse = " ")
+        conf_legend[((i*1000) - 999):(i*1000)] <- rep(paste(c("CI for",databystress[[i]][1,3],"",stressunit1,"/",databystress[[i]][1,4]," units"),collapse = " "),1000)
+        conf_breaks[i] <- paste(c("CI for",databystress[[i]][1,3],"",stressunit1,"/",databystress[[i]][1,4]," units"),collapse = " ")
+      }
+      if(length(3:length(databystress[[i]][1,])) == 2 && is.null(stressunit1) == TRUE && is.null(stressunit2) == FALSE){ # When units are given for ONLY stress 2 and we have two stresses
+        data_legend<-c(data_legend,rep(paste(c("Data for",databystress[[i]][1,3],""," units","/",databystress[[i]][1,4],"",stressunit2),collapse = " "),length(XB_list[[i]])))
+        data_breaks[i] <- paste(c("Data for",databystress[[i]][1,3]," units","/",databystress[[i]][1,4],"",stressunit2),collapse = " ")
+        conf_legend[((i*1000) - 999):(i*1000)] <- rep(paste(c("CI for",databystress[[i]][1,3]," units","/",databystress[[i]][1,4],"",stressunit2),collapse = " "),1000)
+        conf_breaks[i] <- paste(c("CI for",databystress[[i]][1,3]," units","/",databystress[[i]][1,4],"",stressunit2),collapse = " ")
+      }
+      line_legend[((i*2) - 1):(i*2)] <- rep(paste(c("\U03B1 = ",num2str(outputpp1[[i]][[2]][1],2),", \U03B2 = ",num2str(outputpp1[[i]][[2]][2],2)),collapse = ""),2)
+      if(length(databystress) > 1){ # multiple groups of data
+        line_breaks[i] <- paste(c("\U03B1 = ",num2str(outputpp1[[i]][[2]][1],2),", \U03B2 = ",num2str(outputpp1[[i]][[2]][2],2)),collapse = "")
+      } else{ # only one group
+        line_breaks <- waiver()
+      }
     }
     df <- data.frame(XScale = XBfull, Fscale = FBfull, data = data_legend)
     df2 <- data.frame(Xline = xlines, Fline = Flines, best_fit = line_legend)
-    df3 <- data.frame(Xline2up = xlinesconf_up, Xline2down = xlinesconf_down, Fline2up = Flinesconf_up, Fline2down = Flinesconf_down)
+    df3 <- data.frame(Xline2up = xlinesconf_up, Xline2down = xlinesconf_down, Fline2up = Flinesconf_up, Fline2down = Flinesconf_down,confidence = conf_legend)
 
     # If step-stress problem, identify the index of comparison (RCS 01082024)
     if(is.null(stpstr_i)==FALSE){
       df <- df[which(stpstr_i==1),]
     }
 
+    # Plot the data
     plotout<-ggplot() +
       geom_point(data=df, aes(XScale,Fscale, shape = data), colour = 'black', size = 2.2) +
-      scale_shape_manual(values=shape_legend[1:length(databystress)]) +
-      scale_color_manual(values=col_legend[1:length(databystress)])+
-      scale_x_continuous(limits = c(min(unlist(Xbound_list)), max(unlist(Xbound_list)))) +
-      scale_y_continuous(limits = c(min(fcB), max(fcB)), breaks=Pticks, labels=Pticks1label) +
+      theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
+      scale_shape_manual("Raw Data",values=shape_legend[1:length(databystress)], breaks = data_breaks) +
+      scale_x_continuous(expand=c(0, 0),limits = c(min(unlist(Xbound_list)), max(unlist(Xbound_list)))) +
+      scale_y_continuous(expand=c(0, 0),limits = c(min(fcB), max(fcB)), breaks=Pticks, labels=Pticks1label) +
       xlab(xlabel1) +
       ylab("Percent Failure")
 
-
-    plotout <- plotout + geom_line(data=df2, aes(Xline,Fline, colour = best_fit), size = 0.9, linetype = "dashed") +
-      geom_ribbon(data=df3, aes(x=Xline2up, ymin=Fline2down, ymax=Fline2up), alpha=0.25, fill = "blue")
+    # Plot best fit line
+    plotout <- plotout + geom_line(data=df2, aes(Xline,Fline, colour = best_fit), linewidth = 0.9, linetype = "dashed") +
+      scale_color_manual(best_fit_label,values=col_legend[1:length(databystress)], breaks = line_breaks)
+    # Now we can turn off confidence bounds if we set it to anything but NULL (RCS 5/27/2025)
+    if(is.null(nobounds) == TRUE){
+      plotout <- plotout + geom_ribbon(data=df3, aes(x=Xline2up, ymin=Fline2up, ymax=Fline2down, fill = conf_legend), alpha=0.1) +
+        scale_fill_manual(paste(c(confid*100,"% Confidence Intervals"),collapse = " "), values=col_legend[1:length(databystress)], breaks = conf_breaks)
+    }
   }
 
-  return(list(outputpp, SSEbyStress = SSEtot, summary.nonparametric=xiRFblock_list, prob_plot = plotout))
+  if(is.null(MLE_i) == TRUE){
+    # Logging
+    stress_set <- rep(0,length(databystress)*length(3:length(databystress[[i]][1,])))
+    alpha_set <- rep(0,length(databystress))
+    beta_set <- rep(0,length(databystress))
+    R2_set <- rep(0,length(databystress))
+    for(i in 1:length(databystress)){
+      if(length(3:length(databystress[[i]][1,])) == 1){
+        stress_set[i] <- c(outputpp1[[i]][[1]])
+      } else{
+        stress_set[i] <- outputpp1[[i]][[1]][1]
+        stress_set[i+length(databystress)] <- outputpp1[[i]][[1]][2]
+      }
+      alpha_set[i] <- outputpp1[[i]][[2]][1]
+      beta_set[i] <- outputpp1[[i]][[2]][2]
+      R2_set[i] <- outputpp1[[i]][[3]]
+    }
+    matset <- c(stress_set,alpha_set,beta_set,SSEtot,R2_set)
+
+    # Produce some output text that summarizes the results
+    cat(c("Gamma Least-Squares estimates\n\n"))
+    if(length(3:length(databystress[[i]][1,])) == 1){
+      print(matrix(matset, nrow = length(databystress), ncol = 5, byrow = FALSE,dimnames = list(rep("",length(databystress)),c("Stress","\U03B1","\U03B2","SSE","R\U00B2"))))
+    }
+    if(length(3:length(databystress[[i]][1,])) == 2){
+      print(matrix(matset, nrow = length(databystress), ncol = 6, byrow = FALSE,dimnames = list(rep("",length(databystress)),c("Stress1","Stress2","\U03B1","\U03B2","SSE","R\U00B2"))))
+    }
+    cat("\n")
+  } else{
+    # Logging
+    stress_set <- rep(0,length(databystress)*length(3:length(databystress[[i]][1,])))
+    alpha_set <- rep(0,length(databystress))
+    alpha_setCIlow <- rep(0,length(databystress))
+    alpha_setCIhigh <- rep(0,length(databystress))
+    beta_set <- rep(0,length(databystress))
+    beta_setCIlow <- rep(0,length(databystress))
+    beta_setCIhigh <- rep(0,length(databystress))
+    loglik_set <- rep(0,length(databystress))
+    AIC_set <- rep(0,length(databystress))
+    for(i in 1:length(databystress)){
+      if(length(3:length(databystress[[i]][1,])) == 1){
+        stress_set[i] <- c(outputpp1[[i]][[1]])
+      } else{
+        stress_set[i] <- outputpp1[[i]][[1]][1]
+        stress_set[i+length(databystress)] <- outputpp1[[i]][[1]][2]
+      }
+      alpha_set[i] <- outputpp1[[i]][[2]][1]
+      alpha_setCIlow[i] <- ttfc_MLE_list[[i]][[3]][[1]][1]
+      alpha_setCIhigh[i] <- ttfc_MLE_list[[i]][[3]][[1]][2]
+      beta_set[i] <- outputpp1[[i]][[2]][2]
+      beta_setCIlow[i] <- ttfc_MLE_list[[i]][[3]][[2]][1]
+      beta_setCIhigh[i] <- ttfc_MLE_list[[i]][[3]][[2]][2]
+      loglik_set[i] <- ttfc_MLE_list[[i]][[4]]
+      AIC_set[i] <- ttfc_MLE_list[[i]][[6]]
+    }
+
+    # Produce some output text that summarizes the results
+    cat(c("Gamma Maximum Likelihood estimates\n\n"))
+    if(length(3:length(databystress[[i]][1,])) == 1){
+      matset <- c(stress_set,alpha_set,alpha_setCIlow,alpha_setCIhigh,beta_set,beta_setCIlow,beta_setCIhigh,loglik_set,AIC_set)
+      print(matrix(matset, nrow = length(databystress), ncol = 9, byrow = FALSE,dimnames = list(rep("",length(databystress)),c("Stress","\U03B1","\U03B1 Lower CI","\U03B1 Upper CI","\U03B2","\U03B2 Lower CI","\U03B2 Upper CI","loglik","AIC"))))
+    }
+    if(length(3:length(databystress[[i]][1,])) == 2){
+      matset <- c(stress_set,alpha_set,alpha_setCIlow,alpha_setCIhigh,beta_set,beta_setCIlow,beta_setCIhigh,loglik_set,AIC_set)
+      print(matrix(matset, nrow = length(databystress), ncol = 10, byrow = FALSE,dimnames = list(rep("",length(databystress)),c("Stress1","Stress2","\U03B1","\U03B1 Lower CI","\U03B1 Upper CI","\U03B2","\U03B2 Lower CI","\U03B2 Upper CI","loglik","AIC"))))
+    }
+    cat("\n")
+  }
+  return(list(output = outputpp1, summary.nonparametric=xiRFblock_list, prob_plot = plotout))
 }

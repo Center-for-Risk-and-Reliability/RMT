@@ -1,7 +1,7 @@
 # Generalized Three-Parameter Gamma Probability Plot Parameters
 # Developed by Dr. Reuel Smith, 2024
 
-probplotparam.gam3P <- function(xi,F) {
+probplotparam.gam3P <- function(xi,F,CDFrangesetting = 1) {
   library(pracma)
   library(nls.multstart)
   library(zipfR)
@@ -43,6 +43,12 @@ probplotparam.gam3P <- function(xi,F) {
 
     # Calculate upper and lower bound of best fit line
     ttfc <- exp(LSQ[1] + (1/gamest)*log((1/alpest)*Rgamma.inv(alpest,c(0.001,0.999),lower = TRUE)))
+    if(CDFrangesetting == 1){ # Minitab range 1% to 99%
+      ttfc <- exp(LSQ[1] + (1/gamest)*log((1/alpest)*Rgamma.inv(alpest,c(0.01,0.99),lower = TRUE)))
+    }
+    if(CDFrangesetting == 2){ # Weibull++ range 0.1% to 99.9%
+      ttfc <- exp(LSQ[1] + (1/gamest)*log((1/alpest)*Rgamma.inv(alpest,c(0.001,0.999),lower = TRUE)))
+    }
   }
   if(length(xi) == 1){
     alpest <- 1
@@ -52,7 +58,12 @@ probplotparam.gam3P <- function(xi,F) {
     ttfc <- rep(xi,2)
   }
   # Upper and lower bounds of the Percent Failure axis in percent
-  fcB <- Rgamma.inv(alpest,c(0.001,0.999),lower = TRUE)
+  if(CDFrangesetting == 1){ # Minitab range 1% to 99%
+    fcB <- Rgamma.inv(alpest,c(0.01,0.99),lower = TRUE)
+  }
+  if(CDFrangesetting == 2){ # Weibull++ range 0.1% to 99.9%
+    fcB <- Rgamma.inv(alpest,c(0.001,0.999),lower = TRUE)
+  }
 
   gamresults <- matrix(c(alpest,betest,gamest), nrow = 1, ncol = 3, byrow = TRUE,dimnames = list(c("Generalized Gamma Parameters"),c("alpha", "beta","gamma")))
   return(list(ttfc,fcB,gamresults,R2,SSE=SSE))

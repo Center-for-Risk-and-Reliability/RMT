@@ -1,7 +1,7 @@
 # Gamma Probability Plot Parameters
-# Developed by Dr. Reuel Smith, 2022-2024
+# Developed by Dr. Reuel Smith, 2022-2025
 
-probplotparam.gam <- function(xi,F) {
+probplotparam.gam <- function(xi,F,CDFrangesetting = 1) {
   library(pracma)
   library(nls.multstart)
   library(zipfR)
@@ -39,7 +39,9 @@ probplotparam.gam <- function(xi,F) {
     R2 <- 1 - (SSE/SST)
 
     # Calculate upper and lower bound of best fit line
-    ttfc <- betest*Rgamma.inv(alpest,c(0.001,0.999),lower = TRUE)
+    ttfc <- exp(LSQ[1] + log((1/alpest)*Rgamma.inv(alpest,c(0.001,0.999),lower = TRUE)))
+
+    # ttfc <- betest*Rgamma.inv(alpest,c(0.001,0.999),lower = TRUE)
   }
   if(length(xi) == 1){
     alpest <- 1

@@ -1,9 +1,15 @@
 # Normal Probability Plot Parameters
 # Developed by Dr. Reuel Smith, 2021-2022
 
-probplotparam.nor <- function(xi,F) {
+probplotparam.nor <- function(xi,F,CDFrangesetting = 1) {
   # Upper and lower bounds of the Percent Failure axis in percent
-  fcB <- qnorm(c(.001,0.999),mean=0,sd=1)
+  if(CDFrangesetting == 1){ # Minitab range 1% to 99%
+    fcB <- qnorm(c(.01,0.99),mean=0,sd=1)
+  }
+  if(CDFrangesetting == 2){ # Weibull++ range 0.1% to 99.9%
+    fcB <- qnorm(c(.001,0.999),mean=0,sd=1)
+  }
+
   # Set up the x and y data for fitting
   if(F[length(F)]==1){
     yfit <- qnorm(F[1:length(F)-1],mean=0,sd=1)
@@ -24,7 +30,7 @@ probplotparam.nor <- function(xi,F) {
     #meany <- (50-slope)/intercept
     #t84 <- (84-slope)/intercept
     #sigmay <- t84-meany
-    normresults <- matrix(c(meany,sigmay), nrow = 1, ncol = 2, byrow = TRUE,dimnames = list(c("Normal Parameters"),c("mean_t", "sigma_t")))
+    normresults <- matrix(c(meany,sigmay), nrow = 1, ncol = 2, byrow = TRUE,dimnames = list(c("Normal Parameters"),c("mu", "sigma")))
     # Calculate upper and lower bound of best fit line
     xfit2 <- c(meany,meany+sigmay)
     yfit2 <- c(qnorm(0.5,mean=0,sd=1),qnorm(0.84,mean=0,sd=1))
@@ -38,7 +44,7 @@ probplotparam.nor <- function(xi,F) {
     meany <- xi
     R2 <- 0
     SSE <- 0
-    normresults <- matrix(c(meany,sigmay), nrow = 1, ncol = 2, byrow = TRUE,dimnames = list(c("Normal Parameters"),c("mean_t", "sigma_t")))
+    normresults <- matrix(c(meany,sigmay), nrow = 1, ncol = 2, byrow = TRUE,dimnames = list(c("Normal Parameters"),c("mu", "sigma")))
     ttfc <- rep(xi,2)
   }
 
