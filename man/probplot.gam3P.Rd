@@ -1,14 +1,14 @@
-\name{probplot.wbl3P}
-\alias{probplot.wbl3P}
+\name{probplot.gam3P}
+\alias{probplot.gam3P}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Three Parameter Weibull Probability Plot
+Generalized Gamma Probability Plot
 }
 \description{
-Plots the three-parameter Weibull probability plot for singular and multiple stress levels based on an input data set and a given plotting position.  The default plot is based on least squared (LSQ) estimates for the parameters.
+Plots the generalized gamma probability plot for singular and multiple stress levels based on an input data set and a given plotting position.  The default plot is based on least squared (LSQ) estimates for the parameters.
 }
 \usage{
-probplot.wbl3P(data, pp, xlabel1, confid, nobounds, MLE_i, CDFrangesetting, stressunit1, stressunit2)
+probplot.gam3P(data, pp, xlabel1, confid, nobounds, MLE_i, CDFrangesetting, stressunit1, stressunit2)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -53,14 +53,13 @@ The confidence in the best fit probability plot curve entered as a probability b
   }
 }
 \details{
-  Three-parameter Weibull distribution is positively bounded (\eqn{x \geq 0}) consisting of a Weibull scale parameter \eqn{\alpha}, a Weibull shape parameter \eqn{\beta}, and a Weibull location parameter \eqn{\gamma}.
+  The generalized gamma distribution is positively bounded (\eqn{x \geq 0}) consisting of a Gamma shape parameter \eqn{\alpha}, a Gamma scale parameter \eqn{\beta} (sometimes defined as a rate or frequency where rate \eqn{\beta = \frac{1}{\theta}} and \eqn{\theta} is the average time between events), and a second  Gamma shape parameter \eqn{\gamma}.
 
   PDF:
-  \deqn{f(x) = (\frac{\beta}{\alpha}) (\frac{x - \gamma}{\alpha})^{\beta - 1} \exp[-(\frac{x - \gamma}{\alpha})^\beta]}
+  \deqn{f(x) = \frac{\gamma}{\Gamma(\alpha)\beta^{\alpha\gamma}}  x^{\alpha-1} \exp\left[-\left(\frac{x}{\beta}\right)^\gamma\right]}
 
   CDF:
-
-  \deqn{F(x) = 1 - \exp[-(\frac{x - \gamma}{\alpha})^\beta]}
+  \deqn{F(x) = \frac{\gamma}{\Gamma(\alpha)} \int_{0}^{\left(\frac{x}{\beta}\right)^\gamma} t^{\alpha-1} \exp\left(-t\right) dt}
 }
 \value{
 Output consists of a table of parameter estimates by stress as well as the confidence interval for each parameter if \code{MLE_i=1}.  The remaining output list consists of the following:
@@ -71,7 +70,7 @@ Lists the primary output of estimates by stress.  Each group includes the follow
   Stress Level - The unitless value or values of stress
   }
   \item{
-  Parameter Estimates - The LSQ estimates for the Weibull scale parameter \eqn{\alpha}, the Weibull shape parameter \eqn{\beta}, and the Weibull location parameter \eqn{\gamma}.
+  Parameter Estimates - The LSQ estimates for the first Gamma shape parameter \eqn{\alpha}, the Gamma scale parameter \eqn{\beta}, and the second Gamma shape parameter \eqn{\gamma}.
   }
   \item{
   SSE - The sum of square error (based on the linearlized CDF.
@@ -86,7 +85,7 @@ If MLE, the grouping will be as follows:
   Stress Level - The unitless value or values of stress
   }
   \item{
-  Parameter Estimates - The MLE estimates for the Weibull scale parameter \eqn{\alpha}, the Weibull shape parameter \eqn{\beta}, and the Weibull location parameter \eqn{\gamma}.
+  Parameter Estimates - The MLE estimates for the first Gamma shape parameter \eqn{\alpha}, the Gamma scale parameter \eqn{\beta}, and the second Gamma shape parameter \eqn{\gamma}.
   }
   \item{
   CI - The confidence intervals for each MLE parameter estimate (based on \code{confid}).
@@ -119,7 +118,7 @@ Generated probability plot.
 Modarres, M., Amiri, M., Jackson, C.  (2017)  Probabilistic Physics of Failure Approach to Reliability: Modeling, Accelerated Testing, Prognosis and Reliability Assessment.  Center for Risk and Reliability
 }
 \author{
-Dr. Reuel Smith (2021-2025)
+Dr. Reuel Smith (2024-2025)
 }
 \note{
 %%  ~~further notes~~
@@ -135,14 +134,14 @@ Dr. Reuel Smith (2021-2025)
 mat0 <- matrix.failcen(xi = c(70,71,75,78,89), rc = c(80,80,84), nx = 8)
 temp <- rep(373,length(mat0[,1]))
 mat1 <- cbind(mat0,temp)
-probplot.wbl3P(mat1, "Blom", "Time (hours)",stressunit1 = "K")
+probplot.gam3P(mat1, "Blom", "Time (hours)",stressunit1 = "K")
 
 ## Example 2: Single Stress value (Temperature in Kelvin)
 time <- c(52, 80, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 20, 28, 35, 50, 50, 50, 50, 50, 50, 50, 4, 11, 12, 18, 25, 25, 25)
 cens <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0)
 temp <- c(175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 250, 250, 250, 250, 250, 250, 250) + 273.15
 mat2 <- cbind(time, cens, temp)
-probplot.wbl3P(mat2, "Blom", "Time (hours)",stressunit1 = "K")
+probplot.gam3P(mat2, "Blom", "Time (hours)",stressunit1 = "K")
 
 ## Example 3: Dual Stress values (Temperature in Kelvin and Relative Humidity (RH))
 time <- c(102, 115, 151, 196, 210, 184, 193, 244, 265, 281, 298, 311, 337, 347, 405)
@@ -150,11 +149,10 @@ cens <- c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
 temp <- c(393, 393, 393, 393, 393, 353, 353, 353, 353, 353, 353, 353, 353, 353, 353)
 RH <- c(0.6, 0.6, 0.6, 0.6, 0.6, 0.85, 0.85, 0.85, 0.85, 0.85, 0.6, 0.6, 0.6, 0.6, 0.6)
 mat3 <- cbind(time, cens, temp, RH)
-probplot.wbl3P(mat3, "Blom", "Time (hours)",stressunit1 = "K", stressunit2 = "RH")
+probplot.gam3P(mat3, "Blom", "Time (hours)",stressunit1 = "K", stressunit2 = "RH")
 
 # Example 4: Repeat Example 3 but with the MLE estimates.
-probplot.wbl3P(mat3, pp = "Blom", xlabel1 = "Time (hours)",MLE_i = 1,stressunit1 = "K", stressunit2 = "RH")
-
+probplot.gam3P(mat3, pp = "Blom", xlabel1 = "Time (hours)",MLE_i = 1,stressunit1 = "K", stressunit2 = "RH")
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory (show via RShowDoc("KEYWORDS")):
