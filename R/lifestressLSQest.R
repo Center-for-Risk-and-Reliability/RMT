@@ -22,7 +22,7 @@ lifestress.LSQest <- function(data,ls,dist,pp="Blom",xlabel1="X",
     # nonparamoutput <- probplot.wbl3P(data,pp,xlabel1)$summary.nonparametric
   }
   if (dist=="Lognormal") {
-    output <- probplot.logn(data,pp,xlabel1,CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1,stressunit2 = stressunit22)
+    output <- probplot.logn(data,pp,xlabel1,CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1,stressunit2 = stressunit2)
   }
   if (dist=="Normal") {
     output <- probplot.nor(data,pp,xlabel1,CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1,stressunit2 = stressunit2)
@@ -37,7 +37,7 @@ lifestress.LSQest <- function(data,ls,dist,pp="Blom",xlabel1="X",
     output <- probplot.gumb(data,pp,xlabel1,CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1,stressunit2 = stressunit2)
   }
   if (dist=="Logistic") {
-    output <- probplot.logist(data,pp,xlabel1,CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1,stressunit2 = stressunit22)
+    output <- probplot.logist(data,pp,xlabel1,CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1,stressunit2 = stressunit2)
   }
   if (dist=="Loglogistic") {
     output <- probplot.loglogist(data,pp,xlabel1,CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1,stressunit2 = stressunit2)
