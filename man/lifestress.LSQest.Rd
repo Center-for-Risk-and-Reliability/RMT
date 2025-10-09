@@ -8,7 +8,7 @@ Least-Squares Life-Stress Estimator
 Computes least-squares estimate of Life-Stress model parameters for a given set of data assigned a specific life distribution.
 }
 \usage{
-lifestress.LSQest(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab=NULL,Slab=NULL)
+lifestress.LSQest(data,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL,Llab=NULL,Slab=NULL, CDFrangesetting, stressunit1, stressunit2)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -62,6 +62,15 @@ Label for the characteristic life axis of the relationship plot.  Default label 
   \item{Slab}{
 Label for the charateristic stress axis or axes of the relationship plot.  When the Arrhenius or Eyring life-stress model is selected, this label defaults to \eqn{K^{-1}} where \eqn{K} is the temperature notation for Kelvin.  Dual-stresses must be entered as vectors (Example: For "Temperature" and "Humidity" enter \code{c("Temperature", "Humidity")}).
 }
+  \item{CDFrangesetting}{
+(NEW) Sets the failure probability range for the y-axis.  Default is \code{1} for 1\% to 99\%.  Enter  \code{2} for 0.1\% to 99.9\%.
+}
+  \item{stressunit1}{
+(NEW) Label for the first stress unit.  If left blank, the default label is "unit".
+}
+  \item{stressunit2}{
+(NEW) Label for the second stress unit (if applicable).  If left blank, the default label is "unit".
+}
 }
 \details{
 The least-squares estimate of an entered life-stress distribution model is based primarily of the stress-based probability plot of the entered data (usually in the \code{probplot} subfunction).  The life-stress parameters are estimated by linear regression analysis based on the relationship between stress and life-based parameter (for Weibull or three-parameter Weibull that is \eqn{\alpha}, for normal that is \eqn{\mu}, for lognormal that is \eqn{\mu_t}, for exponential that is \eqn{\lambda}, and for two parameter exponential that is \eqn{\sigma}).  The final distribution paramter is obtained by averaging through the multiple stress lines.
@@ -99,7 +108,7 @@ Outputs a printed summary of the life-stress distribution model, its least-squar
 Modarres, M., Amiri, M., Jackson, C.  (2017)  Probabilistic Physics of Failure Approach to Reliability: Modeling, Accelerated Testing, Prognosis and Reliability Assessment.  Center for Risk and Reliability
 }
 \author{
-Dr. Reuel Smith (2021-2024)
+Dr. Reuel Smith (2021-2025)
 }
 \note{
 This function can \strong{only} operate for accelerated stress test data.  For step-stress test data use \code{stepstress.LSQest}.  Data matrix \code{mat} may also be loaded from an Excel .CSV file by \code{mat1 <-read.csv("c:/.../Data.csv")}.  This would be used to provide the \code{pp} output needed to run this function (by way of \code{probplot.NAME(mat,"plotposition","Xlabel")}).
@@ -116,7 +125,7 @@ time <- c(52, 80, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 20, 28, 35, 
 cens <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0)
 temp <- c(175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 175, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 250, 250, 250, 250, 250, 250, 250) + 273.15
 mat1 <- cbind(time, cens, temp)
-lifestress.LSQest(mat1,"Arrhenius","Weibull","Blom",xlabel = "Time (hrs)")
+lifestress.LSQest(mat1,"Arrhenius","Weibull","Blom",xlabel = "Time (hrs)",stressunit1 = "K")
 
 ## Example 2: Dual Stress values (Temperature in Kelvin and Relative Humidity (RH))
 time <- c(102, 115, 151, 196, 210, 184, 193, 244, 265, 281, 298, 311, 337, 347, 405)
@@ -124,7 +133,7 @@ cens <- c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
 temp <- c(393, 393, 393, 393, 393, 353, 353, 353, 353, 353, 353, 353, 353, 353, 353)
 RH <- c(0.6, 0.6, 0.6, 0.6, 0.6, 0.85, 0.85, 0.85, 0.85, 0.85, 0.6, 0.6, 0.6, 0.6, 0.6)
 mat2 <- cbind(time, cens, temp, RH)
-lifestress.LSQest(mat2,"TempHumidity","Weibull","Blom")
+lifestress.LSQest(mat2,"TempHumidity","Weibull","Blom",xlabel = "Time (hrs)", stressunit1 = "K",stressunit2 = "RH")
 
 ## Data(data) may also be loaded from an Excel .CSV file by dat <-read.csv("c:/.../Data.csv")
 
