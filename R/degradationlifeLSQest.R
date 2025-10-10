@@ -5,7 +5,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
   # Load pracma library for pseudo-inverse
   library(pracma)
   library(dplyr)
-  library(plotly)
+  # library(plotly)
   library(stringr)
   library(ggplot2)
 
@@ -47,6 +47,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
   }
   xlabel1 <- colnames(data)[2]
 
+  # return(data_refit)
   # Compute the LSQ estimates for the time/stress based degradation
   if (dist=="Weibull") {
     ppoutput <- probplot.wbl(data_refit,pp,xlabel1)[[1]]
@@ -155,25 +156,38 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
        modelstress=="MultiStress" || modelstress=="TempHumidity" || modelstress=="TempNonthermal"){
       modelstresstype <- 1
     }
+    if(modelstress == "LinearA" || modelstress == "ExponentialA" || modelstress == "Exponential2A" ||
+       modelstress == "ArrheniusA" || modelstress == "EyringA" || modelstress == "Eyring2A" || modelstress == "Eyring3A" || modelstress == "Eyring4A" ||
+       modelstress=="PowerA" || modelstress=="InversePowerA" || modelstress=="InversePower2A" || modelstress=="LogarithmicA" ||
+       modelstress=="MultiStressA" || modelstress=="TempHumidityA" || modelstress=="TempNonthermalA"){
+      modelstresstype <- 2
+    }
+    if(modelstress == "LinearB" || modelstress == "ExponentialB" || modelstress == "Exponential2B" ||
+       modelstress == "ArrheniusB" || modelstress == "EyringB" || modelstress == "Eyring2B" || modelstress == "Eyring3B" || modelstress == "Eyring4B" ||
+       modelstress=="PowerB" || modelstress=="InversePowerB" || modelstress=="InversePower2B" || modelstress=="LogarithmicB" ||
+       modelstress=="MultiStressB" || modelstress=="TempHumidityB" || modelstress=="TempNonthermalB"){
+      modelstresstype <- 3
+    }
     if(modelstress == "LinearAF" || modelstress == "ExponentialAF" || modelstress == "ExponentialAF2" ||
        modelstress == "ArrheniusAF" || modelstress == "EyringAF" || modelstress == "EyringAF2" || modelstress == "EyringAF3" || modelstress == "EyringAF4"  ||
        modelstress=="PowerAF" || modelstress=="InversePowerAF" || modelstress=="InversePowerAF2" || modelstress=="LogarithmicAF" ||
        modelstress=="MultiStressAF" || modelstress=="TempHumidityAF" || modelstress=="TempNonthermalAF"){
-      modelstresstype <- 2
+      modelstresstype <- 5
     }
   } else{
     modelstresstype <- 0
   }
 
-  if (is.null(modelstress) == FALSE && modelstress=="Linear"){
+  if (is.null(modelstress) == FALSE && (modelstress=="Linear" || modelstress=="LinearA" || modelstress=="LinearB")){
     # lsparams[1] - parameter a_0, lsparams[2] - parameter b_0
     paramstress <- function(PARAM,S){
       # theta[1] ~ a_0, theta[2] ~ b_0
 
       params  <- lm(PARAM ~ poly(S, 1, raw=TRUE))
+      SSE <- deviance(params)
       psparams <- c(summary(params)$coefficients[2,1],summary(params)$coefficients[1,1])
 
-      return(psparams)
+      return(list(psparams,SSE))
     }
     stressparamfit <- function(params,S){
       params[2] + params[1]*S
@@ -185,16 +199,17 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     logparam_txt<-"ln(b_0 + S*a_0)"
   }
 
-  if (is.null(modelstress) == FALSE && modelstress=="Exponential"){
+  if (is.null(modelstress) == FALSE && (modelstress=="Exponential" || modelstress=="ExponentialA" || modelstress=="ExponentialB")){
     # lsparams[1] - parameter a_0, lsparams[2] - parameter b_0, lsparams[3] - R^2
     paramstress <- function(PARAM,S){
       # theta[1] ~ a, theta[2] ~ b
       # If stressmodel is based on parameter, it is based on b
 
       params  <- lm(log(PARAM) ~ poly(S, 1, raw=TRUE))
+      SSE <- deviance(params)
       psparams <- c(summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
 
-      return(psparams)
+      return(list(psparams,SSE))
     }
     stressparamfit <- function(params,S){
       params[2]*exp(params[1]*S)
@@ -205,15 +220,16 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     param_txt2<-"b_0*exp(a_0*S)"
     logparam_txt<-"(log(b_0) + a_0*S)"
   }
-  if (is.null(modelstress) == FALSE && modelstress=="Exponential2"){
+  if (is.null(modelstress) == FALSE && (modelstress=="Exponential2" || modelstress=="Exponential2A" || modelstress=="Exponential2B")){
     # lsparams[1] - parameter a_0, lsparams[2] - parameter b_0
     paramstress <- function(PARAM,S){
       # theta[1] ~ a_0, theta[2] ~ b_0
 
       params  <- lm(log(PARAM) ~ poly(1/S, 1, raw=TRUE))
+      SSE <- deviance(params)
       psparams <- c(summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
 
-      return(psparams)
+      return(list(psparams,SSE))
     }
     stressparamfit <- function(params,S){
       params[2]*exp(params[1]/S)
@@ -224,16 +240,17 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     param_txt2<-"b_0*exp(a_0/S)"
     logparam_txt<-"(log(b_0) + a_0/S)"
   }
-  if (is.null(modelstress) == FALSE && modelstress=="Arrhenius"){
+  if (is.null(modelstress) == FALSE && (modelstress=="Arrhenius" || modelstress=="ArrheniusA" || modelstress=="ArrheniusB")){
     # psparams[1] - parameter Ea, psparams[2] - parameter b
     # Temperature HAS to be in Kelvin for this to work
     K<-8.617385e-5
     paramstress <- function(PARAM,S){
       # theta[1] ~ E_a_0, theta[2] ~ b_0
       params  <- lm(log(PARAM) ~ poly(1/S, 1, raw=TRUE))
+      SSE <- deviance(params)
       psparams <- c(K*summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
 
-      return(psparams)
+      return(list(psparams,SSE))
     }
     stressparamfit <- function(params,S){
       params[2]*exp(params[1]/(K*S))
@@ -244,17 +261,23 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     param_txt2<-"b_0*exp(E_a_0)/(K*S))"
     logparam_txt<-"(log(b_0) + (E_a_0/(K*S)))"
   }
-  if (is.null(modelstress) == FALSE && modelstress=="Eyring"){
+  if (is.null(modelstress) == FALSE && (modelstress=="Eyring" || modelstress=="EyringA" || modelstress=="EyringB")){
     # lsparams[1] - parameter a, lsparams[2] - parameter b
     paramstress <- function(PARAM,S){
       # theta[1] ~ a_0, theta[2] ~ b_0
-      Lvals<-log(PARAM) + log(S)
-      Svals<-matrix(c(1/S,rep(1,length(S))),nrow=length(S),ncol=2,byrow=FALSE)
-      params  <- pinv(Svals)%*%Lvals
-      psparams <- c(params)
+      params  <- nls(Lvals ~ logb -log(S) + (a/S),start = list(a = 1,logb = log(3)))
+      psparams <- c(summary(params)$coefficients[1,1],summary(params)$coefficients[2,1])
       psparams[2]<-exp(psparams[2])
+      SST <- sum((Lvals - mean(Lvals))^2)
 
-      return(psparams)
+      # Lvals<-log(PARAM) + log(S)
+      # Svals<-matrix(c(1/S,rep(1,length(S))),nrow=length(S),ncol=2,byrow=FALSE)
+      # params  <- pinv(Svals)%*%Lvals
+      SSE <- deviance(params)
+      # psparams <- c(params)
+      # psparams[2]<-exp(psparams[2])
+
+      return(list(psparams,SSE))
     }
     stressparamfit <- function(params,S){
       (params[2]/S)*exp(params[1]/S)
@@ -265,16 +288,17 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     param_txt2<-"(b_0/S)*exp(a_0/S)"
     logparam_txt<-"(log(b_0) - log(S) + (a_0/S))"
   }
-  if (is.null(modelstress) == FALSE && modelstress=="Eyring2"){
+  if (is.null(modelstress) == FALSE && (modelstress=="Eyring2" || modelstress=="Eyring2A" || modelstress=="Eyring2B")){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
     paramstress <- function(PARAM,S){
       # theta[1] ~ a_0, theta[2] ~ b_0
       Lvals<-log(PARAM) + log(S)
       Svals<-matrix(c(rep(-1,length(S)), 1/S),nrow=length(S),ncol=2,byrow=FALSE)
       params  <- pinv(Svals)%*%Lvals
+      SSE <- deviance(params)
       psparams <- c(params)
 
-      return(psparams)
+      return(list(psparams,SSE))
     }
     stressparamfit <- function(params,S){
       (1/S)*exp(-(params[1] - (params[2]/S)))
@@ -285,14 +309,15 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     param_txt2<-"(1/S)*exp(-(a_0 - (b_0/S)))"
     logparam_txt<-"(-log(S) - a_0 + (b_0/S))"
   }
-  if (is.null(modelstress) == FALSE && modelstress=="Power"){
+  if (is.null(modelstress) == FALSE && (modelstress=="Power" || modelstress=="PowerA" || modelstress=="PowerB")){
     # lsparams[1] - parameter a, lsparams[2] - parameter b
     paramstress <- function(PARAM,S){
       # theta[1] ~ a_0, theta[2] ~ b_0
       params  <- lm(log(PARAM) ~ poly(log(S), 1, raw=TRUE))
+      SSE <- deviance(params)
       psparams <- c(summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
 
-      return(psparams)
+      return(list(psparams,SSE))
     }
     stressparamfit <- function(params,S){
       params[2]*(S^params[1])
@@ -303,14 +328,15 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     param_txt2<-"b_0*(S^a_0)"
     logparam_txt<-"(ln(b_0) + a_0ln(S))"
   }
-  if (is.null(modelstress) == FALSE && modelstress=="InversePower"){
+  if (is.null(modelstress) == FALSE && (modelstress=="InversePower" || modelstress=="InversePowerA" || modelstress=="InversePowerB")){
     # lsparams[1] - parameter a, lsparams[2] - parameter b
     paramstress <- function(PARAM,S){
       # theta[1] ~ a_0, theta[2] ~ b_0
       params  <- lm(log(PARAM) ~ poly(log(S), 1, raw=TRUE))
+      SSE <- deviance(params)
       psparams <- c(-summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
 
-      return(psparams)
+      return(list(psparams,SSE))
     }
     stressparamfit <- function(params,S){
       params[2]*(S^-params[1])
@@ -321,14 +347,15 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     param_txt2<-"b_0*(S^-a_0)"
     logparam_txt<-"(ln(b_0) - a_0ln(S))"
   }
-  if (is.null(modelstress) == FALSE && modelstress=="InversePower2"){
+  if (is.null(modelstress) == FALSE && (modelstress=="InversePower2" || modelstress=="InversePower2A" || modelstress=="InversePower2B")){
     # lsparams[1] - parameter a, lsparams[2] - parameter b
     paramstress <- function(PARAM,S){
       # theta[1] ~ a_0, theta[2] ~ b_0
       params  <- lm(log(PARAM) ~ poly(log(S), 1, raw=TRUE))
+      SSE <- deviance(params)
       psparams <- c(-summary(params)$coefficients[2,1],exp(-summary(params)$coefficients[1,1]))
 
-      return(psparams)
+      return(list(psparams,SSE))
     }
     stressparamfit <- function(params,S){
       1/(params[2]*(S^params[1]))
@@ -339,14 +366,15 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     param_txt2<-"1/[b_0*(S^a_0)]"
     logparam_txt<-"(-ln(b_0) - a_0ln(S))"
   }
-  if (is.null(modelstress) == FALSE && modelstress=="Logarithmic"){
+  if (is.null(modelstress) == FALSE && (modelstress=="Logarithmic" || modelstress=="LogarithmicA" || modelstress=="LogarithmicB")){
     # lsparams[1] - parameter a, lsparams[2] - parameter b
     paramstress <- function(PARAM,S){
       # theta[1] ~ a_0, theta[2] ~ b_0
       params  <- lm(PARAM ~ poly(log(S), 1, raw=TRUE))
+      SSE <- deviance(params)
       psparams <- c(summary(params)$coefficients[2,1],summary(params)$coefficients[1,1])
 
-      return(psparams)
+      return(list(psparams,SSE))
     }
     stressparamfit <- function(params,S){
       params[2] + params[1]*log(S)
@@ -357,7 +385,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     param_txt2<-"(b_0 + a_0*ln(S))"
     logparam_txt<-"ln(b_0 + a_0*ln(S))"
   }
-  if (is.null(modelstress) == FALSE && modelstress=="MultiStress"){
+  if (is.null(modelstress) == FALSE && (modelstress=="MultiStress" || modelstress=="MultiStressA" || modelstress=="MultiStressB")){
     # lsparams - c(ao,a1,...,an), S - c(1,S1,...,Sn)
     if(length(ppoutput[[1]])<2) {
       stop('Select a data set with more than one stress type.')
@@ -368,13 +396,14 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     lsparams <- c(params)
     lnLmodel <- Svals%*%lsparams
     R2 <- 1 - sum((Lvals - lnLmodel)^2)/sum((Lvals - mean(Lvals))^2)
+    SSE <- sum((Lvals - lnLmodel)^2)
     # Writeup for the output text
     params_txt<-paste("a_",c(0:length(S[1,])),sep="")
     ps_txt<-"Multi-Stress"
     param_txt2<-"exp(a_0 + a_1*S_1 + a_2*S_2 + ...+ a_n*S_n)"
     logparam_txt<-"a_0 + a_1*S_1 + a_2*S_2 + ...+ a_n*S_n"
   }
-  if (is.null(modelstress) == FALSE && modelstress=="TempHumidity"){
+  if (is.null(modelstress) == FALSE && (modelstress=="TempHumidity" || modelstress=="TempHumidityA" || modelstress=="TempHumidityB")){
     # lsparams[1] - parameter A, lsparams[2] - parameter a, lsparams[3] - parameter b
     if((dim(data)[2]-3)<2) {
       stop('Select a data set with more than one stress type.')
@@ -385,9 +414,12 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
       Svals<-matrix(c(rep(1,length(S[,1])),1/S[,1],1/S[,2]),nrow=length(unitnames),ncol=3,byrow=FALSE)
       params  <- pinv(Svals)%*%Lvals
       params[1]<-exp(params[1])
+      Lmodel <- params[1]*exp(params[2]/S[,1] + params[3]/S[,2])
+      lnLmodel <- log(Lmodel)
+      SSE <- sum((Lvals - lnLmodel)^2)
       psparams <- c(params)
 
-      return(psparams)
+      return(list(psparams,SSE))
     }
     stressparamfit <- function(params,S){
       params[1]*exp((params[2]/S[,1]) + (params[3]/S[,2]))
@@ -399,7 +431,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     logparam_txt<-"ln(A_0) + a_0/S + b_0/H"
   }
 
-  if (is.null(modelstress) == FALSE && modelstress=="TempNonthermal"){
+  if (is.null(modelstress) == FALSE && (modelstress=="TempNonthermal" || modelstress=="TempNonthermalA" || modelstress=="TempNonthermalB")){
     if((dim(data)[2]-3)<2) {
       stop('Select a data set with more than one stress type.')
     }
@@ -410,8 +442,10 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
       params  <- pinv(Svals)%*%Lvals
       params[3]<-exp(params[3])
       psparams <- c(params)
+      lnLmodel <- psparams[1]*(1/S[,1]) - psparams[2]*log(S[,2]) + log(psparams[3])
+      SSE <- sum((Lvals - lnLmodel)^2)
 
-      return(psparams)
+      return(list(psparams,SSE))
     }
     stressparamfit <- function(params,S){
       params[3]/((S[2]^params[2])*exp(-params[1]/S[1]))
@@ -423,7 +457,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     logparam_txt<-"a_0(1/S) - b_0*ln(U) + ln(c_0)"
   }
 
-  if (is.null(modelstress) == FALSE && modelstress=="Eyring3"){
+  if (is.null(modelstress) == FALSE && (modelstress=="Eyring3" || modelstress=="Eyring3A" || modelstress=="Eyring3B")){
     # lsparams[1] - parameter a, lsparams[2] - parameter b
     # lsparams[3] - parameter c, lsparams[4] - parameter d
     if((dim(data)[2]-3)<2) {
@@ -436,8 +470,10 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
       Svals<-matrix(c(rep(1,length(S[,1])),1/S[,1],S[,2],S[,2]/S[,1]),nrow=length(unitnames),ncol=4,byrow=FALSE)
       params  <- pinv(Svals)%*%Lvals
       psparams <- c(params)
+      lnLmodel <- -log(S[,1]) + psparams[1] + psparams[2]/S[,1] + psparams[3]*S[,2] + psparams[4]*(S[,2]/S[,1])
+      SSE <- sum((Lvals - lnLmodel)^2)
 
-      return(psparams)
+      return(list(psparams,SSE))
     }
     stressparamfit <- function(params,S){
       (1/S[1])*exp((params[1] + (params[2]/S[1])) + ((params[3] + (params[4]/S[1]))*S[2]))
@@ -448,7 +484,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     param_txt2<-"(1/S) exp((a_0 + (b_0/S)) + (c_0 + (d_0/S)) U)"
     logparam_txt<-"-ln(S) + (a_0 + (b_0/S)) + (c_0 + (d_0/S)) U"
   }
-  if (is.null(modelstress) == FALSE && modelstress=="Eyring4"){
+  if (is.null(modelstress) == FALSE && (modelstress=="Eyring4" || modelstress=="Eyring4A" || modelstress=="Eyring4B")){
     # lsparams[1] - parameter A, lsparams[2] - parameter b
     # lsparams[3] - parameter Ea
     # Temperature HAS to be in Kelvin for this to work
@@ -465,8 +501,10 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
       psparams <- c(params)
       psparams[1]<-exp(psparams[1])
       psparams[3]<-K*psparams[3]
+      lnLmodel <- log(psparams[1]) - psparams[2]*log(S[,2]) + (psparams[3]/K)*(1/S[,1])
+      SSE <- sum((Lvals - lnLmodel)^2)
 
-      return(psparams)
+      return(list(psparams,SSE))
     }
     stressparamfit <- function(params,S){
       params[1]*exp(params[3]/(K*S[1]))*(S[2]^-params[2])
@@ -479,7 +517,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
   }
 
   # Initialize AF-stress relation if modelstress is not NULL
-  # INitial test will be for the TempNontermalAF model for several scenarios but mostly for Power
+  # Initial test will be for the TempNontermalAF model for several scenarios but mostly for Power
 
   # Degradation-life model setups.  Least-squares fit for standard degradation life models
   # without stress correlation.
@@ -501,14 +539,20 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     dl_txt <- dl
     dlmodel_txt0<-"a + bl"
     if(is.null(modelstress) == FALSE){
-      if(modelstresstype == 1){
+      if(modelstresstype == 1 || modelstresstype == 2){
         dlparams_txt<-c("a","b")
         # dlparams_txt<-c(params_txt,"b")
         paramref_txt<-"a(S) = "
         paramref_txt2<-"b ~ NOR(\U03BC_b,\U03C3_b)"
         params_txt2<-c("\U03BC_b","\U03C3_b")
       }
-      if(modelstresstype == 2){
+      if(modelstresstype == 3){
+        dlparams_txt<-c("a","b")
+        paramref_txt<-"b(S) = "
+        paramref_txt2<-"a ~ NOR(\U03BC_a,\U03C3_a)"
+        params_txt2<-c("\U03BC_a","\U03C3_a")
+      }
+      if(modelstresstype == 5){
         dlparams_txt<-c("a","b")
       }
     } else{
@@ -534,14 +578,19 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     dl_txt <- dl
     dlmodel_txt0<-"b exp(al)"
     if(is.null(modelstress) == FALSE){
-      if(modelstresstype == 1){
+      if(modelstresstype == 1 || modelstresstype == 3){
         dlparams_txt<-c("a","b")
-        # dlparams_txt<-c("a",params_txt)
         paramref_txt<-"b(S) = "
         paramref_txt2<-"a ~ NOR(\U03BC_a,\U03C3_a)"
         params_txt2<-c("\U03BC_a","\U03C3_a")
       }
       if(modelstresstype == 2){
+        dlparams_txt<-c("a","b")
+        paramref_txt<-"a(S) = "
+        paramref_txt2<-"b ~ NOR(\U03BC_b,\U03C3_b)"
+        params_txt2<-c("\U03BC_b","\U03C3_b")
+      }
+      if(modelstresstype == 5){
         dlparams_txt<-c("a","b")
       }
     } else{
@@ -567,14 +616,57 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     dl_txt <- "Square-Root"
     dlmodel_txt0<-"(a + bl)\U00B2"
     if(is.null(modelstress) == FALSE){
-      if(modelstresstype == 1){
+      if(modelstresstype == 1 || modelstresstype == 2){
         dlparams_txt<-c("a","b")
-        # dlparams_txt<-c(params_txt,"b")
         paramref_txt<-"a(S) = "
         paramref_txt2<-"b ~ NOR(\U03BC_b,\U03C3_b)"
         params_txt2<-c("\U03BC_b","\U03C3_b")
       }
-      if(modelstresstype == 2){
+      if(modelstresstype == 3){
+        dlparams_txt<-c("a","b")
+        paramref_txt<-"b(S) = "
+        paramref_txt2<-"a ~ NOR(\U03BC_a,\U03C3_a)"
+        params_txt2<-c("\U03BC_a","\U03C3_a")
+      }
+      if(modelstresstype == 5){
+        dlparams_txt<-c("a","b")
+      }
+    } else{
+      dlparams_txt<-c("a","b")
+    }
+  }
+
+  if(dl=="SquareRoot2"){
+    # D = a + b*√t
+    # theta[1] ~ a, theta[2] ~ b
+    dloutput <- function(Lifedat,Damdat,Dam_fail){
+      params  <- lm(Damdat ~ poly(sqrt(Lifedat), 1, raw=TRUE))
+      dlparams <- c(summary(params)$coefficients[1,1],summary(params)$coefficients[2,1])
+      timepsuedo<-((Dam_fail-dlparams[1])/dlparams[2])^2
+      R2 <- summary(params)$r.squared
+      SSE <- sum((summary(params)$coefficients[1,1] + sqrt(Lifedat)*summary(params)$coefficients[2,1] - Damdat)^2)
+      return(list(dlparams,timepsuedo,R2,SSE))
+    }
+    damfit <- function(TimeDamfit,params){
+      params[1] + sqrt(TimeDamfit)*params[2]
+    }
+    # Writeup for the output text
+    dl_txt <- "Square-Root2"
+    dlmodel_txt0<-"a + b\U221A(l)"
+    if(is.null(modelstress) == FALSE){
+      if(modelstresstype == 1 || modelstresstype == 2){
+        dlparams_txt<-c("a","b")
+        paramref_txt<-"a(S) = "
+        paramref_txt2<-"b ~ NOR(\U03BC_b,\U03C3_b)"
+        params_txt2<-c("\U03BC_b","\U03C3_b")
+      }
+      if(modelstresstype == 3){
+        dlparams_txt<-c("a","b")
+        paramref_txt<-"b(S) = "
+        paramref_txt2<-"a ~ NOR(\U03BC_a,\U03C3_a)"
+        params_txt2<-c("\U03BC_a","\U03C3_a")
+      }
+      if(modelstresstype == 5){
         dlparams_txt<-c("a","b")
       }
     } else{
@@ -628,14 +720,19 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     dl_txt <- dl
     dlmodel_txt0<-"bl\U00AA"
     if(is.null(modelstress) == FALSE){
-      if(modelstresstype == 1){
+      if(modelstresstype == 1 || modelstresstype == 3){
         dlparams_txt<-c("a","b")
-        # dlparams_txt<-c("a",params_txt)
         paramref_txt<-"b(S) = "
         paramref_txt2<-"a ~ NOR(\U03BC_a,\U03C3_a)"
         params_txt2<-c("\U03BC_a","\U03C3_a")
       }
       if(modelstresstype == 2){
+        dlparams_txt<-c("a","b")
+        paramref_txt<-"a(S) = "
+        paramref_txt2<-"b ~ NOR(\U03BC_b,\U03C3_b)"
+        params_txt2<-c("\U03BC_b","\U03C3_b")
+      }
+      if(modelstresstype == 5){
         dlparams_txt<-c("a","b")
       }
     } else{
@@ -664,14 +761,19 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     dl_txt <- dl
     dlmodel_txt0<-"a + b ln(l)"
     if(is.null(modelstress) == FALSE){
-      if(modelstresstype == 1){
+      if(modelstresstype == 1 || modelstresstype == 2){
         dlparams_txt<-c("a","b")
-        # dlparams_txt<-c(params_txt,"b")
         paramref_txt<-"a(S) = "
         paramref_txt2<-"b ~ NOR(\U03BC_b,\U03C3_b)"
         params_txt2<-c("\U03BC_b","\U03C3_b")
       }
-      if(modelstresstype == 2){
+      if(modelstresstype == 3){
+        dlparams_txt<-c("a","b")
+        paramref_txt<-"b(S) = "
+        paramref_txt2<-"a ~ NOR(\U03BC_a,\U03C3_a)"
+        params_txt2<-c("\U03BC_a","\U03C3_a")
+      }
+      if(modelstresstype == 5){
         dlparams_txt<-c("a","b")
       }
     } else{
@@ -714,14 +816,20 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     dl_txt <- "Lloyd-Lipow"
     dlmodel_txt0<-"a - b/l"
     if(is.null(modelstress) == FALSE){
-      if(modelstresstype == 1){
+      if(modelstresstype == 1 || modelstresstype == 2){
         dlparams_txt<-c("a","b")
         # dlparams_txt<-c(params_txt,"b")
         paramref_txt<-"a(S) = "
         paramref_txt2<-"b ~ NOR(\U03BC_b,\U03C3_b)"
         params_txt2<-c("\U03BC_b","\U03C3_b")
       }
-      if(modelstresstype == 2){
+      if(modelstresstype == 3){
+        dlparams_txt<-c("a","b")
+        paramref_txt<-"b(S) = "
+        paramref_txt2<-"a ~ NOR(\U03BC_a,\U03C3_a)"
+        params_txt2<-c("\U03BC_a","\U03C3_a")
+      }
+      if(modelstresstype == 5){
         dlparams_txt<-c("a","b")
       }
     } else{
@@ -748,7 +856,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
       # dlparams <- c(summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
       # Set the MSE equation
       loglik_Mitsuom <- function(theta){
-        mean((Damdat - (1/(1 + theta[2]*(Lifedat^theta[1]))))^2)
+        sum((Damdat - (1/(1 + theta[2]*(Lifedat^theta[1]))))^2)
       }
       dlparams_out <- nlm(loglik_Mitsuom, theta <- dlparams0, hessian=TRUE)
       dlparams <- dlparams_out$estimate[1:2]
@@ -766,7 +874,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     dl_txt <- dl
     dlmodel_txt0<-"(1 + bl\U00AA)\U207B\U00B9"
     if(is.null(modelstress) == FALSE){
-      if(modelstresstype == 1){
+      if(modelstresstype == 1 || modelstresstype == 3){
         dlparams_txt<-c("a","b")
         # dlparams_txt<-c("a",params_txt)
         paramref_txt<-"b(S) = "
@@ -775,12 +883,97 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
       }
       if(modelstresstype == 2){
         dlparams_txt<-c("a","b")
+        paramref_txt<-"a(S) = "
+        paramref_txt2<-"b ~ NOR(\U03BC_b,\U03C3_b)"
+        params_txt2<-c("\U03BC_b","\U03C3_b")
+      }
+      if(modelstresstype == 5){
+        dlparams_txt<-c("a","b")
       }
     } else{
       dlparams_txt<-c("a","b")
     }
   }
 
+  if(dl=="MitsuomAFArrhenius"){
+    # D = 1/(1 + b*((t*exp(E_a*11604.45*(1/Tuse - 1/Tacc)))^a))
+    # theta[1] ~ Ea, theta[2] ~ a, theta[3] ~ b (all need to be positive)
+    # This is a case of Mitsuom where the time has been replaced by AF x accelerated time.  I will set this up
+    # later so that AF can be an option for fitting to any of the governing degradation models.
+    # =========================================================================
+    # New plan: Run Mitsuom and then approximate parameters to the AF fit.
+    # Life damage output and update by MLE
+    K<-8.617385e-5
+    Kinv <- 11604.45
+    dloutput <- function(Lifedat,Damdat,Tempdat,Dam_fail){
+      # Initialize parameter estimates by finding fit for Mitsuom
+      # D = 1/(1 + b*(t^a))
+      # theta[1] ~ a, theta[2] ~ b
+      # params  <- lm(log(Damdat[which(Damdat<1)]^(-1) - 1) ~ poly(log(Lifedat[which(Damdat<1)]), 1, raw=TRUE))
+      # params_mb <- lm(log(Damdat) ~ poly(Lifedat, 1, raw=TRUE))
+      # dlparams0 <- c(summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
+      # m_param<-summary(params_mb)$coefficients[2,1]
+      # b_param<-summary(params_mb)$coefficients[1,1]
+      # # Set the MSE equation
+      # loglik_Mitsuom <- function(theta){
+      #   sum((Damdat - (1/(1 + theta[2]*(Lifedat^theta[1]))))^2)
+      # }
+      # dlparams_out <- nlm(loglik_Mitsuom, theta <- dlparams0, hessian=TRUE)
+      # dlparams <- dlparams_out$estimate[1:2]
+      # # Then refit parameter a to find estimates of Ea and new a
+      # # D = 1/(1 + b*((t*exp(E_a/K*(1/Tuse - 1/Tacc)))^a))
+      # # theta[1] ~ Ea, theta[2] ~ a, theta[3] ~ b
+      # # t^a_old = (t*exp((E_a/K)*(1/Tuse - 1/Tacc)))^a_new
+      # # log(t^a_old) = a_new log(t) + a_new (E_a/K)*(1/Tuse - 1/Tacc)
+      # params  <- lm(log(Lifedat^dlparams[1]) ~ poly(log(Lifedat), 1, raw=TRUE))
+      # dlparams <- c((summary(params)$coefficients[1,1]*K)/(summary(params)$coefficients[2,1]*((1/Tuse) - (1/Tempdat[1]))),summary(params)$coefficients[2,1],dlparams[2])
+
+      # Again try with matrix analysis.  All parameters need to be positive.
+      # dlparams <- pinv(cbind(rep(1,length(which(Damdat<1))),Lifedat[which(Damdat<1)],Kinv*((1/Tuse)-(1/Tempdat[which(Damdat<1)]))))*log(Damdat[which(Damdat<1)]^(-1) - 1)
+      # dlparams0 <- dlparams
+      # dlparams0[1] <- dlparams[3]/dlparams[2]
+      # dlparams0[2] <- dlparams[2]
+      # dlparams0[3] <- exp(dlparams[1])
+      dlparams0 <- c(.1,.1,.1)
+      # Set the MSE equation
+      loglik_MitsuomAFArrhenius <- function(theta){
+        sum((Damdat - (1/(1 + exp(theta[3])*((Lifedat*exp((exp(theta[1])/K)*((1/Tuse) - (1/Tempdat[1]))))^exp(theta[2])))))^2)
+      }
+      dlparams_out <- nlm(loglik_MitsuomAFArrhenius, theta <- dlparams0, hessian=TRUE)
+      dlparams <- exp(dlparams_out$estimate[1:3])
+      timepsuedo<-((((Dam_fail^(-1)) - 1)*exp(-(theta[1]/K)*((1/Tuse) - (1/Tempdat[1]))))/dlparams[3])^(1/dlparams[2])
+      Dammodel <- 1/(1 + dlparams[3]*((Lifedat*exp((dlparams[1]/K))*((1/Tuse) - (1/Tempdat[1])))^dlparams[2]))
+      R2 <- 1 - (sum((Damdat - Dammodel)^2)/sum((Damdat - mean(Dammodel))^2))
+      SSE <- sum((Damdat - Dammodel)^2)
+      return(list(dlparams,timepsuedo,R2,SSE))
+    }
+    damfit <- function(TimeDamfit,TempDamfit,params){
+      1/(1 + params[3]*((TimeDamfit*exp((params[1]/K)*((1/Tuse) - (1/TempDamfit[1]))))^params[2]))
+    }
+    # Writeup for the output text
+    dl_txt <- dl
+    dlmodel_txt0<-"(1 + bl\U00AA)\U207B\U00B9"
+    if(is.null(modelstress) == FALSE){
+      if(modelstresstype == 1 || modelstresstype == 3){
+        dlparams_txt<-c("Ea","a","b")
+        # dlparams_txt<-c("a",params_txt)
+        paramref_txt<-"b(S) = "
+        paramref_txt2<-"a ~ NOR(\U03BC_a,\U03C3_a)"
+        params_txt2<-c("\U03BC_a","\U03C3_a")
+      }
+      if(modelstresstype == 2){
+        dlparams_txt<-c("Ea","a","b")
+        paramref_txt<-"a(S) = "
+        paramref_txt2<-"b ~ NOR(\U03BC_b,\U03C3_b)"
+        params_txt2<-c("\U03BC_b","\U03C3_b")
+      }
+      if(modelstresstype == 5){
+        dlparams_txt<-c("Ea","a","b")
+      }
+    } else{
+      dlparams_txt<-c("Ea","a","b")
+    }
+  }
   if(dl=="Hamada"){
     # D = 1/(1 + beta1*(t*exp(beta3*11605*(1/Tu - 1/Ti)))^beta2)
     # theta[1] ~ beta1, theta[2] ~ beta2, theta[3] ~ beta3
@@ -838,6 +1031,111 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
       0.001*exp(pi*params[1]*(200^2)*TimeDamfit)
     }
   }
+  if(dl=="LinearD0"){
+    # D = D0 + a*t
+    # theta[1] ~ a
+    dloutput <- function(Lifedat,Damdat,Dam_fail){
+      params  <- lm((Damdat - 8.5) ~ Lifedat + 0)
+      dlparams <- summary(params)$coefficients[,1]
+      timepsuedo<-(Dam_fail - 8.5)/dlparams
+      R2 <- summary(params)$r.squared
+      SSE <- sum((fitted(params) - Damdat)^2)
+      return(list(dlparams,timepsuedo,R2,SSE))
+    }
+    damfit <- function(TimeDamfit,params){
+      8.5 + TimeDamfit*params
+    }
+    # Writeup for the output text
+    dl_txt <- dl
+    dlmodel_txt0<-"8.5 + al"
+    if(is.null(modelstress) == FALSE){
+      if(modelstresstype == 1 || modelstresstype == 2){
+        dlparams_txt<-c("a")
+        # dlparams_txt<-c(params_txt,"b")
+        paramref_txt<-"a(S) = "
+        paramref_txt2<-"b ~ NOR(\U03BC_b,\U03C3_b)"
+        params_txt2<-c("\U03BC_b","\U03C3_b")
+      }
+    } else{
+      dlparams_txt<-c("a")
+    }
+  }
+
+  if(dl=="ExponentialNorm"){
+    # D = 8.5*exp(a*(W/2500)*(t/5000))*exp(b*(T - 298)*(t/5000))
+    # theta[1] ~ a, theta[2] ~ b
+    dloutput <- function(Lifedat,Damdat,Weightdat,Tempdat,Dam_fail){
+      # eqnExpNorm <- function(theta){
+      #   (log(8.5 - Damdat) - (theta[2] + log(Lifedat/5000) + log(Weightdat/2500) + exp(theta[1])*(Tempdat - 298)))^2
+      # }
+      Lvals<-log(Damdat) - log(8.5)
+      M <- cbind(c((Weightdat/2500)*(Lifedat/5000)),c((Tempdat-298)*(Lifedat/5000)))
+      dlparams <- c(pinv(M)%*%Lvals)
+      timepsuedo<-(log(Dam_fail) - log(8.5))*5000*(1/(dlparams[1]*(Weightdat[1]/2500) + dlparams[2]*(Tempdat[1] - 298)))
+      SST <- sum((Lvals - mean(Lvals))^2)
+      SSE <- sum((Lvals - M%*%dlparams)^2)
+      R2 <- 1 - (SSE/SST)
+      error <- Lvals - M%*%dlparams
+
+      return(list(dlparams,timepsuedo,R2,SSE,error))
+    }
+    damfit <- function(TimeDamfit,Weight,Temp,params){
+      8.5*exp(params[1]*(TimeDamfit/5000)*(Weight/2500))*exp(params[2]*(TimeDamfit/5000)*(Temp - 298))
+    }
+    # Writeup for the output text
+    dl_txt <- dl
+    dlmodel_txt0<-"8.5*exp(a*(W/2500)*(t/5000))*exp(b*(T - 298)*(t/5000))"
+    if(is.null(modelstress) == FALSE){
+      if(modelstresstype == 1 || modelstresstype == 2){
+        dlparams_txt<-c("a","b")
+        paramref_txt<-"a(S) = "
+        paramref_txt2<-"b ~ NOR(\U03BC_b,\U03C3_b)"
+        params_txt2<-c("\U03BC_b","\U03C3_b")
+      }
+      if(modelstresstype == 3){
+        dlparams_txt<-c("a","b")
+        paramref_txt<-"b(S) = "
+        paramref_txt2<-"a ~ NOR(\U03BC_a,\U03C3_a)"
+        params_txt2<-c("\U03BC_a","\U03C3_a")
+      }
+      if(modelstresstype == 5){
+        dlparams_txt<-c("a","b")
+      }
+    } else{
+      dlparams_txt<-c("a","b")
+    }
+  }
+
+  if(dl=="SquareRootD0"){
+    # D^(1/2) = sqrt(8.5) + a*t
+    # theta[1] ~ a
+    dloutput <- function(Lifedat,Damdat,Dam_fail){
+      params  <- lm((sqrt(Damdat) - sqrt(8.5)) ~ Lifedat + 0)
+      dlparams <- summary(params)$coefficients[,1]
+      timepsuedo<-(sqrt(Dam_fail) - sqrt(8.5))/dlparams
+      R2 <- summary(params)$r.squared
+      SSE <- sum((fitted(params) - (sqrt(Damdat) - sqrt(8.5)))^2)
+      return(list(dlparams,timepsuedo,R2,SSE))
+    }
+    damfit <- function(TimeDamfit,params){
+      (sqrt(8.5) + TimeDamfit*params)^2
+    }
+    # Writeup for the output text
+    dl_txt <- dl
+    dlmodel_txt0<-"(sqrt(8.5) + al)^2"
+    if(is.null(modelstress) == FALSE){
+      if(modelstresstype == 1 || modelstresstype == 2){
+        dlparams_txt<-c("a")
+        # dlparams_txt<-c(params_txt,"b")
+        paramref_txt<-"a(S) = "
+        paramref_txt2<-"b ~ NOR(\U03BC_b,\U03C3_b)"
+        params_txt2<-c("\U03BC_b","\U03C3_b")
+      }
+    } else{
+      dlparams_txt<-c("a")
+    }
+  }
+
   # if(dl=="KondoWei"){
   #   # r^3 = r_0^3 + (Dt/(A x pH)) exp(-E_a/kT)
   #   # theta[1] ~ A, theta[2] ~ E_a
@@ -876,29 +1174,38 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
         Lifedam<-dloutput(data[which(data[,3]==unitnames[i]),1],data[which(data[,3]==unitnames[i]),2],data[which(data[,3]==unitnames[i]),4],D0)
       } else if(dl=="KondoWei"){
         Lifedam<-dloutput(data[which(data[,3]==unitnames[i]),1],data[which(data[,3]==unitnames[i]),2],data[which(data[,3]==unitnames[i]),4],data[which(data[,3]==unitnames[i]),5],D0)
+      } else if(dl=="ExponentialNorm"){
+        Lifedam<-dloutput(data[which(data[,3]==unitnames[i]),1],data[which(data[,3]==unitnames[i]),2],data[which(data[,3]==unitnames[i]),4],data[which(data[,3]==unitnames[i]),5],D0)
+      } else if(dl=="MitsuomAFArrhenius"){
+        Lifedam<-dloutput(data[which(data[,3]==unitnames[i]),1],data[which(data[,3]==unitnames[i]),2],data[which(data[,3]==unitnames[i]),4][1],D0)
       } else{
         Lifedam<-dloutput(data[which(data[,3]==unitnames[i]),1],data[which(data[,3]==unitnames[i]),2],D0)
       }
     } else if(length(D0)==length(unitnames)){
       if(dl=="Hamada"){
         Lifedam<-dloutput(data[which(data[,3]==unitnames[i]),1],data[which(data[,3]==unitnames[i]),2],data[which(data[,3]==unitnames[i]),4],D0[i])
-      } else {
+      } else if(dl=="MitsuomAFArrhenius"){
+        Lifedam<-dloutput(data[which(data[,3]==unitnames[i]),1],data[which(data[,3]==unitnames[i]),2],data[which(data[,3]==unitnames[i]),4][1],D0[i])
+      }else {
         Lifedam<-dloutput(data[which(data[,3]==unitnames[i]),1],data[which(data[,3]==unitnames[i]),2],D0[i])
       }
     }
     if(i==1){
       tableout<-c(Lifedam[[1]],Lifedam[[2]],Lifedam[[3]],Lifedam[[4]])
+      # errorout<-Lifedam[[5]]
     } else{
       tableout<-c(tableout,Lifedam[[1]],Lifedam[[2]],Lifedam[[3]],Lifedam[[4]])
+      # errorout<-c(errorout,Lifedam[[5]])
     }
   }
   tableout1<-matrix(tableout, nrow = length(unitnames), ncol = length(tableout)/length(unitnames), byrow = TRUE)
 
-  # return(list(modelstresstype,ppoutput,tableout1,stressvals))
+  # return(list(modelstresstype,ppoutput,tableout1,stressvals,cbind(tableout1[,2],rep(1,length(unitnames)),rep(1,length(unitnames))),cbind(tableout1[,1],rep(1,length(unitnames)),rep(1,length(unitnames)))))
   tableout0 <- tableout1
 
+
   # If parameter based stress model then recompute based on stress and parameter (RCS02082024)
-  if(modelstresstype == 1 && (dl=="Linear" || dl=="SquareRoot" || dl=="Logarithmic" || dl=="LloydLipow")){
+  if((modelstresstype == 1 && (dl=="Linear" || dl=="SquareRoot" || dl=="SquareRoot2" || dl=="Logarithmic" || dl=="LloydLipow")) || modelstresstype == 2){
     # Parameter fit to "a"
     if((dim(data)[2]-3)<2) {
       params_0 <- paramstress(tableout1[,1],stressvals)
@@ -907,7 +1214,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     }
     params_1 <- c(probplot.nor(cbind(tableout1[,2],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")[[1]][[2]])
   }
-  if(modelstresstype == 1 && (dl=="Exponential" || dl=="Power" || dl=="Mitsuom")){
+  if((modelstresstype == 1 && (dl=="Exponential" || dl=="Power" || dl=="Mitsuom")) || modelstresstype == 3){
     # Parameter fit to "b"
     if((dim(data)[2]-3)<2) {
       params_0 <- paramstress(tableout1[,2],stressvals)
@@ -916,6 +1223,28 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     }
     params_1 <- c(probplot.nor(cbind(tableout1[,1],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")[[1]][[2]])
   }
+  # return(matrix(unlist(stressvals),nrow = length(unitnames), ncol = (dim(data)[2]-3), byrow = FALSE))
+  # return(tableout1[,1])
+  if(modelstresstype == 1 && (dl=="LinearD0" || dl=="SquareRootD0")){
+    # Parameter fit to "a"
+    if((dim(data)[2]-3)<2) {
+      params_0 <- paramstress(-tableout1[,1],stressvals)
+    } else{
+      params_0 <- paramstress(-tableout1[,1],matrix(unlist(stressvals),nrow = length(unitnames), ncol = (dim(data)[2]-3), byrow = FALSE))
+    }
+    params_1 <- c(probplot.nor(cbind(tableout1[,2],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")[[1]][[2]])
+  }
+  if(modelstresstype == 1 && dl=="ExponentialNorm"){
+    # Parameter fit to "a"
+    if((dim(data)[2]-3)<2) {
+      params_0 <- paramstress(-tableout1[,1],stressvals)
+    } else{
+      params_0 <- paramstress(-tableout1[,1],matrix(unlist(stressvals),nrow = length(unitnames), ncol = (dim(data)[2]-3), byrow = FALSE))
+    }
+    params_1 <- c(probplot.nor(cbind(tableout1[,2],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")[[1]][[2]])
+  }
+
+  # return(tableout1[,1])
 
   # return(list(modelstresstype,tableout1,dlparams_txt,params_0))
 
@@ -932,63 +1261,76 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     }
   }
 
-  # return(tableout1[,3][1])
+  # return(tableout1)
 
   # Generate the best-fit curves by unit (Now separate operations)
   for(i in 1:length(unitnames)){
     # Establish time fit vector for the final plot up to the maximum time value in the data
     # 5/6/2024 - Time fit now adheres to the endurance limit as its stopping point
     if(dl=="Power" || dl=="Logarithmic" || dl=="LloydLipow" || dl=="CrackProp1"){
-      timefit <- linspace(0.01,tableout1[,3][i],1000)
-    } else{
-      timefit <- linspace(0,tableout1[,3][i],1000)
+      # timefit <- linspace(0.01,tableout1[,3][i],1000000)
+      timefit <- c(linspace(0.01,max(data[which(data[,3]==unitnames[i]),1]),1000),linspace(max(data[which(data[,3]==unitnames[i]),1]),tableout1[,3][i],1000))
+    }
+    if(dl=="Linear" || dl=="Exponential" || dl=="SquareRoot" || dl=="SquareRoot2"|| dl=="Mitsuom" || dl=="MitsuomAFArrhenius" || dl=="ExponentialNorm"){
+      # timefit <- linspace(0,tableout1[,3][i],1000000)
+      timefit <- c(linspace(0,max(data[which(data[,3]==unitnames[i]),1]),1000),linspace(max(data[which(data[,3]==unitnames[i]),1]),tableout1[,3][i],1000))
+    }
+    if(dl=="LinearD0" || dl=="SquareRootD0"){
+      # timefit <- linspace(0,tableout1[,2][i],1000000)
+      timefit <- c(linspace(0,max(data[which(data[,3]==unitnames[i]),1]),1000),linspace(max(data[which(data[,3]==unitnames[i]),1]),tableout1[,3][i],1000))
+
     }
 
     if(i==1){
+      # return(damagefit<-damfit(timefit,tableout1[i,1:2]))
       if(dl=="Hamada"){
-        damagefit<-damfit(timefit,rep(data[which(data[,3]==unitnames[i]),4][1],1000),tableout1[i,1:2])
+        damagefit<-damfit(timefit,rep(data[which(data[,3]==unitnames[i]),4][1],2000),tableout1[i,1:2])
         timefit1<-timefit
-        datastressname2<-rep(datastressname[which(data0[,3]==unitnames[i])[1]],1000)
+        datastressname2<-rep(datastressname[which(data0[,3]==unitnames[i])[1]],2000)
       } else if(dl=="KondoWei"){
-        damagefit<-damfit(timefit,rep(data[which(data[,3]==unitnames[i]),4][1],1000),rep(data[which(data[,3]==unitnames[i]),5][1],1000),tableout1[i,1:2])
+        damagefit<-damfit(timefit,rep(data[which(data[,3]==unitnames[i]),4][1],2000),rep(data[which(data[,3]==unitnames[i]),5][1],2000),tableout1[i,1:2])
         timefit1<-timefit
-        datastressname2<-rep(datastressname[which(data0[,3]==unitnames[i])[1]],1000)
+        datastressname2<-rep(datastressname[which(data0[,3]==unitnames[i])[1]],2000)
+      } else if(dl=="LinearD0" || dl=="SquareRootD0"){
+        damagefit<-damfit(timefit,tableout1[i,1])
+        timefit1<-timefit
+        datastressname2<-rep(datastressname[which(data0[,3]==unitnames[i])[1]],2000)
+      } else if(dl=="ExponentialNorm"){
+        damagefit<-damfit(timefit,data[which(data[,3]==unitnames[i]),4][1],data[which(data[,3]==unitnames[i]),5][1],tableout1[i,1:2])
+        timefit1<-timefit
+        datastressname2<-rep(datastressname[which(data0[,3]==unitnames[i])[1]],2000)
+      } else if(dl=="MitsuomAFArrhenius"){
+        damagefit<-damfit(timefit,data[which(data[,3]==unitnames[i]),4][1],tableout1[i,1:3])
+        timefit1<-timefit
+        datastressname2<-rep(datastressname[which(data0[,3]==unitnames[i])[1]],2000)
       } else {
-        if(modelstresstype == 0){
-          damagefit<-damfit(timefit,tableout1[i,1:2])
-        }
-        if(modelstresstype == 1 && is.list(stressvals) == FALSE){
-          damagefit<-damfit(timefit,tableout1[i,1:2])
-          # damagefit<-damfit1(timefit,tableout1[i,1:length(dlparams_txt)],stressvals[i])
-        }
-        if(modelstresstype == 1 && is.list(stressvals) == TRUE){
-          damagefit<-damfit(timefit,tableout1[i,1:2])
-          # damagefit<-damfit1(timefit,tableout1[i,1:length(dlparams_txt)],c(stressvals[[1]][[i]],stressvals[[2]][[i]]))
-        }
+        damagefit<-damfit(timefit,tableout1[i,1:2])
         timefit1<-timefit
-        datastressname2<-rep(datastressname[which(data0[,3]==unitnames[i])[1]],1000)
+        datastressname2<-rep(datastressname[which(data0[,3]==unitnames[i])[1]],2000)
       }
     } else {
       if(dl=="Hamada"){
         if(modelstresstype == 0){
-          damagefit<-c(damagefit,NA,damfit(timefit,rep(data[which(data[,3]==unitnames[i]),4][1],1000),tableout1[i,1:2]))
+          damagefit<-c(damagefit,NA,damfit(timefit,rep(data[which(data[,3]==unitnames[i]),4][1],2000),tableout1[i,1:2]))
         }
         timefit1<-c(timefit1,NA,timefit)
-        datastressname2<-c(datastressname2,datastressname2[length(datastressname2)],rep(datastressname[which(data0[,3]==unitnames[i])[1]],1000))
+        datastressname2<-c(datastressname2,datastressname2[length(datastressname2)],rep(datastressname[which(data0[,3]==unitnames[i])[1]],2000))
+      } else if(dl=="LinearD0" || dl=="SquareRootD0"){
+        damagefit<-c(damagefit,NA,damfit(timefit,tableout1[i,1]))
+        timefit1<-c(timefit1,NA,timefit)
+        datastressname2<-c(datastressname2,datastressname2[length(datastressname2)],rep(datastressname[which(data0[,3]==unitnames[i])[1]],2000))
+      } else if(dl=="ExponentialNorm"){
+        damagefit<-c(damagefit,NA,damfit(timefit,data[which(data[,3]==unitnames[i]),4][1],data[which(data[,3]==unitnames[i]),5][1],tableout1[i,1:2]))
+        timefit1<-c(timefit1,NA,timefit)
+        datastressname2<-c(datastressname2,datastressname2[length(datastressname2)],rep(datastressname[which(data0[,3]==unitnames[i])[1]],2000))
+      } else if(dl=="MitsuomAFArrhenius"){
+        damagefit<-c(damagefit,NA,damfit(timefit,data[which(data[,3]==unitnames[i]),4][1],tableout1[i,1:3]))
+        timefit1<-c(timefit1,NA,timefit)
+        datastressname2<-c(datastressname2,datastressname2[length(datastressname2)],rep(datastressname[which(data0[,3]==unitnames[i])[1]],2000))
       } else{
-        if(modelstresstype == 0){
-          damagefit<-c(damagefit,NA,damfit(timefit,tableout1[i,1:2]))
-        }
-        if(modelstresstype == 1 && is.list(stressvals) == FALSE){
-          damagefit<-c(damagefit,NA,damfit(timefit,tableout1[i,1:2]))
-          # damagefit<-c(damagefit,NA,damfit1(timefit,tableout1[i,1:length(dlparams_txt)],stressvals[i]))
-        }
-        if(modelstresstype == 1 && is.list(stressvals) == TRUE){
-          damagefit<-c(damagefit,NA,damfit(timefit,tableout1[i,1:2]))
-          # damagefit<-c(damagefit,NA,damfit1(timefit,tableout1[i,1:length(dlparams_txt)],c(stressvals[[1]][[i]],stressvals[[2]][[i]])))
-        }
+        damagefit<-c(damagefit,NA,damfit(timefit,tableout1[i,1:2]))
         timefit1<-c(timefit1,NA,timefit)
-        datastressname2<-c(datastressname2,datastressname2[length(datastressname2)],rep(datastressname[which(data0[,3]==unitnames[i])[1]],1000))
+        datastressname2<-c(datastressname2,datastressname2[length(datastressname2)],rep(datastressname[which(data0[,3]==unitnames[i])[1]],2000))
       }
     }
   }
@@ -1001,6 +1343,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
   } else{
     tableout2<-matrix(c(tableout1[,dim(tableout1)[2]-2],rep(1,length(unitnames)),unlist(stressvals)),nrow=length(stressvals[[1]]),ncol=2+stresscount,byrow=FALSE, dimnames = list(unitnames,time_output_names))
   }
+  # return(stressvals)
 
   if(dl=="CrackProp1"){
     df1 <- data.frame(timedat = data0[,1], damdat = data0[,2]+0.001, group = datastressname)
@@ -1014,36 +1357,45 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
 
   # return(df2)
 
+  # plotout<-ggplot() +
+  #   geom_point(data=df1, aes(timedat,damdat, colour=group, shape=group), size = 2.9) +
+  #   # geom_point(data=df, aes(Nrunoff,Srunoff), colour = 'green4', shape=17, size = 1.9) +
+  #   geom_path(data=df2, aes(timefitvec,damfitvec, linetype = group), colour = "black", linewidth = 0.5) +
+  #   scale_shape_manual(values=shape_legend[1:length(unitnames)]) +
+  #   scale_color_manual(values=col_legend[1:length(unitnames)])+
+  #   # scale_x_continuous(trans = 'log10') +
+  #   # scale_y_continuous(trans = 'log10') +
+  #   # annotation_logticks() +
+  #   xlab(col_names_data[1]) +
+  #   ylab(col_names_data[2])
+  # plotout2<-plotout + geom_path(data=df3, aes(timefitvec,damfitvec), linetype = "dashed", colour = "red", linewidth = 0.9)
+
+  # FOR TEXTBOOK
   plotout<-ggplot() +
-    geom_point(data=df1, aes(timedat,damdat, colour=group, shape=group), size = 2.9) +
-    # geom_point(data=df, aes(Nrunoff,Srunoff), colour = 'green4', shape=17, size = 1.9) +
-    geom_path(data=df2, aes(timefitvec,damfitvec, linetype = group), colour = "black", size = 0.5) +
-    scale_shape_manual(values=shape_legend[1:length(unitnames)]) +
-    scale_color_manual(values=col_legend[1:length(unitnames)])+
-    # scale_x_continuous(trans = 'log10') +
-    # scale_y_continuous(trans = 'log10') +
-    # annotation_logticks() +
+    geom_point(data=df1, aes(timedat,damdat, shape=group), colour="black") +
+    geom_path(data=df2, aes(timefitvec,damfitvec, linetype = group), colour = "black", linewidth = 0.4) +
     xlab(col_names_data[1]) +
     ylab(col_names_data[2])
-  plotout<-plotout + geom_path(data=df3, aes(timefitvec,damfitvec), linetype = "dashed", colour = "red", size = 0.9)
+  plotout2<-plotout + geom_path(data=df3, aes(timefitvec,damfitvec), linetype = "dashed", colour = "black", linewidth = 0.4)
 
+  # return(list(modelstresstype,tableout1,plotout2))
   # Produce some output text that summarizes the results
   if(modelstresstype == 0){
     cat(c("Least-Squares estimates for the ",dl_txt," Degradation-Life model.\n\nD(l) = ",dlmodel_txt0,"\n\n"),sep = "")
     print(matrix(tableout, nrow = length(unitnames), ncol = length(tableout)/length(unitnames), byrow = TRUE,dimnames = list(unitnames,c(dlparams_txt,"Pseudo-Failure Times","R\U00B2","SSE"))))
     cat("\n")
 
-    return(list(tableout1,tableout2,plotout))
+    return(list(tableout1,tableout2,plotout,plotout2))
   }
   # return(list(dl_txt,ps_txt,dlmodel_txt0,paramref_txt,param_txt2,paramref_txt2))
-  if(modelstresstype == 1 || modelstresstype == 2){
+  if(modelstresstype == 1 || modelstresstype == 2 || modelstresstype == 3){
     cat(c("Least-Squares estimates for the ",dl_txt,"-",ps_txt," Degradation-Life-Stress model.\n\nD(l,S) = ",dlmodel_txt0," where ",paramref_txt,param_txt2," and ",paramref_txt2,"\n\n"),sep = "")
     print(matrix(tableout, nrow = length(unitnames), ncol = length(tableout)/length(unitnames), byrow = TRUE,dimnames = list(unitnames,c(dlparams_txt,"Pseudo-Failure Times","R\U00B2","SSE"))))
     cat("\n")
-    print(matrix(c(params_0,params_1), nrow = length(params_0)+2, ncol = 1,byrow = FALSE,dimnames = list(c(params_txt,params_txt2),"EsT")))
+    print(matrix(c(params_0[[1]],params_1,params_0[[2]]), nrow = length(params_0[[1]])+3, ncol = 1,byrow = FALSE,dimnames = list(c(params_txt,params_txt2,"param-stress SSE"),"EsT")))
     cat("\n")
 
-    return(list(tableout1,c(params_0,params_1),tableout2,plotout))
+    return(list(tableout1,c(params_0[[1]],params_1),tableout2,plotout,plotout2))
   }
 
 }
