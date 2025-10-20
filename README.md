@@ -27,7 +27,7 @@ library(devtools)
 ```
 * The cmdstanr library is required for installation and may not be available on CRAN so it will need to be installed manually first.
 ```
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+remotes::install_github("stan-dev/cmdstanr")
 ```
 * *If Rtools is installed, build from source:*
 ```
