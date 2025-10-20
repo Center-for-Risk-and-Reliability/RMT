@@ -6,7 +6,6 @@ probplot.wbl <- function(data,pp="Blom",xlabel1="X",confid=0.95,
                          stressunit1 = NULL, stressunit2 = NULL) {
   library(pracma)
   library(ggplot2)
-  library(ggpattern)
 
   # Legend colors
   col_legend <- c("red","blue","darkgreen","violet","gold","orange","pink2","darkblue","lightgreen","yellow","green","darkviolet","darkorange","darkred","purple","royalblue","brown","lightpink","tan","darkgray","aquamarine","sienna","limegreen","mediumpurple3","chocolate","red4")
@@ -25,10 +24,10 @@ probplot.wbl <- function(data,pp="Blom",xlabel1="X",confid=0.95,
 
   # 9/25/2025 - Check if data is a vector or not,  If so, augment the data such that it can be processed as
   # if it has the three column minimum needed to compute
-  if(min(size(data)) == 1){
+  if((min(size(data)) == 1) || (is.null(size(data)) == TRUE && min(dim(data)) == 1)){
     data <- cbind(sort(data),rep(1,length(data)),rep(1,length(data)))
   }
-  if(size(data)[2] == 2){ # add column if only the data and censored column are entered
+  if((size(data)[2] == 2) || (is.null(size(data)) == TRUE && dim(data)[2] == 2)){ # add column if only the data and censored column are entered
     data <- cbind(data,rep(1,length(data[,1])))
   }
 
