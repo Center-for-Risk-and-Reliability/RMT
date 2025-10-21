@@ -28,7 +28,7 @@ fit.logn(xi, rc = NULL, pp = "Blom", confid = 0.95, sided = "twosided")
     Indicates whether the limit calculations are based on a two-sided confidence or one-sided confidence.  The three options for this heading are \code{"twosided"} for two-sided confidence (default), \code{"onesidedlow"} for one-sided (low) confidence, and \code{"onesidedhigh"} for one-sided (high) confidence.
   }
 }
-}
+
 \details{
 Lognormal distribution is positively bounded (\eqn{x \geq 0}) consisting of a lognormal mean parameter \eqn{\mu_x} and a lognormal standard deviation parameter \eqn{\sigma_x}.
 
