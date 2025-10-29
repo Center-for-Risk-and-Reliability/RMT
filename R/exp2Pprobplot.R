@@ -60,17 +60,21 @@ probplot.exp2P <- function(data,pp="Blom",xlabel1="X",confid=0.95,
     Fmin <- 0.01
     Fmax <- 0.99
     Pticks1 <- c(c(1:10),10*c(2:9),95,99)
-    Pticks <- -log(1-Pticks1*0.01)
-    Pticks1label <- c(1,"","","","","","","","",10*c(1:9),95,99)
-    fcB <- -log(1-c(.01,0.99))
+    Pticks <- Pticks1*0.01
+    # Pticks <- -log(1-Pticks1*0.01)
+    Pticks1label <- c(1,2,3,"",5,"","","","",10*c(1:9),95,99)
+    fcB <- c(0.01,0.99)
+    # fcB <- -log(1-c(.01,0.99))
   }
   if(CDFrangesetting == 2){ # Weibull++ range 0.1% to 99.9%
     Fmin <- 0.001
     Fmax <- 0.999
     Pticks1 <- c(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,c(1:10),10*c(2:9),95,99,99.9)
-    Pticks <- -log(1-Pticks1*0.01)
-    Pticks1label <- c("","","","","","","","","",1,"","","","","","","","",10*c(1:9),95,99,99.9)
-    fcB <- -log(1-c(.001,0.999))
+    Pticks <- Pticks1*0.01
+    # Pticks <- -log(1-Pticks1*0.01)
+    Pticks1label <- c(0.1,0.2,0.3,"",0.5,"","","","",1,2,3,"",5,"","","","",10*c(1:9),95,99,99.9)
+    fcB <- c(.001,0.999)
+    # fcB <- -log(1-c(.001,0.999))
   }
 
   if (!is.null(dim(databystress))){
@@ -79,7 +83,8 @@ probplot.exp2P <- function(data,pp="Blom",xlabel1="X",confid=0.95,
     xiRFblock<-plotposit.select(ixirc[[2]],ixirc[[3]],pp)
     # Data pull
     XB<-xiRFblock[,1]
-    FB <- -log(xiRFblock[,3])
+    FB <- xiRFblock[,2]
+    # FB <- -log(xiRFblock[,3])
     ttfc <- probplotparam.exp2P(xiRFblock[,1],xiRFblock[,2])
     ttfcrange <- ttfc[[1]]
     params<-ttfc[[3]]
@@ -108,7 +113,8 @@ probplot.exp2P <- function(data,pp="Blom",xlabel1="X",confid=0.95,
       xiRFblock_list[[i]]<-plotposit.select(ixirc_list[[i]][[2]],ixirc_list[[i]][[3]],pp)
       # Data pull
       XB_list[[i]]<-xiRFblock_list[[i]][,1]
-      FB_list[[i]] <- -log(xiRFblock_list[[i]][,3])
+      FB_list[[i]] <- xiRFblock_list[[i]][,2]
+      # FB_list[[i]] <- -log(xiRFblock_list[[i]][,3])
       ttfc_list[[i]]<-probplotparam.exp2P(xiRFblock_list[[i]][,1],xiRFblock_list[[i]][,2],CDFrangesetting)
 
       if(is.null(MLE_i) == TRUE){ # Default for LSQ
@@ -119,7 +125,7 @@ probplot.exp2P <- function(data,pp="Blom",xlabel1="X",confid=0.95,
         # Compute MLE
         ttfc_MLE_list[[i]] <- distribution.MLEest(c(ttfc_list[[i]][[3]]),"2PExponential",ixirc_list[[i]][[2]],ixirc_list[[i]][[3]])
         # Recalculate x-points if MLE
-        ttfc_list[[i]][[1]] <- fcB*ttfc_MLE_list[[i]][[1]][2] + ttfc_MLE_list[[i]][[1]][1]
+        ttfc_list[[i]][[1]] <- -log(1-fcB)*ttfc_MLE_list[[i]][[1]][2] + ttfc_MLE_list[[i]][[1]][1]
 
         outputpp[[i*3-1]]<-matrix(ttfc_MLE_list[[i]][[1]], nrow = 1, ncol = 2, byrow = TRUE,dimnames = list(c("2P Exponential Parameter"),c("theta","sigma")))
         outputpp1[[i]][[2]]<-matrix(ttfc_MLE_list[[i]][[1]], nrow = 1, ncol = 2, byrow = TRUE,dimnames = list(c("2P Exponential Parameter"),c("theta","sigma")))
@@ -186,9 +192,9 @@ probplot.exp2P <- function(data,pp="Blom",xlabel1="X",confid=0.95,
 
     # F(x) = 1 - exp(-(x - mu)/sig) => -(x - mu)/sig = ln(1-F) => x - mu = -sig*ln(1-F) => x = -sig*ln(1-F) + mu
     Xbound_list[[i]] <- FB_bound*ttfc_list[[i]][[3]][2] + ttfc_list[[i]][[3]][1]
-    Fboundlow_list[[i]] <- FB_low
+    Fboundlow_list[[i]] <- F_low
     Xboundlow_list[[i]] <- Xbound_list[[i]]
-    Fboundhigh_list[[i]] <- FB_high
+    Fboundhigh_list[[i]] <- F_high
     Xboundhigh_list[[i]] <- Xbound_list[[i]]
   }
 
@@ -212,22 +218,22 @@ probplot.exp2P <- function(data,pp="Blom",xlabel1="X",confid=0.95,
     # Multi-Stress
     data_legend <- logical(0)
     data_breaks <- rep(0,length(databystress))
-    xlines <- rep(0,length(databystress)*2)
-    Flines <- rep(0,length(databystress)*2)
+    xlines <- rep(0,length(databystress)*length(Pticks))
+    Flines <- rep(0,length(databystress)*length(Pticks))
     xlinesconf <- rep(0,length(databystress)*2001)
     xlinesconf_up <- rep(0,length(databystress)*1000)
     xlinesconf_down <- rep(0,length(databystress)*1000)
     Flinesconf <- rep(0,length(databystress)*2001)
     Flinesconf_up <- rep(0,length(databystress)*1000)
     Flinesconf_down <- rep(0,length(databystress)*1000)
-    line_legend <- rep(0,length(databystress)*2)
+    line_legend <- rep(0,length(databystress)*length(Pticks))
     line_breaks <- rep(0,length(databystress))
     conf_legend <- rep(0,length(databystress)*1000)
     conf_breaks <- rep(0,length(databystress))
 
     for(i in 1:length(databystress)){
-      xlines[((i*2) - 1):(i*2)] <- ttfc_list[[i]][[1]]
-      Flines[((i*2) - 1):(i*2)] <- ttfc_list[[i]][[2]]
+      xlines[((i*length(Pticks1)) - (length(Pticks1)-1)):(i*length(Pticks1))] <- -log(1-Pticks)*ttfc_list[[i]][[3]][2] + ttfc_list[[i]][[3]][1]
+      Flines[((i*length(Pticks1)) - (length(Pticks1)-1)):(i*length(Pticks1))] <- Pticks
       xlinesconf[((i*2001) - 2000):(i*2001)] <- c(Xboundlow_list[[i]],NA,Xboundhigh_list[[i]])
       Flinesconf[((i*2001) - 2000):(i*2001)] <- c(Fboundlow_list[[i]],NA,Fboundhigh_list[[i]])
       Flinesconf_up[((i*1000) - 999):(i*1000)] <- Fboundhigh_list[[i]]
@@ -277,7 +283,7 @@ probplot.exp2P <- function(data,pp="Blom",xlabel1="X",confid=0.95,
         conf_legend[((i*1000) - 999):(i*1000)] <- rep(paste(c("CI for",databystress[[i]][1,3]," units","/",databystress[[i]][1,4],"",stressunit2),collapse = " "),1000)
         conf_breaks[i] <- paste(c("CI for",databystress[[i]][1,3]," units","/",databystress[[i]][1,4],"",stressunit2),collapse = " ")
       }
-      line_legend[((i*2) - 1):(i*2)] <- rep(paste(c("\U03B8 = ",num2str(outputpp1[[i]][[2]][1],2),", \U03C3 = ",num2str(outputpp1[[i]][[2]][2],2)),collapse = ""),2)
+      line_legend[((i*length(Pticks)) - (length(Pticks1)-1)):(i*length(Pticks))] <- rep(paste(c("\U03B8 = ",num2str(outputpp1[[i]][[2]][1],2),", \U03C3 = ",num2str(outputpp1[[i]][[2]][2],2)),collapse = ""),length(Pticks))
       if(length(databystress) > 1){ # multiple groups of data
         line_breaks[i] <- paste(c("\U03B8 = ",num2str(outputpp1[[i]][[2]][1],2),", \U03C3 = ",num2str(outputpp1[[i]][[2]][2],2)),collapse = "")
       } else{ # only one group
@@ -299,7 +305,7 @@ probplot.exp2P <- function(data,pp="Blom",xlabel1="X",confid=0.95,
       theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
       scale_shape_manual("Raw Data",values=shape_legend[1:length(databystress)], breaks = data_breaks) +
       scale_x_continuous(expand=c(0, 0),limits = c(min(ttfcrange), max(ttfcrange))) +
-      scale_y_continuous(expand=c(0, 0),limits = c(min(fcB), max(fcB)), breaks=Pticks, labels=Pticks1label) +
+      scale_y_continuous(expand=c(0, 0),trans = 'log10',limits = c(min(fcB), max(fcB)), breaks=Pticks, labels=Pticks1label) +
       xlab(xlabel1) +
       ylab("Percent Failure")
 

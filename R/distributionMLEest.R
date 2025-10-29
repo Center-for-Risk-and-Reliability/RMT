@@ -43,8 +43,10 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
       } else{
         LSQest[3] <- 0.5*min(Tc)
       }
-      LSQest[1:2] <- c(probplot.wbl(cbind(c(TTF,Tc)-LSQest[3],c(rep(1,length(TTF)),rep(0,length(Tc))),rep(1,length(TTF)+length(Tc))),"Blom")[[1]][[2]])
+      xiRFblock_list <- plotposit.select((TTF-LSQest[3]),(Tc-LSQest[3]),pp="Blom")
+      LSQest[1:2] <- c(probplotparam.wbl(xiRFblock_list[,1],xiRFblock_list[,3])[[3]])
     }
+    # return(LSQest)
     # shift alpha to log alpha
     LSQest[1] <- log(LSQest[1])
     # shift beta to log beta
@@ -68,7 +70,7 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
 
     if(is.null(Tc)){
       loglik <- function(theta){
-        -sum(-theta[2] - 0.5*log(2*pi) - 0.5*(exp(theta[2])^-2)*((log(TTF) - theta[1])^2))
+        -sum(-theta[2] - log(TTF) - 0.5*log(2*pi) - 0.5*(exp(theta[2])^-2)*((log(TTF) - theta[1])^2))
       }
     } else{
       loglik <- function(theta){
@@ -92,7 +94,6 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
     }
   }
   if (dist=="Exponential") {
-    # positivity_v[1]<-1
     # shift lambda to log lambda
     LSQest[1] <- log(LSQest[1])
 
@@ -107,26 +108,29 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
     }
   }
   if (dist=="2PExponential") {
-    # positivity_v[2]<-1
-    # Check Gamma first and if it is greater than any of the times, reset
-    if(LSQest[1] > min(TTF) || (is.null(Tc) == FALSE && LSQest[1] > min(Tc))){
-      if(is.null(Tc)==TRUE){
-        LSQest[1] <- 0.5*min(TTF)
-      } else{
-        LSQest[1] <- 0.5*min(Tc)
-      }
-      LSQest[2] <- 1/c(probplot.exp(cbind(c(TTF,Tc)-LSQest[1],c(rep(1,length(TTF)),rep(0,length(Tc))),rep(1,length(TTF)+length(Tc))),"Blom")[[1]][[2]])
-    }
-    # shift sigma to log sigma
-    LSQest[2] <- log(LSQest[2])
+    positivity_v<-rep(1,length(LSQest))
 
     if(is.null(Tc)){
+      # Estimate directly theta
+      LSQest[1] <- (length(TTF)*min(TTF) - mean(TTF))/(length(TTF) - 1)
+      # and sigma
+      LSQest[2] <- mean(TTF) - LSQest[1]
+      # and variance
+      SIGMA_est <- cbind(c((LSQest[2]^2)/(length(TTF)*(length(TTF)-1)),0),c(0,(LSQest[2]^2)/(length(TTF)-1)))
+      # loglikelihood
       loglik <- function(theta){
-        -sum(-theta[2] - (exp(theta[2])^-1)*(TTF - theta[1]))
+        -sum(log(min(c(TTF)) - theta[1]) - log(theta[2]) - (theta[2]^-1)*(TTF - theta[1]))
       }
     } else{
+      # Estimate directly theta
+      LSQest[1] <- ((length(TTF)+length(Tc))*min(TTF) - (1/length(TTF))*sum(c(TTF,Tc)))/(length(TTF) + length(Tc) - 1 - (length(Tc)/length(TTF)))
+      # and sigma
+      LSQest[2] <- (1/length(TTF))*(sum(c(TTF,Tc))) - LSQest[1]*(length(Tc)/length(TTF))
+      # loglikelihood
+      SIGMA_est <- cbind(c((length(TTF)*(LSQest[2]^2))/(((length(TTF)+length(Tc))^2)*(length(TTF)-1)),0),c(0,(LSQest[2]^2)/(length(TTF)-1)))
+      # loglikelihood
       loglik <- function(theta){
-        -sum(-theta[2] - (exp(theta[2])^-1)*(TTF - theta[1])) - sum(-exp(theta[2])*(Tc - theta[1]))
+        -sum(log(min(c(TTF,Tc)) - theta[1]) - log(theta[2]) - (theta[2]^-1)*(TTF - theta[1])) - sum(-(theta[2]^-1)*(Tc - theta[1]))
       }
     }
   }
@@ -216,10 +220,12 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
   # return(list(loglik,LSQest))
 
   if (dist=="3PWeibull"){
+    # Debugger check to see what initial conditions are under 3PWeibull
+    # print(cbind(c(LSQest,0.99*min(c(TTF,Tc)))))
     MLEandvar <- MLE.var.covar.select(loglik,LSQest,0.99*min(c(TTF,Tc)))
   }
   if (dist=="2PExponential"){
-    MLEandvar <- MLE.var.covar.select(loglik,LSQest,0.99*min(c(TTF,Tc)))
+    MLEandvar <- list(LSQest,SIGMA_est)
   }
   if (dist=="Weibull" || dist=="Normal" || dist=="Lognormal" || dist=="Exponential" || dist=="Gumbel" || dist=="Logistic" || dist=="Loglogistic" || dist=="Gamma" || dist=="3PGamma"){
     MLEandvar <- MLE.var.covar.select(loglik,LSQest)
@@ -231,6 +237,7 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
   loglik.hat <- -loglik(theta.hat)
   likeli.hat <- exp(loglik.hat)
 
+  # return(list(loglik,MLEandvar))
   crit <- qnorm((1 + conf.level)/2)
   crit2 <- qnorm(conf.level)
   conflim<-vector(mode = "list", length = length(LSQest))
@@ -249,7 +256,7 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
       if(dist=="Exponential" && i == 1){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
-      if ((dist=="Normal" || dist=="Lognormal" || dist=="2PExponential" || dist=="Logistic" || dist=="Loglogistic" || dist=="Gamma" || dist=="3PGamma" || dist=="Gumbel") && i == 2){
+      if ((dist=="Normal" || dist=="Lognormal" || dist=="Logistic" || dist=="Loglogistic" || dist=="Gamma" || dist=="3PGamma" || dist=="Gumbel") && i == 2){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
       if(dist=="3PGamma" && i == 3){
@@ -269,7 +276,7 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
       if(dist=="Exponential" && i == 1){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
-      if ((dist=="Normal" || dist=="Lognormal" || dist=="2PExponential" || dist=="Logistic" || dist=="Loglogistic" || dist=="Gamma" || dist=="3PGamma" || dist=="Gumbel") && i == 2){
+      if ((dist=="Normal" || dist=="Lognormal" || dist=="Logistic" || dist=="Loglogistic" || dist=="Gamma" || dist=="3PGamma" || dist=="Gumbel") && i == 2){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
       if(dist=="3PGamma" && i == 3){
@@ -289,7 +296,7 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
       if(dist=="Exponential" && i == 1){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
-      if ((dist=="Normal" || dist=="Lognormal" || dist=="2PExponential" || dist=="Logistic" || dist=="Loglogistic" || dist=="Gamma" || dist=="3PGamma" || dist=="Gumbel") && i == 2){
+      if ((dist=="Normal" || dist=="Lognormal" || dist=="Logistic" || dist=="Loglogistic" || dist=="Gamma" || dist=="3PGamma" || dist=="Gumbel") && i == 2){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
       if(dist=="3PGamma" && i == 3){
@@ -310,7 +317,6 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
     conflim[[2]] <- exp(conflim0[[1]] + (conflim0[[3]]/conflim0[[2]])*log((conflim0[[2]])^2))
     conflim[[3]] <- conflim0[[2]]/conflim0[[3]]
   }
-
 
   AIC = 2*length(theta.hat) + 2*loglik(theta.hat)
   BIC = 2*log(length(TTF)+length(Tc)) + 2*loglik(theta.hat)
@@ -334,7 +340,7 @@ distribution.MLEest <- function(LSQest,dist,TTF,Tc=NULL,confid=0.95,sided="twosi
   if(dist=="Exponential"){
     theta.hat[1] <- exp(theta.hat[1])
   }
-  if(dist=="Normal" || dist=="Lognormal" || dist=="2PExponential" || dist=="Logistic" || dist=="Loglogistic" || dist=="Gumbel"){
+  if(dist=="Normal" || dist=="Lognormal" || dist=="Logistic" || dist=="Loglogistic" || dist=="Gumbel"){
     theta.hat[2] <- exp(theta.hat[2])
   }
 

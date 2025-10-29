@@ -1,13 +1,13 @@
 # Exponential Probability Plot Parameters
-# Developed by Dr. Reuel Smith, 2021-2022
+# Developed by Dr. Reuel Smith, 2021-2025
 
 probplotparam.exp <- function(xi,F,CDFrangesetting = 1) {
   # Upper and lower bounds of the Percent Failure axis in percent
   if(CDFrangesetting == 1){ # Minitab range 1% to 99%
-    fcB <- -log(1-c(.01,0.99))
+    fcB <- c(.01,0.99)
   }
   if(CDFrangesetting == 2){ # Weibull++ range 0.1% to 99.9%
-    fcB <- -log(1-c(.001,0.999))
+    fcB <- c(.001,0.999)
   }
   # Set up the x and y data for fitting
   if(F[length(F)]==1){

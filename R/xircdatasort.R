@@ -3,16 +3,16 @@
 
 sort.xircdata <- function(rawdat) {
   # Input has to be a two column table
-  if(length(rawdat[,2])==sum(rawdat[,2])) {
-    xi <- sort(rawdat[,1])
-    i <- rankcalc(xi)
-    xitab<-list(i, xi, NULL)
+  if(length(rawdat[,2])==sum(rawdat[,2])) { # No right censored data case
+    xi <- sort(rawdat[,1]) # sort the xi (event) data from least to greatest
+    i <- rankcalc(xi)  # Rank data with `rankcalc` function
+    xitab<-list(i, xi, NULL) # Retabulate data
   }
-  else {
-    xi <- sort(rawdat[,1][which(rawdat[,2] == 1)])
-    rc <- sort(rawdat[,1][which(rawdat[,2] == 0)])
-    i <- rankcalc(xi,rc)
-    xitab<-list(i,xi,rc)
+  else { # right censored data case
+    xi <- sort(rawdat[,1][which(rawdat[,2] == 1)]) # sort the xi (event) data from least to greatest
+    rc <- sort(rawdat[,1][which(rawdat[,2] == 0)]) # sort the rc (censored event) data from least to greatest
+    i <- rankcalc(xi,rc) # Rank data with `rankcalc` function
+    xitab<-list(i,xi,rc) # Retabulate data
   }
-  return(xitab)
+  return(xitab) # return retabulated data
 }
