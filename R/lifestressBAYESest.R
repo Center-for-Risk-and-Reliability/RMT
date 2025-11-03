@@ -1,7 +1,7 @@
 # Bayesian Life-Stress Estimator
 # Developed by Dr. Reuel Smith, 2021-2023
 
-lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,SACC=NULL,confid=0.95,priors,nsamples=20000,burnin=10000,nchains=4){
+lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,SACC=NULL,confid=0.95,priors,nsamples=20000,burnin=10000,nchains=4,param2=NULL){
   #Load pracma library for erf
   library(pracma)
   library(StanHeaders)
@@ -21,7 +21,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
 
   # Check to see if dist="Exponential" so you can exclude life
   # distribution parameters.
-  if (dist=="Exponential") {
+  if (dist=="Exponential"  || (dist=="Weibull" && is.null(param2) == FALSE)) {
     ishift<-0
   } else {
     ishift<-1
@@ -160,13 +160,13 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
     pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
     lspriors <- paste(c(pr1,pr2),collapse = " ")
 
-    # NOTE (11/15/2023): Eyring life-stress model needs to be entered as a vector because it multiplies two Sf or Sc vectors and
-    # this is how Stan typically treats vectors multiplied or divided from other vectors.
-    lifeF <- "Lifei[i] = (b/Sf[i])*exp(a/Sf[i]);"
-    loglifeF <- "Lifei[i] = log(b) - log(Sf[i]) + (a/Sf[i]);"
+    # NOTE (8/25/2025): Can now go back to all Eyring type functions and just set .*, ./, and .^ on vector
+    # multipliers (like MATLAB)
+    lifeF <- "(b/Sf).*exp(a/Sf)"
+    loglifeF <- "log(b) - log(Sf) + (a/Sf)"
     if(is.null(Tc)==FALSE){
-      lifeC <- "Lifej[j] = (b/Sc[j])*exp(a/Sc[j]);"
-      loglifeC <- "Lifej[j] = log(b) - log(Sc[j]) + (a/Sc[j]);"
+      lifeC <- "(b/Sc).*exp(a/Sc)"
+      loglifeC <- "log(b) - log(Sc) + (a/Sc)"
     }
     if(missing(SUSE)==FALSE){
       lifeU <- "(b/Suse)*exp(a/Suse);"
@@ -189,12 +189,12 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
     pr2<-paste(c("b ~ ",priors[ishift+2],";"),collapse = "")
     lspriors <- paste(c(pr1,pr2),collapse = " ")
 
-    lifeF <- "Lifei[i] = (1/Sf[i])*exp(-(a - (b/Sf[i])));"
-    loglifeF <- "Lifei[i] = -log(Sf[i]) - a + (b/Sf[i]);"
+    lifeF <- "(1/Sf).*exp(-(a - (b/Sf)))"
+    loglifeF <- "-log(Sf) - a + (b/Sf)"
 
     if(is.null(Tc)==FALSE){
-      lifeC <- "Lifej[j] = (1/Sc[j])*exp(-(a - (b/Sc[j])));"
-      loglifeC <- "Lifej[j] = -log(Sc[j]) - a + (b/Sc[j]);"
+      lifeC <- "(1/Sc).*exp(-(a - (b/Sc)))"
+      loglifeC <- "-log(Sc) - a + (b/Sc)"
     }
     if(missing(SUSE)==FALSE){
       lifeU <- "(1/Suse)*exp(-(a - (b/Suse)));"
@@ -235,6 +235,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       compAF <- (SUSE/SACC)^pt_est[ishift+1]
     }
   }
+
 
   if (ls=="InversePower") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b
@@ -327,11 +328,11 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       pr2<-paste(c("a1 ~ ",priors[ishift+2],";"),collapse = "")
       lspriors <- paste(c(pr1,pr2),collapse = " ")
 
-      lifeF <- "Lifei[i] = exp(a0 + a1*Sf[i]);"
-      loglifeF <- "Lifei[i] = a0 + a1*Sf[i];"
+      lifeF <- "exp(a0 + a1.*Sf)"
+      loglifeF <- "a0 + a1.*Sf"
       if(is.null(Tc)==FALSE){
-        lifeC <- "Lifej[j] = exp(a0 + a1*Sc[j]);"
-        loglifeC <- "Lifej[j] = a0 + a1*Sc[j];"
+        lifeC <- "exp(a0 + a1.*Sc)"
+        loglifeC <- "a0 + a1.*Sc"
       }
       if(missing(SUSE)==FALSE){
         lifeU <- "exp(a0 + a1*Suse);"
@@ -436,11 +437,11 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
     pr3<-paste(c("b ~ ",priors[ishift+3],";"),collapse = "")
     lspriors <- paste(c(pr1,pr2,pr3),collapse = " ")
 
-    lifeF <- "Lifei[i] = A*exp((a/Sf[i,1]) + (b/Sf[i,2]));"
-    loglifeF <- "Lifei[i] = log(A) + (a/Sf[i,1]) + (b/Sf[i,2]);"
+    lifeF <- "A.*exp((a/Sf[,1]) + (b/Sf[,2]));"
+    loglifeF <- "log(A) + (a/Sf[,1]) + (b/Sf[,2]);"
     if(is.null(Tc)==FALSE){
-      lifeC <- "Lifej[j] = A*exp((a/Sc[j,1]) + (b/Sc[j,2]));"
-      loglifeC <- "Lifej[j] = log(A) + (a/Sc[j,1]) + (b/Sc[j,2]);"
+      lifeC <- "A.*exp((a/Sc[1]) + (b/Sc[2]))"
+      loglifeC <- "log(A) + (a/Sc[1]) + (b/Sc[2])"
     }
     if(missing(SUSE)==FALSE){
       lifeU <- "A*exp((a/Suse[1]) + (b/Suse[2]));"
@@ -465,18 +466,17 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
     pr3<-paste(c("c ~ ",priors[ishift+3],";"),collapse = "")
     lspriors <- paste(c(pr1,pr2,pr3),collapse = " ")
 
-    lifeF <- "Lifei[i] = c/((Sf[i,2]^b)*exp(-a/Sf[i,1]));"
-    loglifeF <- "Lifei[i] = log(c) - b*log(Sf[i,2]) + (a/Sf[i,1]);"
+    lifeF <- "c./((Sf[,2].^b)*exp(-a./Sf[,1]))"
+    loglifeF <- "log(c) - b.*log(Sf[,2]) + (a/Sf[,1])"
     if(is.null(Tc)==FALSE){
-      lifeC <- "Lifej[j] = c/((Sc[j,2]^b)*exp(-a/Sc[j,1]));"
-      loglifeC <- "Lifej[j] = log(c) - b*log(Sc[j,2]) + (a/Sc[j,1]);"
+      lifeC <- "c/((Sc[,2]^b)*exp(-a/Sc[,1]))"
+      loglifeC <- "log(c) - b*log(Sc[,2]) + (a/Sc[,1])"
     }
     if(missing(SUSE)==FALSE){
       lifeU <- "c/((Suse[2]^b)*exp(-a/Suse[1]));"
       complifeU <- pt_est[ishift+3]/((SUSE[2]^pt_est[ishift+2])*exp(-pt_est[ishift+1]/SUSE[1]))
     }
     if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
-      # AFheading <- paste(c("AFat",SACC),collapse = "")
       AFheading <- paste(c("AFatSACC"),collapse = "")
       AF <- "((Sacc[2]/Suse[2])^b)*exp(-a*((1/Suse[1]) - (1/Sacc[1])));"
       complifeU <- pt_est[ishift+3]/((SUSE[2]^pt_est[ishift+2])*exp(-pt_est[ishift+1]/SUSE[1]))
@@ -495,11 +495,11 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
     pr4<-paste(c("d ~ ",priors[ishift+4],";"),collapse = "")
     lspriors <- paste(c(pr1,pr2,pr3,pr4),collapse = " ")
 
-    lifeF <- "Lifei[i] = (1/Sf[i,1])*exp((a + (b/Sf[i,1])) + (c + (d/Sf[i,1]))*Sf[i,2]);"
-    loglifeF <- "Lifei[i] = -log(Sf[i,1]) + a + (b/Sf[i,1]) + (c + (d/Sf[i,1]))*Sf[i,2];"
+    lifeF <- "(1/Sf[,1]).*exp((a + (b/Sf[,1])) + (c + (d/Sf[,1])).*Sf[,2])"
+    loglifeF <- "-log(Sf[,1]) + a + (b/Sf[,1]) + (c + (d/Sf[,1])).*Sf[,2]"
     if(is.null(Tc)==FALSE){
-      lifeC <- "Lifej[j] = (1/Sc[j,1])*exp((a + (b/Sc[j,1])) + (c + (d/Sc[j,1]))*Sc[j,2]);"
-      loglifeC <- "Lifej[j] = -log(Sc[j,1]) + a + (b/Sc[j,1]) + (c + (d/Sc[j,1]))*Sc[j,2];"
+      lifeC <- "(1/Sc[,1]).*exp((a + (b/Sc[,1])) + (c + (d/Sc[,1])).*Sc[,2])"
+      loglifeC <- "-log(Sc[,1]) + a + (b/Sc[,1]) + (c + (d/Sc[,1])).*Sc[,2]"
     }
     if(missing(SUSE)==FALSE){
       lifeU <- "(1/Suse[1])*exp((a + (b/Suse[1])) + (c + (d/Suse[1]))*Suse[2]);"
@@ -514,34 +514,58 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
     }
   }
 
+
+
   # Fit to log-likelihood distributions
   if (dist=="Weibull") {
-    distparam <-"real<lower=0> beta;"
-    distpriors<-paste(c("beta ~ ",priors[ishift],";"),collapse = "")
+    if(is.null(param2) == TRUE){
+      distparam <-"real<lower=0> beta;"
+      distpriors<-paste(c("beta ~ ",priors[ishift],";"),collapse = "")
 
-    if(ls=="Eyring" || ls=="Eyring2" || ls=="Eyring3" || ls=="TempHumidity" || ls=="TempNonthermal" || ls=="MultiStress"){
-      if(is.null(Tc)==TRUE){
-        loglik <- paste(c("target += weibull_lpdf(TTF | beta, Lifei);"),collapse = "")
+      if(ls=="MultiStress"){
+        if(is.null(Tc)==TRUE){
+          loglik <- paste(c("target += weibull_lpdf(TTF | beta, Lifei);"),collapse = "")
+        } else{
+          loglik <- paste(c("target += weibull_lpdf(TTF | beta, Lifei) + weibull_lccdf(TTS | beta, Lifej);"),collapse = "")
+        }
       } else{
-        loglik <- paste(c("target += weibull_lpdf(TTF | beta, Lifei) + weibull_lccdf(TTS | beta, Lifej);"),collapse = "")
+        if(is.null(Tc)==TRUE){
+          loglik <- paste(c("target += weibull_lpdf(TTF | beta,",lifeF,");"),collapse = "")
+        } else{
+          loglik <- paste(c("target += weibull_lpdf(TTF | beta,",lifeF,") + weibull_lccdf(TTS | beta,",lifeC,");"),collapse = "")
+        }
       }
-    } else{
-      if(is.null(Tc)==TRUE){
-        loglik <- paste(c("target += weibull_lpdf(TTF | beta,",lifeF,");"),collapse = "")
-      } else{
-        loglik <- paste(c("target += weibull_lpdf(TTF | beta,",lifeF,") + weibull_lccdf(TTS | beta,",lifeC,");"),collapse = "")
-      }
+      params <- paste(c(distparam,lsparams),collapse = " ")
+      paramsvec <- c("beta",lsparamsvec)
+      outputparamset <- c("\U03B2",lsparamsvec)
+      priors <- paste(c(distpriors,lspriors),collapse = " ")
     }
-    params <- paste(c(distparam,lsparams),collapse = " ")
-    paramsvec <- c("beta",lsparamsvec)
-    outputparamset <- c("\U03B2",lsparamsvec)
-    priors <- paste(c(distpriors,lspriors),collapse = " ")
+    if(is.null(param2) == FALSE){
+      if(ls=="MultiStress"){
+        if(is.null(Tc)==TRUE){
+          loglik <- paste(c("target += weibull_lpdf(TTF | ",param2,", Lifei);"),collapse = "")
+        } else{
+          loglik <- paste(c("target += weibull_lpdf(TTF | ",param2,", Lifei) + weibull_lccdf(TTS | ",param2,", Lifej);"),collapse = "")
+        }
+      } else{
+        if(is.null(Tc)==TRUE){
+          loglik <- paste(c("target += weibull_lpdf(TTF | ",param2,",",lifeF,");"),collapse = "")
+        } else{
+          loglik <- paste(c("target += weibull_lpdf(TTF | ",param2,",",lifeF,") + weibull_lccdf(TTS | ",param2,",",lifeC,");"),collapse = "")
+        }
+      }
+      params <- paste(c(lsparams),collapse = " ")
+      paramsvec <- lsparamsvec
+      outputparamset <- lsparamsvec
+      priors <- paste(c(lspriors),collapse = " ")
+    }
+
   }
   if (dist=="3PWeibull") {
     distparam <-"real<lower=0> beta; real gamma;"
     distpriors<-paste(c("beta ~ ",priors[ishift],";","gamma ~ ",priors[ishift+1],";"),collapse = "")
 
-    if(ls=="Eyring" || ls=="Eyring2" || ls=="Eyring3" || ls=="TempHumidity" || ls=="TempNonthermal" || ls=="MultiStress"){
+    if(ls=="MultiStress"){
       if(is.null(Tc)==TRUE){
         loglik <- paste(c("target += weibull_lpdf(TTF | beta, Lifei);"),collapse = "")
       } else{
@@ -563,7 +587,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
     distparam <-"real<lower=0> sigma_t;"
     distpriors<-paste(c("sigma_t ~ ",priors[ishift],";"),collapse = "")
 
-    if(ls=="Eyring" || ls=="Eyring2" || ls=="Eyring3" || ls=="TempHumidity" || ls=="TempNonthermal" || ls=="MultiStress"){
+    if(ls=="MultiStress"){
       if(is.null(Tc)==TRUE){
         loglik <- paste(c("target += lognormal_lpdf(TTF |Lifei, sigma_t);"),collapse = "")
       } else{
@@ -585,7 +609,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
   if (dist=="Normal") {
     distparam <-"real<lower=0> sigma;"
     distpriors<-paste(c("sigma ~ ",priors[ishift],";"),collapse = "")
-    if(ls=="Eyring" || ls=="Eyring2" || ls=="Eyring3" || ls=="TempHumidity" || ls=="TempNonthermal" || ls=="MultiStress"){
+    if(ls=="MultiStress"){
       if(is.null(Tc)==TRUE){
         loglik <- paste(c("target += normal_lpdf(TTF | Lifei, sigma);"),collapse = "")
       } else{
@@ -604,7 +628,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
     priors <- paste(c(distpriors,lspriors),collapse = " ")
   }
   if (dist=="Exponential") {
-    if(ls=="Eyring" || ls=="Eyring2" || ls=="Eyring3" || ls=="TempHumidity" || ls=="TempNonthermal" || ls=="MultiStress"){
+    if(ls=="MultiStress"){
       if(is.null(Tc)==TRUE){
         loglik <- paste(c("target += exponential_lpdf(TTF | 1/(Lifei));"),collapse = "")
       } else{
@@ -625,7 +649,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
   if (dist=="2PExponential") {
     distparam <-"real<lower=0> sigma;"
     distpriors<-paste(c("sigma ~ ",priors[ishift],";"),collapse = "")
-    if(ls=="Eyring" || ls=="Eyring2" || ls=="Eyring3" || ls=="TempHumidity" || ls=="TempNonthermal" || ls=="MultiStress"){
+    if(ls=="MultiStress"){
       if(is.null(Tc)==TRUE){
         loglik <- paste(c("target += double_exponential_lpdf(TTF | Lifei, sigma);"),collapse = "")
       } else{
@@ -714,7 +738,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
     paramsvec0 <- paramsvec
   }
   block3 <- paste(c("model {",priors,loglik,"}"),collapse = " ")
-  if ((ls=="Eyring" || ls=="Eyring2"  || ls=="Eyring3" || ls=="TempHumidity" || ls=="TempNonthermal" || ls=="MultiStress") && dist == "Lognormal"){
+  if (ls=="MultiStress" && dist == "Lognormal"){
     if(is.null(Tc)==TRUE){
       block3 <- paste(c("model { vector[n] Lifei; vector[m] Lifej; ",priors," for(i in 1:n){",loglifeF,"}",loglik,"}"),collapse = " ")
     }
@@ -722,7 +746,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       block3 <- paste(c("model { vector[n] Lifei; vector[m] Lifej; ",priors," for(i in 1:n){",loglifeF,"} for(j in 1:m){",loglifeC,"}",loglik,"}"),collapse = " ")
     }
   }
-  if ((ls=="Eyring" || ls=="Eyring2"  || ls=="Eyring3" || ls=="TempHumidity" || ls=="TempNonthermal" || ls=="MultiStress") && (dist == "Normal" || dist=="Weibull" || dist=="Exponential")){
+  if (ls=="MultiStress" && (dist == "Normal" || dist=="Weibull" || dist=="Exponential")){
     if(is.null(Tc)==TRUE){
       block3 <- paste(c("model { vector[n] Lifei; ",priors," for(i in 1:n){",lifeF,"}",loglik,"}"),collapse = " ")
     }
@@ -759,7 +783,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
   # dataout <- fit@.MISC[["summary"]][["msd"]]
   conflim_txt<-c(paste(c("Lower ",100*conf.level,"%"),collapse = ""),paste(c("Upper ",100*conf.level,"%"),collapse = ""))
   stats <- fit$summary(variables = paramsvec0)
-  dataout <- fit$draws(format = "df")
+  # dataout <- fit$draws(format = "df")
   confidbounds <- mcmc_intervals_data(fit$draws(variables = paramsvec0),prob_outer = confid)
   outputtable <- matrix(c(stats[[2]],stats[[4]],confidbounds[[5]],stats[[3]],confidbounds[[9]],stats[[8]]), nrow = length(paramsvec0), ncol = 6, byrow = FALSE,dimnames = list(paramsvec0,c("Mean","Standard Deviation",conflim_txt[1],"Median",conflim_txt[2],"R\U005E")))
 
@@ -773,6 +797,7 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
   plot2_hist <- mcmc_hist(fit$draws(paramsvec0))
   plot3_density <- mcmc_dens(fit$draws(paramsvec0))
   plot4_densityoverlay <- mcmc_dens_overlay(fit$draws(paramsvec0))
+  plot5_scatterplot <- mcmc_pairs(fit$draws(paramsvec0))
 
   # Produce some output text that summarizes the results
   cat(c("Posterior estimates for Bayesian Analysis.\n\n"),sep = "")
@@ -780,5 +805,8 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
   cat(c("\n"),sep = "")
 
 
-  return(list(fit,stats,dataout,plot1_MCtrace,plot2_hist,plot3_density,plot4_densityoverlay))
+  return(list(fit,plot1_MCtrace,plot2_hist,plot3_density))
+  # NOTE: Comment return above and uncomment return below if you want to view the scatterplot between posteriors.
+  # This may however increase processing time.
+  # return(list(fit,plot1_MCtrace,plot2_hist,plot3_density,plot4_densityoverlay,plot5_scatterplot))
 }
