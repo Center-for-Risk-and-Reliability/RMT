@@ -1,4 +1,4 @@
-# Least-Squares Accelerated Degradation Testing Estimator
+# Least-Squares Degradation Life Estimator
 # Developed by Dr. Reuel Smith, 2021-2024
 
 degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelstress=NULL,xlabel=NULL,ylabel=NULL,Tuse=NULL){
@@ -1212,7 +1212,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     } else{
       params_0 <- paramstress(tableout1[,1],matrix(unlist(stressvals),nrow = length(unitnames), ncol = (dim(data)[2]-3), byrow = TRUE))
     }
-    params_1 <- c(probplot.nor(cbind(tableout1[,2],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")[[1]][[2]])
+    params_1 <- c(probplot.nor(cbind(tableout1[,2],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")$output[[1]]$`Parameter Estimates`)
   }
   if((modelstresstype == 1 && (dl=="Exponential" || dl=="Power" || dl=="Mitsuom")) || modelstresstype == 3){
     # Parameter fit to "b"
@@ -1221,7 +1221,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     } else{
       params_0 <- paramstress(tableout1[,2],matrix(unlist(stressvals),nrow = length(unitnames), ncol = (dim(data)[2]-3), byrow = TRUE))
     }
-    params_1 <- c(probplot.nor(cbind(tableout1[,1],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")[[1]][[2]])
+    params_1 <- c(probplot.nor(cbind(tableout1[,1],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")$output[[1]]$`Parameter Estimates` )
   }
   # return(matrix(unlist(stressvals),nrow = length(unitnames), ncol = (dim(data)[2]-3), byrow = FALSE))
   # return(tableout1[,1])
@@ -1232,7 +1232,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     } else{
       params_0 <- paramstress(-tableout1[,1],matrix(unlist(stressvals),nrow = length(unitnames), ncol = (dim(data)[2]-3), byrow = FALSE))
     }
-    params_1 <- c(probplot.nor(cbind(tableout1[,2],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")[[1]][[2]])
+    params_1 <- c(probplot.nor(cbind(tableout1[,2],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")$output[[1]]$`Parameter Estimates`)
   }
   if(modelstresstype == 1 && dl=="ExponentialNorm"){
     # Parameter fit to "a"
@@ -1241,7 +1241,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     } else{
       params_0 <- paramstress(-tableout1[,1],matrix(unlist(stressvals),nrow = length(unitnames), ncol = (dim(data)[2]-3), byrow = FALSE))
     }
-    params_1 <- c(probplot.nor(cbind(tableout1[,2],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")[[1]][[2]])
+    params_1 <- c(probplot.nor(cbind(tableout1[,2],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")$output[[1]]$`Parameter Estimates`)
   }
 
   # return(tableout1[,1])
