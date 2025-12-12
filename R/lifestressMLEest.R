@@ -1,7 +1,9 @@
 # Maximum Likelihood Life-Stress Estimator
 # Developed by Dr. Reuel Smith, 2021-2024
 
-lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,confid=0.95,sided="twosided",pp="Blom",xlabel1="X"){
+lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,confid=0.95,
+                              sided="twosided",pp="Blom",xlabel1="X",param2=NULL,
+                              stressunit1 = NULL, stressunit2 = NULL){
   # (NOTE -11/13/2023 RS) Add Exponential2 model that uses inverse stress as input
 
   #Load pracma library for erf
@@ -12,7 +14,7 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
 
   # Check to see if dist="Exponential" so you can exclude life
   # distribution parameters.
-  if (dist=="Exponential") {
+  if (dist=="Exponential" || (dist=="Weibull" && is.null(param2) == FALSE)) {
     ishift<-0
   } else {
     ishift<-1
@@ -255,6 +257,44 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
     }
     ls_txt<-ls
     params_txt<-c("a","b")
+  }
+
+  if (ls=="PowerwithBias") {
+    # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - parameter c
+    # First redefine b parameter as logb
+    # and c parameter as logc
+    LSQest[ishift+2] <- log(LSQest[ishift+2])
+    LSQest[ishift+3] <- log(LSQest[ishift+3])
+
+    lifeF <- function(theta) {
+      exp(theta[ishift+3]) + exp(theta[ishift+2])*(SF^theta[ishift+1])
+    }
+    loglifeF <- function(theta) {
+      log(exp(theta[ishift+3]) + exp(theta[ishift+2])*(SF^theta[ishift+1]))
+    }
+    if(is.null(Tc)==FALSE){
+      lifeC <- function(theta) {
+        exp(theta[ishift+3]) + exp(theta[ishift+2])*(Sc^theta[ishift+1])
+      }
+      loglifeC <- function(theta) {
+        log(exp(theta[ishift+3]) + exp(theta[ishift+2])*(Sc^theta[ishift+1]))
+      }
+    }
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        exp(theta[ishift+3]) + exp(theta[ishift+2])*(Suse^theta[ishift+1])
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        ((exp(theta[ishift+3]))^2)*VARCOV[ishift+3,ishift+3] +
+          ((exp(theta[ishift+2])*(Suse^theta[ishift+1]))^2)*VARCOV[ishift+2,ishift+2] +
+          ((log(Suse)*exp(theta[ishift+2])*(Suse^theta[ishift+1]))^2)*VARCOV[ishift+1,ishift+1] -
+          2*(log(Suse)*exp(theta[ishift+2])*(Suse^theta[ishift+1]))*(exp(theta[ishift+2])*(Suse^theta[ishift+1]))*VARCOV[ishift+1,ishift+2] -
+          2*(log(Suse)*exp(theta[ishift+2])*(Suse^theta[ishift+1]))*(exp(theta[ishift+3]))*VARCOV[ishift+1,ishift+3] -
+          2*(exp(theta[ishift+2])*(Suse^theta[ishift+1]))*(exp(theta[ishift+3]))*VARCOV[ishift+2,ishift+3]
+      }
+    }
+    ls_txt<-ls
+    params_txt<-c("a","b","c")
   }
 
   if (ls=="InversePower") {
@@ -882,16 +922,9 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
         exp(theta[ishift+3])/((Suse[2]^theta[ishift+2])*exp(-theta[ishift+1]/Suse[1]))
       }
       lifeUSEVAR <- function(theta,VARCOV) {
-        # (lifeUSE(theta)^2)*VARCOV[ishift+3,ishift+3] +
-        #   (log(Suse[2])^2)*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
-        #   (1/Suse[1]^2)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1]
-
-        (lifeUSE(theta)^2)*VARCOV[ishift+3,ishift+3] +
-          (log(Suse[2])^2)*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+2] +
-          (1/Suse[1]^2)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] -
-          2*(1/Suse[1])*log(Suse[2])*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2] +
-          2*(1/Suse[2])*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+3] -
-          2*log(Suse[2])*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+3]
+        c(c(1/Suse[1]*lifeUSE(theta),-log(Suse[2])*lifeUSE(theta),lifeUSE(theta))%*%
+          VARCOV[((ishift+1):(ishift+3)),((ishift+1):(ishift+3))]%*%
+          c(1/Suse[1]*lifeUSE(theta),-log(Suse[2])*lifeUSE(theta),lifeUSE(theta)))
       }
     }
     ls_txt<-"Temperature-Non-thermal"
@@ -975,6 +1008,40 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
     params_txt<-c("A","b","E_a")
   }
 
+  if (ls=="EyringHW4") {
+    # lsparams[1] - parameter alp_0, lsparams[2] - parameter alp_1, lsparams[3] - M
+
+    lifeF <- function(theta) {
+      exp(theta[ishift+1])*exp(theta[ishift+2]/SF)*(SF^-theta[ishift+3])
+    }
+    loglifeF <- function(theta) {
+      theta[ishift+1] + (theta[ishift+2]/SF) - theta[ishift+3]*log(SF)
+    }
+    if(is.null(Tc)==FALSE){
+      lifeC <- function(theta) {
+        exp(theta[ishift+1])*exp(theta[ishift+2]/Sc)*(Sc^-theta[ishift+3])
+      }
+      loglifeC <- function(theta) {
+        theta[ishift+1] + (theta[ishift+2]/Sc) - theta[ishift+3]*log(Sc)
+      }
+    }
+    if(is.null(Suse) == FALSE){
+      lifeUSE <- function(theta) {
+        exp(theta[ishift+1])*exp(theta[ishift+2]/Suse)*(Suse^-theta[ishift+3])
+      }
+      lifeUSEVAR <- function(theta,VARCOV) {
+        (log(Suse)^2)*(lifeUSE(theta)^2)*VARCOV[ishift+3,ishift+3] +
+          (1/Suse^2)*VARCOV[ishift+2,ishift+2] +
+          (lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] +
+          2*(1/Suse)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2] -
+          2*log(Suse)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+3] -
+          2*(1/Suse)*log(Suse)*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+3]
+      }
+    }
+    ls_txt<-ls
+    params_txt<-c("\U03B1\U2080","\U03B1\U2080","m")
+  }
+
   # UPDATE (10/22/2024) - Form data matrix for MLE probability plot
   if(is.null(Tc) == TRUE){
     data <- cbind(TTF,rep(1,length(TTF)),SF)
@@ -988,20 +1055,41 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
 
   # Fit to log-likelihood distributions
   if (dist=="Weibull") {
-    # positivity_v[1]<-1
-    # First redefine beta parameter as logbeta
-    LSQest[1] <- log(LSQest[1])
+    # For standard beta estimation
+    if(is.null(param2) == TRUE){
+      # positivity_v[1]<-1
+      # First redefine beta parameter as logbeta
+      LSQest[1] <- log(LSQest[1])
 
-    if(is.null(Tc)){
-      loglik <- function(theta){
-        -sum(theta[1] + (exp(theta[1])-1)*log(TTF) - exp(theta[1])*loglifeF(theta) - ((TTF/lifeF(theta))^exp(theta[1])))
-      }
-    } else{
-      loglik <- function(theta){
-        -sum(theta[1] + (exp(theta[1])-1)*log(TTF) - exp(theta[1])*loglifeF(theta) - ((TTF/lifeF(theta))^exp(theta[1]))) - sum(- ((Tc/lifeC(theta))^exp(theta[1])))
+      if(is.null(Tc)){
+        loglik <- function(theta){
+          -sum(theta[1] + (exp(theta[1])-1)*log(TTF) - exp(theta[1])*loglifeF(theta) - ((TTF/lifeF(theta))^exp(theta[1])))
+        }
+      } else{
+        loglik <- function(theta){
+          -sum(theta[1] + (exp(theta[1])-1)*log(TTF) - exp(theta[1])*loglifeF(theta) - ((TTF/lifeF(theta))^exp(theta[1]))) - sum(- ((Tc/lifeC(theta))^exp(theta[1])))
+        }
       }
     }
-    plotoutput <- probplot.wbl(data,pp,xlabel1,MLE_i = 1)$prob_plot
+    # For when beta is known
+    if(is.null(param2) == FALSE){
+      # Store full LSQest for later
+      LSQest0 <- LSQest
+      # Set new LSQest for everything but the known beta
+      LSQest <- LSQest0[2:length(LSQest0)]
+      # First redefine beta parameter as logbeta
+      if(is.null(Tc)){
+        loglik <- function(theta){
+          -sum(log(param2) + (param2-1)*log(TTF) - param2*loglifeF(theta) - ((TTF/lifeF(theta))^param2))
+        }
+      } else{
+        loglik <- function(theta){
+          -sum(log(param2) + (param2-1)*log(TTF) - param2*loglifeF(theta) - ((TTF/lifeF(theta))^param2)) - sum(- ((Tc/lifeC(theta))^param2))
+        }
+      }
+    }
+
+    plotoutput <- probplot.wbl(data,pp,xlabel1,MLE_i = 1,stressunit1 = stressunit1,stressunit2 = stressunit2)$prob_plot
     dist_txt<-dist
     distparam_txt<-"\U03B2"
   }
@@ -1020,7 +1108,7 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
         -sum(theta[1] + (exp(theta[1])-1)*log(TTF-theta[2]) - exp(theta[1])*loglifeF(theta) - (((TTF-theta[2])/lifeF(theta))^exp(theta[1]))) - sum(- (((Tc-theta[1])/lifeC(theta))^exp(theta[1])))
       }
     }
-    plotoutput <- probplot.wbl3P(data,pp,xlabel1,MLE_i = 1)$prob_plot
+    plotoutput <- probplot.wbl3P(data,pp,xlabel1,MLE_i = 1,stressunit1 = stressunit1,stressunit2 = stressunit2)$prob_plot
     dist_txt<-"Three-Parameter Weibull"
     distparam_txt<-c("\U03B2","\U03B3")
   }
@@ -1039,7 +1127,7 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
         -sum(-theta[1] - 0.5*log(2*pi) - log(TTF) - 0.5*(exp(theta[1])^-2)*((log(TTF) - loglifeF(theta))^2)) - sum(log(0.5 - 0.5*erf((2^-0.5)*(exp(theta[1])^-1)*(log(Tc) - loglifeC(theta)))))
       }
     }
-    plotoutput <- probplot.logn(data,pp,xlabel1,MLE_i = 1)$prob_plot
+    plotoutput <- probplot.logn(data,pp,xlabel1,MLE_i = 1,stressunit1 = stressunit1,stressunit2 = stressunit2)$prob_plot
     dist_txt<-dist
     distparam_txt<-"\U03C3_t"
   }
@@ -1057,7 +1145,7 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
         -sum(-theta[1] - 0.5*log(2*pi) - 0.5*(exp(theta[1])^-2)*((TTF - lifeF(theta))^2)) - sum(log(0.5 - 0.5*erf((2^-0.5)*(exp(theta[1])^-1)*(Tc - lifeC(theta)))))
       }
     }
-    plotoutput <- probplot.nor(data,pp,xlabel1,MLE_i = 1)$prob_plot
+    plotoutput <- probplot.nor(data,pp,xlabel1,MLE_i = 1,stressunit1 = stressunit1,stressunit2 = stressunit2)$prob_plot
     dist_txt<-dist
     distparam_txt<-"\U03C3"
   }
@@ -1071,7 +1159,7 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
         -sum(-loglifeF(theta) - TTF/lifeF(theta)) - sum(-Tc/lifeC(theta))
       }
     }
-    plotoutput <- probplot.exp(data,pp,xlabel1,MLE_i = 1)$prob_plot
+    plotoutput <- probplot.exp(data,pp,xlabel1,MLE_i = 1,stressunit1 = stressunit1,stressunit2 = stressunit2)$prob_plot
     dist_txt<-dist
   }
   if (dist=="2PExponential") {
@@ -1088,7 +1176,7 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
         -sum(-theta[1] - (exp(theta[1])^-1)*(TTF - lifeF(theta)) - 1) - sum(-(theta[1])*(Tc - lifeC(theta)) - 1)
       }
     }
-    plotoutput <- probplot.exp2P(data,pp,xlabel1,MLE_i = 1)$prob_plot
+    plotoutput <- probplot.exp2P(data,pp,xlabel1,MLE_i = 1,stressunit1 = stressunit1,stressunit2 = stressunit2)$prob_plot
     dist_txt<-"Two-Parameter Exponential"
     distparam_txt<-"\U03C3"
   }
@@ -1195,12 +1283,26 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
   # return(MLEandvar)
   theta.hat <- MLEandvar[[1]]
   inv.fish  <- MLEandvar[[2]]
+  loglik.hat <- -loglik(theta.hat)
+  likeli.hat <- exp(loglik.hat)
 
   if(is.null(Suse) == FALSE){
     # Compute use life and variance with untransformed parameters
     uselife <- lifeUSE(theta.hat)
     uselife_VAR <- lifeUSEVAR(theta.hat,inv.fish)
     uselifelim <- vector(mode = "list", length = 1)
+  }
+  # Reimplement beta in estimate if Weibull beta was known
+  if(is.null(param2) == FALSE && dist == "Weibull"){
+    # Reset LSQest to original
+    LSQest <- LSQest0
+    ishift <- 1
+    # Add setbeta to theta.hat
+    theta.hat <- c(log(param2),theta.hat)
+    # Add zero variance for beta to VARCOV
+    i2 <- size(inv.fish)[1]
+    inv.fish <- cbind(rep(0,i2),inv.fish)
+    inv.fish <- rbind(rep(0,(i2+1)),inv.fish)
   }
   # return(list(uselife,uselife_VAR))
 
@@ -1230,6 +1332,9 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
       if (ls=="TempNonthermal" && i == (ishift+3)){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
+      if (ls=="PowerwithBias" && (i == (ishift+2) || i == (ishift+3))){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
       conflim_txt<-c(paste(c("Lower ",100*conf.level,"%"),collapse = ""),paste(c("Upper ",100*conf.level,"%"),collapse = ""))
     }
     if(sided == "onesidedlow"){
@@ -1248,6 +1353,9 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
       if (ls=="TempNonthermal" && i == (ishift+3)){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
+      if (ls=="PowerwithBias" && (i == (ishift+2) || i == (ishift+3))){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
       conflim_txt<-paste(c("One-Sided Low ",100*conf.level,"%"),collapse = "")
@@ -1270,11 +1378,14 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
       if (ls=="TempNonthermal" && i == (ishift+3)){
         conflim[[i]] <- sort(exp(conflim[[i]]))
       }
+      if (ls=="PowerwithBias" && (i == (ishift+2) || i == (ishift+3))){
+        conflim[[i]] <- sort(exp(conflim[[i]]))
+      }
       conflim_txt<-paste(c("One-Sided High ",100*conf.level,"%"),collapse = "")
     }
     fulllimset[[i]]<-c(theta.hat[i],conflim[[i]])
 
-    if((dist=="Weibull" || dist=="3PWeibull" || dist=="Lognormal" || dist=="Normal" || dist=="2PExponential") && i == 1){
+    if((dist=="Weibull"  || dist=="3PWeibull" || dist=="Lognormal" || dist=="Normal" || dist=="2PExponential") && i == 1){
       fulllimset[[i]] <- c(exp(theta.hat[i]),conflim[[i]])
     }
     if(ls=="TempHumidity" && i == (ishift+1)){
@@ -1286,10 +1397,15 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
     if (ls=="TempNonthermal" && i == (ishift+3)){
       fulllimset[[i]] <- c(exp(theta.hat[i]),conflim[[i]])
     }
+    if (ls=="PowerwithBias" && (i == (ishift+2) || i == (ishift+3))){
+      fulllimset[[i]] <- c(exp(theta.hat[i]),conflim[[i]])
+    }
   }
 
   AIC = 2*length(theta.hat) + 2*loglik(theta.hat)
   BIC = 2*log(length(TTF)+length(Tc)) + 2*loglik(theta.hat)
+
+  # return(ishift)
 
   if(is.null(Suse) == FALSE){
     if(sided == "twosided"){
@@ -1343,10 +1459,14 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
   if (ls=="TempNonthermal"){
     theta.hat[ishift+3] <- exp(theta.hat[ishift+3])
   }
+  if (ls=="PowerwithBias"){
+    theta.hat[ishift+2] <- exp(theta.hat[ishift+2])
+    theta.hat[ishift+3] <- exp(theta.hat[ishift+3])
+  }
   if(is.null(Suse) == TRUE){
-    return(list(theta.hat,inv.fish,conflim,AIC,BIC,plotoutput=plotoutput))
+    return(list(theta.hat,inv.fish,conflim,loglik.hat,likeli.hat,AIC,BIC,plotoutput=plotoutput))
   }
   if(is.null(Suse) == FALSE){
-    return(list(theta.hat,inv.fish,uselife,conflim,uselifelim,AIC,BIC,plotoutput=plotoutput))
+    return(list(theta.hat,inv.fish,uselife,conflim,uselifelim,loglik.hat,likeli.hat,AIC,BIC,plotoutput=plotoutput))
   }
 }

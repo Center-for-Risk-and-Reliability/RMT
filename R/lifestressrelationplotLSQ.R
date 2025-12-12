@@ -1,7 +1,7 @@
 # Life-Stress Relationship Plot Generator (LSQ Life-Stress)
 # Developed by Dr. Reuel Smith, 2021-2024
 
-lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=NULL,Smax=NULL,Suse=NULL,therm=1,confid=0.95,Llab="Characteristic Life - L",Slab="Characteristic Stress - S") {
+lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=NULL,Smax=NULL,Suse=NULL,therm=1,confid=0.95,Llab=NULL,Slab=NULL,confid_int = NULL,predic_int = NULL) {
   # Minimum inputs: Original data and stresses, life-stress model, life distribution, life parameters (alpha, mu, mu_t, etc.)
   # Optional inputs: Use stress, min and max stress, confidence, labels
   # Output: Relationship plot
@@ -14,7 +14,7 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
   library(ggplot2)
 
   # Legend colors
-  col_legend <- c("red","blue","darkgreen","violet","lightblue","orange","pink","darkblue","lightgreen","yellow","green")
+  col_legend <- c("red","blue","darkgreen","violet","gold","orange","pink2","darkblue","lightgreen","yellow","green","darkviolet","darkorange","darkred","purple","royalblue","brown","lightpink","tan","darkgray","aquamarine","sienna","limegreen","mediumpurple3","chocolate","red4")
 
   # Check first that the data has multiple accelerated stress levels
   if(length(checkstress(data))==1) {
@@ -42,6 +42,7 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
     fulldatabystress<-c(singledat,databystress)
   }
 
+  # return(fulldatabystress)
   # Reorder the S and L vector inputs to match fulldatabystress
   if(is.null(singledat)==FALSE){
     Snew<-c(S[which(S==c(sort.xircstressdata(data)[[3]][1])):length(S)],S[1:(which(S==c(sort.xircstressdata(data)[[3]][1]))-1)])
@@ -55,9 +56,10 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
 
 
   # Compute min and max stress used for relationship plot (if single-stress and if not given)
-  if (ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
+  if (ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="PowerwithBias" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
     # TRAIN SMIN FOR CASES WHERE LEFT OUT
     if(is.null(Smin)==TRUE && is.null(Suse)==TRUE){
+      Smin <- 0
       if(log10(min(data[,3])) > 1){
         Smin <- round_any(min(data[,3]), 0.5*(10^floor(log10(min(data[,3])))), f = floor)
       }
@@ -71,6 +73,7 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
       }
     }
     if(is.null(Smin)==TRUE && is.null(Suse)==FALSE && Suse < max(data[,3])){
+      Smin <- 0
       if(log10(Suse) > 1){
         Smin <- round_any(Suse, 0.5*(10^floor(log10(Suse))), f = floor)
       }
@@ -147,7 +150,7 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
   }
 
   # Form data frame
-  if (ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
+  if (ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="PowerwithBias" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
     # Will likely have to separate these into LSQ, MLE, and Bayesian if I want to have them detect the parameters.
     # Will also need to do this for step-stress and maybe ADT.  Will have this under one help file for simplicity.
     data_legend <- logical(0)
@@ -155,9 +158,9 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
     # Lists the data by stress
     for(i in 1:length(fulldatabystress)){
       if(size(fulldatabystress[[i]])[1] > 1){
-        data_legend<-c(data_legend,rep(paste(c("Data for stress level",fulldatabystress[[i]][1,3:length(fulldatabystress[[i]][1,])]),collapse = " "),sum(fulldatabystress[[i]][,2])))
+        data_legend<-c(data_legend,rep(paste(c("Data for stress level",fulldatabystress[[i]][[1,3:length(fulldatabystress[[i]][1,])]]),collapse = " "),sum(fulldatabystress[[i]][,2])))
       } else{
-        data_legend<-c(data_legend,paste(c("Data for stress level",fulldatabystress[[i]][3:length(fulldatabystress[[i]])]),collapse = " "))
+        data_legend<-c(data_legend,paste(c("Data for stress level",fulldatabystress[[i]][[3:length(fulldatabystress[[i]])]]),collapse = " "))
       }
     }
     # Lists the life distribution parameters by stress
@@ -168,11 +171,11 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
     for(i in 1:length(fulldatabystress)){
       if(dist == "Normal"){
         if(size(fulldatabystress[[i]])[1] > 1){
-          data_legend<-c(data_legend,paste(c("\U03BC for stress level",fulldatabystress[[i]][1,3:length(fulldatabystress[[i]][1,])]),collapse = " "))
-          dist_legend<-c(dist_legend,paste(c("Distribution for stress level",fulldatabystress[[i]][1,3:length(fulldatabystress[[i]][1,])]),collapse = " "))
+          data_legend<-c(data_legend,paste(c("\U03BC for stress level",fulldatabystress[[i]][[1,3:length(fulldatabystress[[i]][1,])]]),collapse = " "))
+          dist_legend<-c(dist_legend,paste(c("Distribution for stress level",fulldatabystress[[i]][[1,3:length(fulldatabystress[[i]][1,])]]),collapse = " "))
         } else{
-          data_legend<-c(data_legend,paste(c("\U03BC for stress level",fulldatabystress[[i]][3:length(fulldatabystress[[i]])]),collapse = " "))
-          dist_legend<-c(dist_legend,paste(c("Distribution for stress level",fulldatabystress[[i]][3:length(fulldatabystress[[i]])]),collapse = " "))
+          data_legend<-c(data_legend,paste(c("\U03BC for stress level",fulldatabystress[[i]][[3:length(fulldatabystress[[i]])]]),collapse = " "))
+          dist_legend<-c(dist_legend,paste(c("Distribution for stress level",fulldatabystress[[i]][[3:length(fulldatabystress[[i]])]]),collapse = " "))
         }
         # Pull the life range from the mode to the end
         # xrange <- c()
@@ -180,23 +183,23 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
       }
       if(dist == "Lognormal"){
         if(size(fulldatabystress[[i]])[1] > 1){
-          data_legend<-c(data_legend,paste(c("exp(\U03BC_t) for stress level",fulldatabystress[[i]][1,3:length(fulldatabystress[[i]][1,])]),collapse = " "))
+          data_legend<-c(data_legend,paste(c("exp(\U03BC_t) for stress level",fulldatabystress[[i]][[1,3:length(fulldatabystress[[i]][1,])]]),collapse = " "))
         } else{
-          data_legend<-c(data_legend,paste(c("exp(\U03BC_t) for stress level",fulldatabystress[[i]][3:length(fulldatabystress[[i]])]),collapse = " "))
+          data_legend<-c(data_legend,paste(c("exp(\U03BC_t) for stress level",fulldatabystress[[i]][[3:length(fulldatabystress[[i]])]]),collapse = " "))
         }
       }
       if(dist == "Exponential"){
         if(size(fulldatabystress[[i]])[1] > 1){
-          data_legend<-c(data_legend,paste(c("1/\U03BB for stress level",fulldatabystress[[i]][1,3:length(fulldatabystress[[i]][1,])]),collapse = " "))
+          data_legend<-c(data_legend,paste(c("1/\U03BB for stress level",fulldatabystress[[i]][[1,3:length(fulldatabystress[[i]][1,])]]),collapse = " "))
         } else{
-          data_legend<-c(data_legend,paste(c("1/\U03BB for stress level",fulldatabystress[[i]][3:length(fulldatabystress[[i]])]),collapse = " "))
+          data_legend<-c(data_legend,paste(c("1/\U03BB for stress level",fulldatabystress[[i]][[3:length(fulldatabystress[[i]])]]),collapse = " "))
         }
       }
       if(dist == "Weibull"){
         if(size(fulldatabystress[[i]])[1] > 1){
-          data_legend<-c(data_legend,paste(c("\U03B1 for stress level",fulldatabystress[[i]][1,3:length(fulldatabystress[[i]][1,])]),collapse = " "))
+          data_legend<-c(data_legend,paste(c("\U03B1 for stress level",fulldatabystress[[i]][[1,3:length(fulldatabystress[[i]][1,])]]),collapse = " "))
         } else{
-          data_legend<-c(data_legend,paste(c("\U03B1 for stress level",fulldatabystress[[i]][3:length(fulldatabystress[[i]])]),collapse = " "))
+          data_legend<-c(data_legend,paste(c("\U03B1 for stress level",fulldatabystress[[i]][[3:length(fulldatabystress[[i]])]]),collapse = " "))
         }
         # if(params[1] >= 1){
         #   xrangemin <- linspace(L[i]*(((params[1] - 1)/params[1])^(1/params[1])),pweibull(0.999,L[i],params[1]),50)
@@ -263,29 +266,79 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
       }
       df_data <- data.frame(S = c(sort.xircstressdata(data)[[3]],S,Suse), Sinv = 1/c(sort.xircstressdata(data)[[3]],S,Suse), L = c(sort.xircstressdata(data)[[1]],L,Luse),data = data_legend)
     }
+    # return(sort.xircstressdata(data)[[3]])
     if(is.null(Suse) == TRUE){
       df_data <- data.frame(S = c(sort.xircstressdata(data)[[3]],S), Sinv = 1/c(sort.xircstressdata(data)[[3]],S), L = c(sort.xircstressdata(data)[[1]],L),data = data_legend)
       # df_data <- data.frame(S = c(sort.xircstressdata(data)[[3]],S), Sinv = 1/c(sort.xircstressdata(data)[[3]],S), L = c(sort.xircstressdata(data)[[1]],L))
     }
+    # Best fit line
     df_line <- data.frame(S = Sline, Sinv = 1/Sline, L = Lline, best_fit = rep("Fitted",100))
+    # # Confidence upper and lower bound
+    # # Mean square error
+    # MSE <- (1/(dim(data)[1]-2))*sum((lifestress.select(ls)[[1]](params,sort.xircstressdata(data)[[3]]) - sort.xircstressdata(data)[[1]])^2)
+    # # SS
+    # SS <- sum((1)^2)
+    # CONFDIFF <- qt(confid,dim(data)[1])*sqrt(MSE*(1/dim(data)[1] + (Lline - mean(Lline))^2))
+    # df_confid_bound <- data.frame(S = Sline, Sinv = 1/Sline, Llower = Lline, Lupper = Lline, best_fit = rep("Fitted",100))
+    # # Predicative upper and lower bound
     # df <- data.frame(X = xrange, YCDF = ycdf, YCDFlow = ycdf_low, YCDFhigh = ycdf_high, best_fit = rep("Fitted",1000))
   }
 
-  # return(list(df_data))
+  return(list(df_data))
 
   # UPDATE (11/9/2023): Adding the test of the plots now.  These will be standard output.  Going to test Arrhenius first
   # for all conditions and then do the rest when I'm satisfied.
 
   if (ls=="Linear") {
     # theta[1] - parameter a, theta[2] - parameter b
+    if(is.null(Slab)==TRUE){
+      Slab <- "Characteristic Stress - S"
+    }
+    if(is.null(Llab)==TRUE){
+      Llab <- "Characteristic Life - L"
+    }
+
+    # Confidence upper and lower bound
+    # Mean square error
+    # y = ln(L)
+    if(dist=="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((lifestress.select(ls)[[1]](params,sort.xircstressdata(data)[[3]]) - sort.xircstressdata(data)[[1]])^2)
+    }
+    if(dist!="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((lifestress.select(ls)[[1]](params[2:length(params)],sort.xircstressdata(data)[[3]]) - sort.xircstressdata(data)[[1]])^2)
+    }
+    # SS
+    SS <- sum(((sort.xircstressdata(data)[[3]]) - mean(sort.xircstressdata(data)[[3]]))^2)
+    CONFDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*((1/dim(data)[1]) + (((Sline - mean(sort.xircstressdata(data)[[3]])))^2)/SS))
+    df_confid_bound <- data.frame(S = Sline, Llower = Lline - CONFDIFF, Lupper = Lline + CONFDIFF, best_fit = rep("Confidence",100))
+    # Predicative upper and lower bound
+    if(is.null(predic_int)==FALSE){
+      PREDICTDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*(1 + (1/dim(data)[1]) + (((Sline - mean(sort.xircstressdata(data)[[3]])))^2)/SS))
+      df_predict_bound <- data.frame(S = Sline, Llower = Lline - PREDICTDIFF, Lupper = Lline + PREDICTDIFF, best_fit = rep("Confidence",100))
+    }
 
     relationplot<-ggplot() +
-      geom_line(data=df_line, aes(x=S,y=L), colour = 'blue', size = 0.9, linetype = "dashed") +
-      xlab("Characteristic Stress - S") +
-      ylab("Characteristic Life - L")
+      geom_line(data=df_line, aes(x=S,y=L), colour = 'black', linewidth = 0.9, linetype = "dashed") +
+      xlab(Slab) +
+      ylab(Llab)
+
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
+    if(is.null(confid_int)==TRUE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+    }
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==TRUE){
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
+
 
     if(is.null(Suse) == FALSE){
-      relationplot <- relationplot + geom_point(data=df_data, aes(x=S, y=L, shape=data, color=data), size=3) +
+      # relationplot <- relationplot + geom_point(data=df_data, aes(x=S, y=L, shape=data, color=data), size=3) +
+      #   scale_shape_manual(values=c(rep(16,length(fulldatabystress)),rep(24,length(fulldatabystress)),23)) +
+      #   scale_color_manual(values=c(rep(col_legend[1:length(fulldatabystress)],2),"black"))
+      relationplot <- relationplot + geom_point(data=df_data, aes(x=S, y=L, shape=data),  color="black", size=3) +
         scale_shape_manual(values=c(rep(16,length(fulldatabystress)),rep(24,length(fulldatabystress)),23)) +
         scale_color_manual(values=c(rep(col_legend[1:length(fulldatabystress)],2),"black"))
     }
@@ -298,12 +351,48 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
 
   if (ls=="Exponential"){
     # theta[1] - parameter a, theta[2] - parameter b
+    if(is.null(Slab)==TRUE){
+      Slab <- "Characteristic Stress - S"
+    }
+    if(is.null(Llab)==TRUE){
+      Llab <- "Characteristic Life - L"
+    }
+
+    # Confidence upper and lower bound
+    # Mean square error
+    # y = ln(L)
+    if(dist=="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((log(lifestress.select(ls)[[1]](params,sort.xircstressdata(data)[[3]])) - log(sort.xircstressdata(data)[[1]]))^2)
+    }
+    if(dist!="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((log(lifestress.select(ls)[[1]](params[2:length(params)],sort.xircstressdata(data)[[3]])) - log(sort.xircstressdata(data)[[1]]))^2)
+    }
+    # SS
+    SS <- sum(((sort.xircstressdata(data)[[3]]) - mean(sort.xircstressdata(data)[[3]]))^2)
+    CONFDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*((1/dim(data)[1]) + (((Sline - mean(sort.xircstressdata(data)[[3]])))^2)/SS))
+    df_confid_bound <- data.frame(S = Sline, Llower = exp(log(Lline) - CONFDIFF), Lupper = exp(log(Lline) + CONFDIFF), best_fit = rep("Confidence",100))
+    # Predicative upper and lower bound
+    if(is.null(predic_int)==FALSE){
+      PREDICTDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*(1 + (1/dim(data)[1]) + (((Sline - mean(sort.xircstressdata(data)[[3]])))^2)/SS))
+      df_predict_bound <- data.frame(S = Sline, Llower = exp(log(Lline) - PREDICTDIFF), Lupper = exp(log(Lline) + PREDICTDIFF), best_fit = rep("Confidence",100))
+    }
 
     relationplot<-ggplot() +
-      geom_line(data=df_line, aes(x=S,y=L), colour = 'blue', size = 0.9, linetype = "dashed") +
+      geom_line(data=df_line, aes(x=S,y=L), colour = 'black', linewidth = 0.9, linetype = "dashed") +
       scale_y_continuous(trans = 'log10') +
-      xlab("Characteristic Stress - S") +
-      ylab("Characteristic Life - L")
+      xlab(Slab) +
+      ylab(Llab)
+
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
+    if(is.null(confid_int)==TRUE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+    }
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==TRUE){
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
 
     if(is.null(Suse) == FALSE){
       relationplot <- relationplot + geom_point(data=df_data, aes(x=S, y=L, shape=data, color=data), size=3) +
@@ -319,15 +408,54 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
 
   if (ls=="Exponential2"){
     # theta[1] - parameter a, theta[2] - parameter b
+    if(is.null(Slab)==TRUE){
+      Slab <- "Characteristic Stress - 1/S"
+    }
+    if(is.null(Llab)==TRUE){
+      Llab <- "Characteristic Life - L"
+    }
+
+    # Confidence upper and lower bound
+    # Mean square error
+    # y = ln(L)
+    if(dist=="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((log(lifestress.select(ls)[[1]](params,sort.xircstressdata(data)[[3]])) - log(sort.xircstressdata(data)[[1]]))^2)
+    }
+    if(dist!="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((log(lifestress.select(ls)[[1]](params[2:length(params)],sort.xircstressdata(data)[[3]])) - log(sort.xircstressdata(data)[[1]]))^2)
+    }
+    # SS
+    SS <- sum(((1/sort.xircstressdata(data)[[3]]) - mean(1/sort.xircstressdata(data)[[3]]))^2)
+    CONFDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*((1/dim(data)[1]) + ((((1/Sline) - mean(1/(sort.xircstressdata(data)[[3]]))))^2)/SS))
+    df_confid_bound <- data.frame(S = Sline, Sinv = (1/Sline), Llower = exp(log(Lline) - CONFDIFF), Lupper = exp(log(Lline) + CONFDIFF), best_fit = rep("Confidence",100))
+    # Predicative upper and lower bound
+    if(is.null(predic_int)==FALSE){
+      PREDICTDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*(1 + (1/dim(data)[1]) + ((((1/Sline) - mean(1/(sort.xircstressdata(data)[[3]]))))^2)/SS))
+      df_predict_bound <- data.frame(S = Sline, Sinv = (1/Sline), Llower = exp(log(Lline) - PREDICTDIFF), Lupper = exp(log(Lline) + PREDICTDIFF), best_fit = rep("Confidence",100))
+    }
 
     relationplot<-ggplot() +
-      geom_line(data=df_line, aes(x=Sinv,y=L), colour = 'blue', size = 0.9, linetype = "dashed") +
+      geom_line(data=df_line, aes(x=Sinv,y=L), colour = 'black', linewidth = 0.5, linetype = "dashed") +
       scale_y_continuous(trans = 'log10') +
-      xlab("Characteristic Stress - 1/S") +
-      ylab("Characteristic Life - L")
+      xlab(Slab) +
+      ylab(Llab)
+
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
+    if(is.null(confid_int)==TRUE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+    }
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==TRUE){
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
 
     if(is.null(Suse) == FALSE){
-      relationplot <- relationplot + geom_point(data=df_data, aes(x=Sinv, y=L, shape=data, color=data), size=3) +
+      # relationplot <- relationplot + geom_point(data=df_data, aes(x=Sinv, y=L, shape=data, color=data), size=3) +
+      #   scale_shape_manual(values=c(rep(16,length(fulldatabystress)),rep(24,length(fulldatabystress)),23)) +
+      #   scale_color_manual(values=c(rep(col_legend[1:length(fulldatabystress)],2),"black"))
+      relationplot <- relationplot + geom_point(data=df_data, aes(x=Sinv, y=L, shape=data), color="black", size=2) +
         scale_shape_manual(values=c(rep(16,length(fulldatabystress)),rep(24,length(fulldatabystress)),23)) +
         scale_color_manual(values=c(rep(col_legend[1:length(fulldatabystress)],2),"black"))
     }
@@ -342,14 +470,54 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
     # lsparams[1] - parameter Ea, lsparams[2] - parameter b
     # Temperature HaS to be in Kelvin for this to work
     K<-8.617385e-5
+    if(is.null(Slab)==TRUE){
+      Slab <- "Characteristic Stress - 1/S"
+    }
+    if(is.null(Llab)==TRUE){
+      Llab <- "Characteristic Life - L"
+    }
+
+    # Confidence upper and lower bound
+    # Mean square error
+    # y = ln(L)
+    if(dist=="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((log(lifestress.select(ls)[[1]](params,sort.xircstressdata(data)[[3]])) - log(sort.xircstressdata(data)[[1]]))^2)
+    }
+    if(dist!="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((log(lifestress.select(ls)[[1]](params[2:length(params)],sort.xircstressdata(data)[[3]])) - log(sort.xircstressdata(data)[[1]]))^2)
+    }
+    # SS
+    SS <- sum(((1/sort.xircstressdata(data)[[3]]) - mean(1/sort.xircstressdata(data)[[3]]))^2)
+    CONFDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*((1/dim(data)[1]) + ((((1/Sline) - mean(1/(sort.xircstressdata(data)[[3]]))))^2)/SS))
+    df_confid_bound <- data.frame(S = Sline, Sinv = (1/Sline), Llower = exp(log(Lline) - CONFDIFF), Lupper = exp(log(Lline) + CONFDIFF), best_fit = rep("Confidence",100))
+    # Predicative upper and lower bound
+    if(is.null(predic_int)==FALSE){
+      PREDICTDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*(1 + (1/dim(data)[1]) + ((((1/Sline) - mean(1/(sort.xircstressdata(data)[[3]]))))^2)/SS))
+      df_predict_bound <- data.frame(S = Sline, Sinv = (1/Sline), Llower = exp(log(Lline) - PREDICTDIFF), Lupper = exp(log(Lline) + PREDICTDIFF), best_fit = rep("Confidence",100))
+    }
+
     relationplot<-ggplot() +
-      geom_line(data=df_line, aes(x=Sinv,y=L), colour = 'blue', size = 0.9, linetype = "dashed") +
+      geom_line(data=df_line, aes(x=Sinv,y=L), colour = 'black', linewidth = 0.9, linetype = "dashed") +
       scale_y_continuous(trans = 'log10') +
-      xlab("Characteristic Stress - 1/S") +
-      ylab("Characteristic Life - L")
+      xlab(Slab) +
+      ylab(Llab)
+
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
+    if(is.null(confid_int)==TRUE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+    }
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==TRUE){
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
 
     if(is.null(Suse) == FALSE){
-      relationplot <- relationplot + geom_point(data=df_data, aes(x=Sinv, y=L, shape=data, color=data), size=3) +
+      # relationplot <- relationplot + geom_point(data=df_data, aes(x=Sinv, y=L, shape=data, color=data), size=3) +
+      #   scale_shape_manual(values=c(rep(16,length(fulldatabystress)),rep(24,length(fulldatabystress)),23)) +
+      #   scale_color_manual(values=c(rep(col_legend[1:length(fulldatabystress)],2),"black"))
+      relationplot <- relationplot + geom_point(data=df_data, aes(x=Sinv, y=L, shape=data),color="black", size=2) +
         scale_shape_manual(values=c(rep(16,length(fulldatabystress)),rep(24,length(fulldatabystress)),23)) +
         scale_color_manual(values=c(rep(col_legend[1:length(fulldatabystress)],2),"black"))
     }
@@ -362,12 +530,29 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
 
   if (ls=="Eyring") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b
+    if(is.null(Slab)==TRUE){
+      Slab <- "Characteristic Stress - 1/S"
+    }
+    if(is.null(Llab)==TRUE){
+      Llab <- "Characteristic Life - L"
+    }
 
     relationplot<-ggplot() +
-      geom_line(data=df_line, aes(x=Sinv,y=L), colour = 'blue', size = 0.9, linetype = "dashed") +
+      geom_line(data=df_line, aes(x=Sinv,y=L), colour = 'blue', linewidth = 0.9, linetype = "dashed") +
       scale_y_continuous(trans = 'log10') +
-      xlab("Characteristic Stress - 1/S") +
-      ylab("Characteristic Life - L")
+      xlab(Slab) +
+      ylab(Llab)
+
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
+    if(is.null(confid_int)==TRUE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+    }
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==TRUE){
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
 
     if(is.null(Suse) == FALSE){
       relationplot <- relationplot + geom_point(data=df_data, aes(x=Sinv, y=L, shape=data, color=data), size=3) +
@@ -383,13 +568,29 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
 
   if (ls=="Eyring2") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b
+    if(is.null(Slab)==TRUE){
+      Slab <- "Characteristic Stress - 1/S"
+    }
+    if(is.null(Llab)==TRUE){
+      Llab <- "Characteristic Life - L"
+    }
 
     relationplot<-ggplot() +
-      geom_line(data=df_line, aes(x=Sinv,y=L), colour = 'blue', size = 0.9, linetype = "dashed") +
+      geom_line(data=df_line, aes(x=Sinv,y=L), colour = 'blue', linewidth = 0.9, linetype = "dashed") +
       scale_y_continuous(trans = 'log10') +
-      xlab("Characteristic Stress - 1/S") +
-      ylab("Characteristic Life - L")
+      xlab(Slab) +
+      ylab(Llab)
 
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
+    if(is.null(confid_int)==TRUE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+    }
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==TRUE){
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=Sinv, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
     if(is.null(Suse) == FALSE){
       relationplot <- relationplot + geom_point(data=df_data, aes(x=Sinv, y=L, shape=data, color=data), size=3) +
         scale_shape_manual(values=c(rep(16,length(fulldatabystress)),rep(24,length(fulldatabystress)),23)) +
@@ -404,12 +605,107 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
 
   if (ls=="Power") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b
+    if(is.null(Slab)==TRUE){
+      Slab <- "Characteristic Stress - S"
+    }
+    if(is.null(Llab)==TRUE){
+      Llab <- "Characteristic Life - L"
+    }
+
+    # Confidence upper and lower bound
+    # Mean square error
+    # y = ln(L)
+    if(dist=="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((log(lifestress.select(ls)[[1]](params,sort.xircstressdata(data)[[3]])) - log(sort.xircstressdata(data)[[1]]))^2)
+    }
+    if(dist!="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((log(lifestress.select(ls)[[1]](params[2:length(params)],sort.xircstressdata(data)[[3]])) - log(sort.xircstressdata(data)[[1]]))^2)
+    }
+    # SS
+    SS <- sum(((sort.xircstressdata(data)[[3]]) - mean(sort.xircstressdata(data)[[3]]))^2)
+    CONFDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*((1/dim(data)[1]) + (((Sline - mean(sort.xircstressdata(data)[[3]])))^2)/SS))
+    df_confid_bound <- data.frame(S = Sline, Llower = exp(log(Lline) - CONFDIFF), Lupper = exp(log(Lline) + CONFDIFF), best_fit = rep("Confidence",100))
+    # Predicative upper and lower bound
+    if(is.null(predic_int)==FALSE){
+      PREDICTDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*(1 + (1/dim(data)[1]) + (((Sline - mean(sort.xircstressdata(data)[[3]])))^2)/SS))
+      df_predict_bound <- data.frame(S = Sline, Llower = exp(log(Lline) - PREDICTDIFF), Lupper = exp(log(Lline) + PREDICTDIFF), best_fit = rep("Confidence",100))
+    }
+
+    relationplot<-ggplot() +
+      geom_line(data=df_line, aes(x=S,y=L), colour = 'black', size = 0.5, linetype = "dashed") +
+      scale_y_continuous(trans = 'log10') +
+      xlab(Slab) +
+      ylab(Llab)
+
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
+    if(is.null(confid_int)==TRUE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+    }
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==TRUE){
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
+
+    if(is.null(Suse) == FALSE){
+      # relationplot <- relationplot + geom_point(data=df_data, aes(x=S, y=L, shape=data, color=data), size=3) +
+      #   scale_shape_manual(values=c(rep(16,length(fulldatabystress)),rep(24,length(fulldatabystress)),23)) +
+      #   scale_color_manual(values=c(rep(col_legend[1:length(fulldatabystress)],2),"black"))
+      relationplot <- relationplot + geom_point(data=df_data, aes(x=S, y=L, shape=data), color="black", size=2) +
+        scale_shape_manual(values=c(rep(16,length(fulldatabystress)),rep(24,length(fulldatabystress)),23)) +
+        scale_color_manual(values=c(rep(col_legend[1:length(fulldatabystress)],2),"black"))
+    }
+    if(is.null(Suse) == TRUE){
+      relationplot <- relationplot + geom_point(data=df_data, aes(x=S, y=L, shape=data, color=data), size=3) +
+        scale_shape_manual(values=c(rep(16,length(fulldatabystress)),rep(24,length(fulldatabystress)))) +
+        scale_color_manual(values=rep(col_legend[1:length(fulldatabystress)],2))
+    }
+  }
+
+  if (ls=="PowerwithBias") {
+    # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - parameter c
+    if(is.null(Slab)==TRUE){
+      Slab <- "Characteristic Stress - S"
+    }
+    if(is.null(Llab)==TRUE){
+      Llab <- "Characteristic Life - L"
+    }
+
+    # Confidence upper and lower bound
+    # Mean square error
+    # y = ln(L)
+    if(dist=="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((lifestress.select(ls)[[1]](params,sort.xircstressdata(data)[[3]]) - sort.xircstressdata(data)[[1]])^2)
+    }
+    if(dist!="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((lifestress.select(ls)[[1]](params[2:length(params)],sort.xircstressdata(data)[[3]]) - sort.xircstressdata(data)[[1]])^2)
+    }
+    # SS
+    SS <- sum(((sort.xircstressdata(data)[[3]]) - mean(sort.xircstressdata(data)[[3]]))^2)
+    CONFDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*((1/dim(data)[1]) + (((Sline - mean(sort.xircstressdata(data)[[3]])))^2)/SS))
+    df_confid_bound <- data.frame(S = Sline, Llower = Lline - CONFDIFF, Lupper = Lline + CONFDIFF, best_fit = rep("Confidence",100))
+    # Predicative upper and lower bound
+    if(is.null(predic_int)==FALSE){
+      PREDICTDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*(1 + (1/dim(data)[1]) + (((Sline - mean(sort.xircstressdata(data)[[3]])))^2)/SS))
+      df_predict_bound <- data.frame(S = Sline, Llower = Lline - PREDICTDIFF, Lupper = Lline + PREDICTDIFF, best_fit = rep("Confidence",100))
+    }
 
     relationplot<-ggplot() +
       geom_line(data=df_line, aes(x=S,y=L), colour = 'blue', size = 0.9, linetype = "dashed") +
-      scale_y_continuous(trans = 'log10') +
-      xlab("Characteristic Stress - S") +
-      ylab("Characteristic Life - L")
+      xlab(Slab) +
+      ylab(Llab)
+
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
+    if(is.null(confid_int)==TRUE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+    }
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==TRUE){
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
 
     if(is.null(Suse) == FALSE){
       relationplot <- relationplot + geom_point(data=df_data, aes(x=S, y=L, shape=data, color=data), size=3) +
@@ -425,12 +721,53 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
 
   if (ls=="InversePower") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b
+    if(is.null(Slab)==TRUE){
+      Slab <- "Characteristic Stress - S"
+    }
+    if(is.null(Llab)==TRUE){
+      Llab <- "Characteristic Life - L"
+    }
+
+    # Confidence upper and lower bound
+    # Mean square error
+    # y = ln(L)
+    if(dist=="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((log(lifestress.select(ls)[[1]](params,sort.xircstressdata(data)[[3]])) - log(sort.xircstressdata(data)[[1]]))^2)
+    }
+    if(dist!="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((log(lifestress.select(ls)[[1]](params[2:length(params)],sort.xircstressdata(data)[[3]])) - log(sort.xircstressdata(data)[[1]]))^2)
+    }
+    # SS
+    SS <- sum(((sort.xircstressdata(data)[[3]]) - mean(sort.xircstressdata(data)[[3]]))^2)
+    CONFDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*((1/dim(data)[1]) + (((Sline - mean(sort.xircstressdata(data)[[3]])))^2)/SS))
+    df_confid_bound <- data.frame(S = Sline, Llower = exp(log(Lline) - CONFDIFF), Lupper = exp(log(Lline) + CONFDIFF), best_fit = rep("Confidence",100))
+    # Predicative upper and lower bound
+    if(is.null(predic_int)==FALSE){
+      PREDICTDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*(1 + (1/dim(data)[1]) + (((Sline - mean(sort.xircstressdata(data)[[3]])))^2)/SS))
+      df_predict_bound <- data.frame(S = Sline, Llower = exp(log(Lline) - PREDICTDIFF), Lupper = exp(log(Lline) + PREDICTDIFF), best_fit = rep("Confidence",100))
+    }
 
     relationplot<-ggplot() +
-      geom_line(data=df_line, aes(x=S,y=L), colour = 'blue', size = 0.9, linetype = "dashed") +
+      # geom_line(data=df_line, aes(x=S,y=L), colour = 'blue', linewidth = 0.9, linetype = "dashed") +
+      geom_line(data=df_line, aes(x=S,y=L), colour = 'black', linewidth = 0.4, linetype = "dashed") +
       scale_y_continuous(trans = 'log10') +
       xlab(Slab) +
       ylab(Llab)
+
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
+    if(is.null(confid_int)==TRUE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+    }
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==TRUE){
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
 
     if(is.null(Suse) == FALSE){
       relationplot <- relationplot + geom_point(data=df_data, aes(x=S, y=L, shape=data, color=data), size=3) +
@@ -446,17 +783,56 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
 
   if (ls=="InversePower2") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b
+    if(is.null(Slab)==TRUE){
+      Slab <- "Characteristic Stress - S"
+    }
+    if(is.null(Llab)==TRUE){
+      Llab <- "Characteristic Life - L"
+    }
+
+    # Confidence upper and lower bound
+    # Mean square error
+    # y = ln(L)
+    if(dist=="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((log(lifestress.select(ls)[[1]](params,sort.xircstressdata(data)[[3]])) - log(sort.xircstressdata(data)[[1]]))^2)
+    }
+    if(dist!="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((log(lifestress.select(ls)[[1]](params[2:length(params)],sort.xircstressdata(data)[[3]])) - log(sort.xircstressdata(data)[[1]]))^2)
+    }
+    # SS
+    SS <- sum(((sort.xircstressdata(data)[[3]]) - mean(sort.xircstressdata(data)[[3]]))^2)
+    CONFDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*((1/dim(data)[1]) + (((Sline - mean(sort.xircstressdata(data)[[3]])))^2)/SS))
+    df_confid_bound <- data.frame(S = Sline, Llower = exp(log(Lline) - CONFDIFF), Lupper = exp(log(Lline) + CONFDIFF), best_fit = rep("Confidence",100))
+    # Predicative upper and lower bound
+    if(is.null(predic_int)==FALSE){
+      PREDICTDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*(1 + (1/dim(data)[1]) + (((Sline - mean(sort.xircstressdata(data)[[3]])))^2)/SS))
+      df_predict_bound <- data.frame(S = Sline, Llower = exp(log(Lline) - PREDICTDIFF), Lupper = exp(log(Lline) + PREDICTDIFF), best_fit = rep("Confidence",100))
+    }
 
     relationplot<-ggplot() +
-      geom_line(data=df_line, aes(x=S,y=L), colour = 'blue', size = 0.9, linetype = "dashed") +
+      # geom_line(data=df_line, aes(x=S,y=L), colour = 'blue', linewidth = 0.9, linetype = "dashed") +
+      geom_line(data=df_line, aes(x=S,y=L), colour = 'black', linewidth = 0.4, linetype = "dashed") +
       scale_y_continuous(trans = 'log10') +
-      xlab("Characteristic Stress - S") +
-      ylab("Characteristic Life - L")
+      xlab(Slab) +
+      ylab(Llab)
+
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
+    if(is.null(confid_int)==TRUE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+    }
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==TRUE){
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
 
     if(is.null(Suse) == FALSE){
-      relationplot <- relationplot + geom_point(data=df_data, aes(x=S, y=L, shape=data, color=data), size=3) +
-        scale_shape_manual(values=c(rep(16,length(fulldatabystress)),rep(24,length(fulldatabystress)),23)) +
-        scale_color_manual(values=c(rep(col_legend[1:length(fulldatabystress)],2),"black"))
+      # relationplot <- relationplot + geom_point(data=df_data, aes(x=S, y=L, shape=data, color=data), size=3) +
+      #   scale_shape_manual(values=c(rep(16,length(fulldatabystress)),rep(24,length(fulldatabystress)),23)) +
+      #   scale_color_manual(values=c(rep(col_legend[1:length(fulldatabystress)],2),"black"))
+      relationplot <- relationplot + geom_point(data=df_data, aes(x=S, y=L, shape=data), color="black", size=2) +
+        scale_shape_manual(values=c(rep(16,length(fulldatabystress)),rep(24,length(fulldatabystress)),23))
     }
     if(is.null(Suse) == TRUE){
       relationplot <- relationplot + geom_point(data=df_data, aes(x=S, y=L, shape=data, color=data), size=3) +
@@ -466,11 +842,47 @@ lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,Smin=N
   }
   if (ls=="Logarithmic") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b
+    if(is.null(Slab)==TRUE){
+      Slab <- "Characteristic Stress - S"
+    }
+    if(is.null(Llab)==TRUE){
+      Llab <- "Characteristic Life - L"
+    }
+
+    # Confidence upper and lower bound
+    # Mean square error
+    # y = ln(L)
+    if(dist=="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((lifestress.select(ls)[[1]](params,sort.xircstressdata(data)[[3]]) - sort.xircstressdata(data)[[1]])^2)
+    }
+    if(dist!="Exponential"){
+      MSE <- (1/(dim(data)[1]-2))*sum((lifestress.select(ls)[[1]](params[2:length(params)],sort.xircstressdata(data)[[3]]) - sort.xircstressdata(data)[[1]])^2)
+    }
+    # SS
+    SS <- sum(((sort.xircstressdata(data)[[3]]) - mean(sort.xircstressdata(data)[[3]]))^2)
+    CONFDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*((1/dim(data)[1]) + (((Sline - mean(sort.xircstressdata(data)[[3]])))^2)/SS))
+    df_confid_bound <- data.frame(S = Sline, Llower = Lline - CONFDIFF, Lupper = Lline + CONFDIFF, best_fit = rep("Confidence",100))
+    # Predicative upper and lower bound
+    if(is.null(predic_int)==FALSE){
+      PREDICTDIFF <- qt(confid,(dim(data)[1]-2))*sqrt(MSE*(1 + (1/dim(data)[1]) + (((Sline - mean(sort.xircstressdata(data)[[3]])))^2)/SS))
+      df_predict_bound <- data.frame(S = Sline, Llower = Lline - PREDICTDIFF, Lupper = Lline + PREDICTDIFF, best_fit = rep("Confidence",100))
+    }
 
     relationplot<-ggplot() +
-      geom_line(data=df_line, aes(x=S,y=L), colour = 'blue', size = 0.9, linetype = "dashed") +
-      xlab("Characteristic Stress - S") +
-      ylab("Characteristic Life - L")
+      geom_line(data=df_line, aes(x=S,y=L), colour = 'blue', linewidth = 0.9, linetype = "dashed") +
+      xlab(Slab) +
+      ylab(Llab)
+
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
+    if(is.null(confid_int)==TRUE && is.null(predic_int)==FALSE){
+      relationplot <- relationplot + geom_ribbon(data = df_predict_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "red",alpha = 0.25)
+    }
+    if(is.null(confid_int)==FALSE && is.null(predic_int)==TRUE){
+      relationplot <- relationplot + geom_ribbon(data = df_confid_bound, aes(x=S, ymin = Llower, ymax = Lupper), fill = "blue",alpha = 0.25)
+    }
 
     if(is.null(Suse) == FALSE){
       relationplot <- relationplot + geom_point(data=df_data, aes(x=S, y=L, shape=data, color=data), size=3) +

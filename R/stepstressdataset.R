@@ -1,5 +1,5 @@
 # Step-Stress Data Non-Cumulative Retabulator
-# Developed by Dr. Reuel Smith, 2021-2022
+# Developed by Dr. Reuel Smith, 2021-2025
 
 stepstress.data <- function(data,stepstresstable) {
   library(dplyr)

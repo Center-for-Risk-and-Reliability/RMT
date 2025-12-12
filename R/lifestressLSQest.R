@@ -19,7 +19,6 @@ lifestress.LSQest <- function(data,ls,dist,pp="Blom",xlabel1="X",
   }
   if (dist=="3PWeibull") {
     output <- probplot.wbl3P(data,pp,xlabel1,CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1,stressunit2 = stressunit2)
-    # nonparamoutput <- probplot.wbl3P(data,pp,xlabel1)$summary.nonparametric
   }
   if (dist=="Lognormal") {
     output <- probplot.logn(data,pp,xlabel1,CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1,stressunit2 = stressunit2)
@@ -53,16 +52,16 @@ lifestress.LSQest <- function(data,ls,dist,pp="Blom",xlabel1="X",
 
   # return(ppoutput)
   # First check and see that there are multiple stress levels
-  if(length(ppoutput)<3) {
-    stop('Need more than one stress level to generate estimates')
-  }
+  # if(length(ppoutput[[1]]$`Stress Level`)<2) {
+  #   stop('Need more than one stress level to generate estimates')
+  # }
   # Then check and see if there are single entry data
-  if(length(ppoutput)%%3==0){
+  if(is.null(ppoutput$singledat)==TRUE){
     singledat<-0 # FALSE Single data does not exist
   } else{
-    # Temporarily disabling this option for analysis (RCS 11/3/2025)
-    singledat<-0 # TRUE Single data exists
+    singledat<-1 # TRUE Single data exists
   }
+  # return(singledat)
 
   if(length(ppoutput[[1]]$`Stress Level`)==2){
     if(therm==1){
@@ -72,7 +71,9 @@ lifestress.LSQest <- function(data,ls,dist,pp="Blom",xlabel1="X",
       alttherm<-1
     }
   }
-# return(length(ppoutput[[1]]$`Stress Level`))
+  # return(length(ppoutput))
+  # return(singledat)
+  # return(length(ppoutput[[1]]$`Stress Level`))
   # Setup vectors (for cases with and without single point data)
   if(singledat==0){
     # Sets up existing probability plot curve life and stress vectors
@@ -85,15 +86,15 @@ lifestress.LSQest <- function(data,ls,dist,pp="Blom",xlabel1="X",
     distparams<-rep(0,length(ppoutput))
   } else if(singledat==1){
     # Sets up probability plot curve and single entry L-S life and stress vectors
-    L<-rep(0,(length(ppoutput)-1) + length(tail(ppoutput,n=1)[[1]]))
+    L<-rep(0,(length(ppoutput[[1]]$`Stress Level`)-1) + length(tail(ppoutput,n=1)[[1]]))
     if (length(ppoutput[[1]]$`Stress Level`)<2){
-      S<-rep(0,(length(ppoutput)-1) + length(tail(ppoutput,n=1)[[1]]))
+      S<-rep(0,(length(ppoutput[[1]]$`Stress Level`)-1) + length(tail(ppoutput[[1]]$`Stress Level`,n=1)[[1]]))
     } else {
       # NOTE TEST THIS UNDER APPROPRIATE CIRCUMSTANCES
-      S<-matrix(rep(0,((length(ppoutput)-1) + length(tail(ppoutput,n=1)[[1]]))*length(ppoutput[[1]]$`Stress Level`)),nrow=(length(ppoutput)-1) + length(tail(ppoutput,n=1)[[1]]),ncol=length(ppoutput[[1]]$`Stress Level`),byrow = TRUE)
+      S<-matrix(rep(0,((length(ppoutput[[1]]$`Stress Level`)-1) + length(tail(ppoutput[[1]]$`Stress Level`,n=1)[[1]]))*length(ppoutput[[1]]$`Stress Level`)),nrow=(length(ppoutput[[1]]$`Stress Level`)-1) + length(tail(ppoutput[[1]]$`Stress Level`,n=1)[[1]]),ncol=length(ppoutput[[1]]$`Stress Level`),byrow = TRUE)
     }
     # Distribution parameter pulls ONLY apply to the probability plots
-    distparams<-rep(0,(length(ppoutput)-1))
+    distparams<-rep(0,(length(ppoutput[[1]]$`Stress Level`)-1))
   }
   # return(list(ppoutput,S,L,distparams))
   # Fill in Stress and Life Vectors
@@ -272,6 +273,7 @@ lifestress.LSQest <- function(data,ls,dist,pp="Blom",xlabel1="X",
     dist_txt<-"Generalized Gamma"
   }
 
+  # return(list(S,L))
   # LSQ Estimates for Life-Stress Model
   # Executes the LSQ estimates of life-stress model "ls"
   if (ls=="Linear"){
@@ -341,20 +343,6 @@ lifestress.LSQest <- function(data,ls,dist,pp="Blom",xlabel1="X",
     life_txt2<-"(b/S)*exp(a/S)"
     loglife_txt<-"(log(b) - log(S) + (a/S))"
   }
-  if (ls=="EyringFINALP3"){
-    # lsparams[1] - parameter alp_0, lsparams[2] - parameter alp_1, lsparams[3] - M
-    Lvals<-log(L)
-    params  <- nls(Lvals ~ alp_0 + (alp_1/S) - M*log(S),start = list(alp_0 = 1,alp_1 = 3, M = 1))
-    lsparams <- c(summary(params)$coefficients[1,1],summary(params)$coefficients[2,1],summary(params)$coefficients[3,1])
-    SST <- sum((Lvals - mean(Lvals))^2)
-    SSE <- deviance(params)
-    R2 <- 1 - (SSE/SST)
-    params_txt<-c("\U03B1\U2080","\U03B1\U2081","m")
-    # Writeup for the output text
-    ls_txt<-ls
-    life_txt2<-"exp(\U03B1\U2080)*exp(\U03B1\U2081/S)*S^-m"
-    loglife_txt<-"(\U03B1\U2080 + \U03B1\U2081/S - m*ln(S))"
-  }
   if (ls=="Eyring2"){
     # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - R^2
     Lvals<-log(L)
@@ -392,8 +380,6 @@ lifestress.LSQest <- function(data,ls,dist,pp="Blom",xlabel1="X",
 
     params <- nlminb(c(1,1,1),PwBSSE,hessian=TRUE,lower = c(-Inf,-Inf,-Inf),upper = c(Inf,Inf,Inf))$par
     lsparams <- params
-    # params  <- nls(Lvals ~ exp(logc) + exp(logb)*(S^a),start = list(a = 1,logb = -5, logc = -5))
-    # lsparams <- c(summary(params)$coefficients[1,1],summary(params)$coefficients[2,1],summary(params)$coefficients[3,1])
     lsparams[2] <- exp(lsparams[2])
     lsparams[3] <- exp(lsparams[3])
     SST <- sum((Lvals - mean(Lvals))^2)
@@ -581,21 +567,6 @@ lifestress.LSQest <- function(data,ls,dist,pp="Blom",xlabel1="X",
     loglife_txt<-"-\U03B2\U2080 - \U03B2\U2081/S - \U03B2\U2082/RH"
   }
 
-  if (ls=="EyringHW4"){
-    # lsparams[1] - parameter alp_0, lsparams[2] - parameter alp_1, lsparams[3] - M
-    Lvals<-log(L)
-    params  <- nls(Lvals ~ alp_0 + (alp_1/S) - M*log(S),start = list(alp_0 = 1,alp_1 = 3, M = 1))
-    lsparams <- c(summary(params)$coefficients[1,1],summary(params)$coefficients[2,1],summary(params)$coefficients[3,1])
-    SST <- sum((Lvals - mean(Lvals))^2)
-    SSE <- deviance(params)
-    R2 <- 1 - (SSE/SST)
-    params_txt<-c("\U03B1\U2080","\U03B1\U2080","m")
-    # Writeup for the output text
-    ls_txt<-ls
-    life_txt2<-"exp(\U03B1\U2080)*exp(\U03B1\U2081/S)*S^-m"
-    loglife_txt<-"(\U03B1\U2080 + \U03B1\U2081/S - m*ln(S))"
-  }
-
   # Writeup for the output text
   if (dist=="Weibull") {
     dist_txt<-dist
@@ -698,7 +669,7 @@ lifestress.LSQest <- function(data,ls,dist,pp="Blom",xlabel1="X",
   # ====================================================
 
   # lifestress.relationplot.LSQ(data,ls,dist,params,S=NULL,L=NULL,Smin=NULL,Smax=NULL,Suse=NULL,therm=1,confid=0.95,Llab="Characteristic Life - X",Slab="Characteristic Stress - S") {
-  # return(LSQ)
+  # return(list(S,L))
 
   if(ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="PowerwithBias" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
     if(is.null(Suse)==TRUE){
@@ -757,4 +728,3 @@ lifestress.LSQest <- function(data,ls,dist,pp="Blom",xlabel1="X",
   # }
 
 }
-

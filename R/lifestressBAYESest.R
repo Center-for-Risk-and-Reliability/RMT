@@ -1,5 +1,5 @@
 # Bayesian Life-Stress Estimator
-# Developed by Dr. Reuel Smith, 2021-2023
+# Developed by Dr. Reuel Smith, 2021-2025
 
 lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,SACC=NULL,confid=0.95,priors,nsamples=20000,burnin=10000,nchains=4,param2=NULL){
   #Load pracma library for erf
@@ -513,6 +513,33 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
       compAF <- (SACC[1]/SUSE[1])*exp(pt_est[ishift+2]*((1/SUSE[1]) - (1/SACC[1])) + pt_est[ishift+3]*(SUSE[2] - SACC[2]) + pt_est[ishift+4]*((SUSE[2]/SUSE[1]) - (SACC[2]/SACC[1])))
     }
   }
+  if (ls=="EyringFINALP4") {
+    # lsparams[1] - parameter alp0, lsparams[2] - parameter alp1, lsparams[2] - parameter M
+    lsparams <- "real alp0; real alp1; real M;"
+    lsparamsvec <- c("alp0","alp1","M")
+    pr1<-paste(c("alp0 ~ ",priors[ishift+1],";"),collapse = "")
+    pr2<-paste(c("alp1 ~ ",priors[ishift+2],";"),collapse = "")
+    pr3<-paste(c("M ~ ",priors[ishift+3],";"),collapse = "")
+    lspriors <- paste(c(pr1,pr2,pr3),collapse = " ")
+
+    lifeF <- "exp(alp0)*exp(alp1/Sf[i])*(Sf[i]^-M)"
+    loglifeF <- "alp0 + (alp1/Sf[i]) - M*log(Sf[i])"
+    if(is.null(Tc)==FALSE){
+      lifeC <- "exp(alp0)*exp(alp1/Sc[j])*(Sc[j]^-M);"
+      loglifeC <- "alp0 + (alp1/Sc[j]) - M*log(Sc[j]);"
+    }
+    if(missing(SUSE)==FALSE){
+      lifeU <- "exp(alp0)*exp(alp1/Suse)*(Suse^-M);"
+      complifeU <- exp(pt_est[ishift+1])*exp(pt_est[ishift+2]/SUSE)*(SUSE^-pt_est[ishift+3])
+    }
+    if(missing(SUSE)==FALSE && missing(SACC)==FALSE){
+      AFheading <- paste(c("AFatSACC"),collapse = "")
+      AF <- "((Sacc/Suse)^M)*exp(alp1*((1/Suse) - (1/Sacc)));"
+      complifeU <- exp(pt_est[ishift+1])*exp(pt_est[ishift+2]/SUSE)*(SUSE^-pt_est[ishift+3])
+      compAF <- ((SACC/SUSE)^pt_est[ishift+3])*exp(((1/SUSE) - (1/SACC))*pt_est[ishift+1])
+    }
+  }
+
 
 
 

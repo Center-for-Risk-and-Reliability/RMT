@@ -1,7 +1,9 @@
 # Least-Squares Step-Stress Estimator
-# Developed by Dr. Reuel Smith, 2021-2023
+# Developed by Dr. Reuel Smith, 2021-2025
 
-stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,xlabel1="X",therm=1,Suse=NULL) {
+stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,xlabel1="X",
+                              therm=1,Suse=NULL,CDFrangesetting = 1,
+                              stressunit1 = NULL, stressunit2 = NULL) {
   #Load pracma library for pseudo-inverse
   library(pracma)
   library(dplyr)
@@ -44,162 +46,166 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,xlabel1="X",therm=
     Nstress<-dim(stepstresstable[[1]])[2]-1
   }
 
-  # return(Nstress)
 
   # Tabulate initial LSQ Estimates starting with the distributions
   if (dist=="Weibull") {
     distlifeest <- function(fulldata){
-      distoutput <- probplot.wbl(fulldata,pp,colnames(data)[1])[[1]]
+      distoutput <- probplot.wbl(fulldata,pp,xlabel1 = colnames(data)[1],CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1, stressunit2 = stressunit2)$output
       lifeest <- rep(0,length(distoutput))
-      if(Nstress==1){
-        stressest <- rep(0,length(distoutput))
-      }
-      if(Nstress>=2){
-        stressest <- rep(0,length(distoutput)*Nstress)
-      }
-      paramest <- rep(0,length(distoutput))
+      paramest.0 <- rep(0,length(distoutput))
+      stressset.0 <- rep(0,length(distoutput))
       for(i in 1:length(distoutput)){
-        lifeest[i] <- distoutput[[i]]$`Parameter Estimates`[1]
-        if(Nstress==1){
-          stressest[i] <- distoutput[[i]]$`Stress Level`
-        }
-        if(Nstress==2){
-          stressest[(2*i-1)] <- distoutput[[i]]$`Stress Level`[1]
-          stressest[2*i] <- distoutput[[i]]$`Stress Level`[2]
-        }
-        paramest[i] <- distoutput[[i]]$`Parameter Estimates`[2]
+        lifeest[i] <- c(distoutput[[i]]$`Parameter Estimates`)[1]
+        paramest.0[i] <- c(distoutput[[i]]$`Parameter Estimates`)[2]
+        stressset.0[i] <- distoutput[[i]]$`Stress Level`
       }
-      return(list(distoutput,lifeest,stressest,paramest))
+      return(list(distoutput,lifeest,stressset.0,paramest.0))
     }
   }
   if (dist=="Lognormal") {
     distlifeest <- function(fulldata){
-      distoutput <-probplot.logn(fulldata,pp,colnames(data)[1])[[1]]
+      distoutput <-probplot.logn(fulldata,pp,colnames(data)[1])$output
       lifeest <- rep(0,length(distoutput))
-      if(Nstress==1){
-        stressest <- rep(0,length(distoutput))
-      }
-      if(Nstress>=2){
-        stressest <- rep(0,length(distoutput)*Nstress)
-      }
-      paramest <- rep(0,length(distoutput))
+      paramest.0 <- rep(0,length(distoutput))
+      stressset.0 <- rep(0,length(distoutput))
       for(i in 1:length(distoutput)){
-        lifeest[i] <- distoutput[[i]]$`Parameter Estimates`[1]
-        if(Nstress==1){
-          stressest[i] <- distoutput[[i]]$`Stress Level`
-        }
-        if(Nstress==2){
-          stressest[(2*i-1)] <- distoutput[[i]]$`Stress Level`[1]
-          stressest[2*i] <- distoutput[[i]]$`Stress Level`[2]
-        }
-        paramest[i] <- distoutput[[i]]$`Parameter Estimates`[2]
+        lifeest[i] <- exp(c(distoutput[[i]]$`Parameter Estimates`)[1])
+        paramest.0[i] <- c(distoutput[[i]]$`Parameter Estimates`)[2]
+        stressset.0[i] <- distoutput[[i]]$`Stress Level`
       }
-      return(list(distoutput,lifeest,stressest,paramest))
+      return(list(distoutput,lifeest,stressset.0,paramest.0))
     }
   }
   if (dist=="Normal") {
     distlifeest <- function(fulldata){
-      distoutput <-probplot.nor(fulldata,pp,colnames(data)[1])[[1]]
+      distoutput <-probplot.nor(fulldata,pp,colnames(data)[1])$output
       lifeest <- rep(0,length(distoutput))
-      if(Nstress==1){
-        stressest <- rep(0,length(distoutput))
-      }
-      if(Nstress>=2){
-        stressest <- rep(0,length(distoutput)*Nstress)
-      }
-      paramest <- rep(0,length(distoutput))
+      paramest.0 <- rep(0,length(distoutput))
+      stressset.0 <- rep(0,length(distoutput))
       for(i in 1:length(distoutput)){
-        lifeest[i] <- distoutput[[i]]$`Parameter Estimates`[1]
-        if(Nstress==1){
-          stressest[i] <- distoutput[[i]]$`Stress Level`
-        }
-        if(Nstress==2){
-          stressest[(2*i-1)] <- distoutput[[i]]$`Stress Level`[1]
-          stressest[2*i] <- distoutput[[i]]$`Stress Level`[2]
-        }
-        paramest[i] <- distoutput[[i]]$`Parameter Estimates`[2]
+        lifeest[i] <- c(distoutput[[i]]$`Parameter Estimates`)[1]
+        paramest.0[i] <- c(distoutput[[i]]$`Parameter Estimates`)[2]
+        stressset.0[i] <- distoutput[[i]]$`Stress Level`
       }
-      return(list(distoutput,lifeest,stressest,paramest))
+      return(list(distoutput,lifeest,stressset.0,paramest.0))
     }
   }
   if (dist=="Exponential") {
     distlifeest <- function(fulldata){
-      distoutput<-probplot.exp(fulldata,pp,colnames(data)[1])[[1]]
+      distoutput<-probplot.exp(fulldata,pp,colnames(data)[1])$output
       lifeest <- rep(0,length(distoutput))
-      if(Nstress==1){
-        stressest <- rep(0,length(distoutput))
-      }
-      if(Nstress>=2){
-        stressest <- rep(0,length(distoutput)*Nstress)
-      }
-      paramest <- rep(0,length(distoutput))
+      stressset.0 <- rep(0,length(distoutput))
       for(i in 1:length(distoutput)){
-        lifeest[i] <- distoutput[[i]]$`Parameter Estimates`[1]
-        if(Nstress==1){
-          stressest[i] <- distoutput[[i]]$`Stress Level`
-        }
-        if(Nstress==2){
-          stressest[(2*i-1)] <- distoutput[[i]]$`Stress Level`[1]
-          stressest[2*i] <- distoutput[[i]]$`Stress Level`[2]
-        }
-        paramest[i] <- distoutput[[i]]$`Parameter Estimates`[2]
+        lifeest[i] <- 1/c(distoutput[[i]]$`Parameter Estimates`)
+        stressset.0[i] <- distoutput[[i]]$`Stress Level`
       }
-      return(list(distoutput,lifeest,stressest,paramest))
+      return(list(distoutput,lifeest,stressset.0))
     }
   }
   if (dist=="2PExponential") {
     distlifeest <- function(fulldata){
-      distoutput <-probplot.exp2P(fulldata,pp,colnames(data)[1])[[1]]
+      distoutput <-probplot.exp2P(fulldata,pp,colnames(data)[1])$output
       lifeest <- rep(0,length(distoutput))
-      if(Nstress==1){
-        stressest <- rep(0,length(distoutput))
-      }
-      if(Nstress>=2){
-        stressest <- rep(0,length(distoutput)*Nstress)
-      }
-      paramest <- rep(0,length(distoutput))
+      paramest.0 <- rep(0,length(distoutput))
+      stressset.0 <- rep(0,length(distoutput))
       for(i in 1:length(distoutput)){
-        lifeest[i] <- distoutput[[i]]$`Parameter Estimates`[1]
-        if(Nstress==1){
-          stressest[i] <- distoutput[[i]]$`Stress Level`
-        }
-        if(Nstress==2){
-          stressest[(2*i-1)] <- distoutput[[i]]$`Stress Level`[1]
-          stressest[2*i] <- distoutput[[i]]$`Stress Level`[2]
-        }
-        paramest[i] <- distoutput[[i]]$`Parameter Estimates`[2]
+        lifeest[i] <- sum(c(distoutput[[i]]$`Parameter Estimates`))
+        paramest.0[i] <- c(distoutput[[i]]$`Parameter Estimates`)[2]
+        stressset.0[i] <- distoutput[[i]]$`Stress Level`
       }
-      return(list(distoutput,lifeest,stressest,paramest))
+      return(list(distoutput,lifeest,stressset.0,paramest.0))
+    }
+  }
+  if (dist=="Gumbel") {
+    distlifeest <- function(fulldata){
+      distoutput <- probplot.gumb(fulldata,pp,xlabel1 = colnames(data)[1],CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1, stressunit2 = stressunit2)$output
+      lifeest <- rep(0,length(distoutput))
+      paramest.0 <- rep(0,length(distoutput))
+      stressset.0 <- rep(0,length(distoutput))
+      for(i in 1:length(distoutput)){
+        lifeest[i] <- c(distoutput[[i]]$`Parameter Estimates`)[1]
+        paramest.0[i] <- c(distoutput[[i]]$`Parameter Estimates`)[2]
+        stressset.0[i] <- distoutput[[i]]$`Stress Level`
+      }
+      return(list(distoutput,lifeest,stressset.0,paramest.0))
+    }
+  }
+  if (dist=="Logistic") {
+    distlifeest <- function(fulldata){
+      distoutput <- probplot.logist(fulldata,pp,xlabel1 = colnames(data)[1],CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1, stressunit2 = stressunit2)$output
+      lifeest <- rep(0,length(distoutput))
+      paramest.0 <- rep(0,length(distoutput))
+      stressset.0 <- rep(0,length(distoutput))
+      for(i in 1:length(distoutput)){
+        lifeest[i] <- c(distoutput[[i]]$`Parameter Estimates`)[1]
+        paramest.0[i] <- c(distoutput[[i]]$`Parameter Estimates`)[2]
+        stressset.0[i] <- distoutput[[i]]$`Stress Level`
+      }
+      return(list(distoutput,lifeest,stressset.0,paramest.0))
+    }
+  }
+  if (dist=="Loglogistic") {
+    distlifeest <- function(fulldata){
+      distoutput <- probplot.loglogist(fulldata,pp,xlabel1 = colnames(data)[1],CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1, stressunit2 = stressunit2)$output
+      lifeest <- rep(0,length(distoutput))
+      paramest.0 <- rep(0,length(distoutput))
+      stressset.0 <- rep(0,length(distoutput))
+      for(i in 1:length(distoutput)){
+        lifeest[i] <- exp(c(distoutput[[i]]$`Parameter Estimates`)[1])
+        paramest.0[i] <- c(distoutput[[i]]$`Parameter Estimates`)[2]
+        stressset.0[i] <- distoutput[[i]]$`Stress Level`
+      }
+      return(list(distoutput,lifeest,stressset.0,paramest.0))
+    }
+  }
+  if (dist=="Gamma") {
+    distlifeest <- function(fulldata){
+      distoutput <- probplot.gam(fulldata,pp,xlabel1 = colnames(data)[1],CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1, stressunit2 = stressunit2)$output
+      lifeest <- rep(0,length(distoutput))
+      stressset.0 <- rep(0,length(distoutput))
+      for(i in 1:length(distoutput)){
+        lifeest[i] <- c(distoutput[[i]]$`Parameter Estimates`)[1]*c(distoutput[[i]]$`Parameter Estimates`)[2]
+        stressset.0[i] <- distoutput[[i]]$`Stress Level`
+      }
+      return(list(distoutput,lifeest,stressset.0))
+    }
+  }
+  if (dist=="3PGamma" || dist=="GeneralizedGamma") {
+    distlifeest <- function(fulldata){
+      distoutput <- probplot.gam(fulldata,pp,xlabel1 = colnames(data)[1],CDFrangesetting = CDFrangesetting,stressunit1 = stressunit1, stressunit2 = stressunit2)$output
+      lifeest <- rep(0,length(distoutput))
+      stressset.0 <- rep(0,length(distoutput))
+      for(i in 1:length(distoutput)){
+        lifeest[i] <- c(distoutput[[i]]$`Parameter Estimates`)[2]*(gamma(c(distoutput[[i]]$`Parameter Estimates`)[1] + c(distoutput[[i]]$`Parameter Estimates`)[3]^-1)/gamma(c(distoutput[[i]]$`Parameter Estimates`)[1]))
+        stressset.0[i] <- distoutput[[i]]$`Stress Level`
+      }
+      return(list(distoutput,lifeest,stressset.0))
     }
   }
   output1<-distlifeest(full_stpstrdata)
   distoutput<-output1[[1]]
   lifeest<-output1[[2]]
-  stressest<-output1[[3]]
-  # return(output1)
 
   # Collect the stresses for evaluation
-  if(Nstress==1 && dist=="Exponential"){
-    Stressset<-output1[[3]]
-  }
-  if(Nstress==1 && dist!="Exponential"){
+  if(Nstress==1){
     Stressset<-output1[[3]]
   }
   if(Nstress==2 && dist=="Exponential"){
-    Stressset<-matrix(output1[[3]],nrow = Nstress, ncol = length(distoutput), byrow = TRUE)
+    Stressset<-cbind(unlist(distoutput)[output1[[3]]],unlist(distoutput)[output1[[3]]+1])
   }
   if(Nstress==2 && dist!="Exponential"){
-    Stressset<-matrix(output1[[3]],nrow = Nstress, ncol = length(distoutput), byrow = TRUE)
+    Stressset<-cbind(unlist(distoutput)[output1[[3]]-1],unlist(distoutput)[output1[[3]]])
   }
   if(Nstress==3 && dist=="Exponential"){
-    Stressset<-matrix(output1[[3]],nrow = Nstress, ncol = length(distoutput), byrow = TRUE)
+    Stressset<-cbind(unlist(distoutput)[output1[[3]]],unlist(distoutput)[output1[[3]]+1],unlist(distoutput)[output1[[3]]+2])
   }
   if(Nstress==3 && dist!="Exponential"){
-    Stressset<-matrix(output1[[3]],nrow = Nstress, ncol = length(distoutput), byrow = TRUE)
+    Stressset<-cbind(unlist(distoutput)[output1[[3]]-1],unlist(distoutput)[output1[[3]]],unlist(distoutput)[output1[[3]]+1])
   }
   # Initialize average parameter for all cases except Exponential ls
-  if(dist!="Exponential"){
-    distparam0<-mean(output1[[4]])
+  if(dist!="Exponential" || dist!="Gamma"){
+    setvect <- output1[[4]]
+    distparam0<-mean(setvect[!is.na(setvect)])
   }
 
   # return(list(output1,Nstress,Stressset))
@@ -489,11 +495,11 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,xlabel1="X",therm=
     # }
     lsoutput <- function(Lest){
       Lvals<-log(Lest)
-      Svals<-matrix(c(rep(1,length(Stressset[1,])),1/Stressset[therm,],1/Stressset[alttherm,]),nrow=remNsteps,ncol=3,byrow=FALSE)
+      Svals<-matrix(c(rep(1,length(Stressset[,1])),1/Stressset[,therm],1/Stressset[,alttherm]),nrow=remNsteps,ncol=3,byrow=FALSE)
       params  <- pinv(Svals)%*%Lvals
       params[1]<-exp(params[1])
       lsparams <- c(params)
-      lnLmodel <- log(lsparams[1]) + (lsparams[2]/Stressset[therm,]) + (lsparams[3]/Stressset[alttherm,])
+      lnLmodel <- log(lsparams[1]) + (lsparams[2]/Stressset[,therm]) + (lsparams[3]/Stressset[,alttherm])
       R2 <- 1 - sum((Lvals - lnLmodel)^2)/sum((Lvals - mean(Lvals))^2)
       return(list(lsparams,R2))
     }
@@ -523,7 +529,7 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,xlabel1="X",therm=
     }
     lsoutput <- function(Lest){
       Lvals<-log(Lest)
-      Svals<-matrix(c(1/Stressset[alttherm,],-log(Stressset[therm,]),rep(1,length(Stressset[1,]))),nrow=remNsteps,ncol=3,byrow=FALSE)
+      Svals<-matrix(c(1/Stressset[,alttherm],-log(Stressset[,therm]),rep(1,length(Stressset[,1]))),nrow=remNsteps,ncol=3,byrow=FALSE)
       params  <- pinv(Svals)%*%Lvals
       params[3]<-exp(params[3])
       lsparams <- c(params)
@@ -557,7 +563,7 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,xlabel1="X",therm=
     }
     lsoutput <- function(Lest){
       Lvals<-log(Lest)+log(Stressset[,therm])
-      Svals<-matrix(c(rep(1,length(Stressset[1,])),1/Stressset[therm,],Stressset[alttherm,],Stressset[alttherm,]/Stressset[therm,]),nrow=remNsteps,ncol=4,byrow=FALSE)
+      Svals<-matrix(c(rep(1,length(Stressset[,1])),1/Stressset[,therm],Stressset[,alttherm],Stressset[,alttherm]/Stressset[,therm]),nrow=remNsteps,ncol=4,byrow=FALSE)
       params  <- pinv(Svals)%*%Lvals
       lsparams <- c(params)
       R2 <- 1
@@ -590,10 +596,10 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,xlabel1="X",therm=
     # lsparams[1] - parameter beta_0, lsparams[2] - parameter beta_1, lsparams[3] - R^2
     lsoutput <- function(Lest){
       Lvals<-log(Lest)
-      Svals<-matrix(c(rep(-1,length(Stressset[1,])),-1/Stressset[therm,],-1/Stressset[alttherm,]),nrow=remNsteps,ncol=3,byrow=FALSE)
+      Svals<-matrix(c(rep(-1,length(Stressset[,1])),-1/Stressset[,therm],-1/Stressset[,alttherm]),nrow=remNsteps,ncol=3,byrow=FALSE)
       params  <- pinv(Svals)%*%Lvals
       lsparams <- c(params)
-      Lmodel <- exp(-lsparams[1])*exp(-lsparams[2]/Stressset[therm,] - lsparams[3]/Stressset[alttherm,])
+      Lmodel <- exp(-lsparams[1])*exp(-lsparams[2]/Stressset[,therm] - lsparams[3]/Stressset[,alttherm])
       lnLmodel <- log(Lmodel)
       R2 <- 1 - sum((Lvals - lnLmodel)^2)/sum((Lvals - mean(Lvals))^2)
       return(list(lsparams,R2))
@@ -622,10 +628,10 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,xlabel1="X",therm=
     # lsparams[1] - parameter beta_0, lsparams[2] - parameter beta_1, lsparams[3] - beta_2, lsparams[4] - R^2
     lsoutput <- function(Lest){
       Lvals<-log(Lest)
-      Svals<-matrix(c(rep(-1,length(Stressset[1,])),-1/Stressset[therm,],-1/Stressset[alttherm,]),nrow=remNsteps,ncol=3,byrow=FALSE)
+      Svals<-matrix(c(rep(-1,length(Stressset[,1])),-1/Stressset[,therm],-1/Stressset[,alttherm]),nrow=remNsteps,ncol=3,byrow=FALSE)
       params  <- pinv(Svals)%*%Lvals
       lsparams <- c(params)
-      Lmodel <- exp(-lsparams[1])*exp(-lsparams[2]/Stressset[therm,] - lsparams[3]/Stressset[alttherm,])
+      Lmodel <- exp(-lsparams[1])*exp(-lsparams[2]/Stressset[,therm] - lsparams[3]/Stressset[,alttherm])
       lnLmodel <- log(Lmodel)
       R2 <- 1 - sum((Lvals - lnLmodel)^2)/sum((Lvals - mean(Lvals))^2)
       return(list(lsparams,R2))
@@ -870,7 +876,6 @@ stepstress.LSQest <- function(data,stepstresstable,ls,dist,pp,xlabel1="X",therm=
   plotoutput = output2$plotoutput
 
   if(is.null(Suse)==TRUE){
-    return(list(params_0 = paramsfirst,params_optimized = paramslast,life_estimation = lifeest,SSE=SSE,full_stpstrdata,updatedata,AFupdate,Tequiv,plotoutput=plotoutput))
     return(list(params_0 = paramsfirst,params_optimized = paramslast,life_estimation = lifeest,SSE=SSE,full_stpstrdata,updatedata,AFupdate,Tequiv,plotoutput=plotoutput))
   }
   if(is.null(Suse)==FALSE){
