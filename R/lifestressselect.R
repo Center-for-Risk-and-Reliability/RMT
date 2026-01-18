@@ -112,6 +112,21 @@ lifestress.select <- function(ls) {
       log(lsparams[,2]) + lsparams[,1]*log(S)
     }
   }
+  if (ls=="PowerwithBias") {
+    # lsparams[1] - parameter a, lsparams[2] - parameter b, lsparams[3] - parameter c
+    lsmodel <- function(lsparams,S) {
+      lsparams[3] + lsparams[2]*(S^lsparams[1])
+    }
+    lin_lsmodel <- function(lsparams,S) {
+      log(lsparams[3] + lsparams[2]*(S^lsparams[1]))
+    }
+    lsmodel_v <- function(lsparams,S) {
+      lsparams[,3] + lsparams[,2]*(S^lsparams[,1])
+    }
+    lin_lsmodel_v <- function(lsparams,S) {
+      log(lsparams[,3] + lsparams[,2]*(S^lsparams[,1]))
+    }
+  }
   if (ls=="InversePower") {
     # lsparams[1] - parameter a, lsparams[2] - parameter b
     lsmodel <- function(lsparams,S) {

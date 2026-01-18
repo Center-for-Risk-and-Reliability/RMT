@@ -1,7 +1,8 @@
 # Least-Squares Degradation Life Estimator
 # Developed by Dr. Reuel Smith, 2021-2024
 
-degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelstress=NULL,xlabel=NULL,ylabel=NULL,Tuse=NULL){
+degradationlife.LSQest <- function(data,dl,dist="Normal",pp="Blom",D0,modelstress=NULL,Suse=NULL,
+                                   xlabel=NULL,ylabel=NULL){
   # Load pracma library for pseudo-inverse
   library(pracma)
   library(dplyr)
@@ -107,8 +108,8 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
   time_output_names <- c(col_names_data[1],"Censored",col_names_data[4:length(col_names_data)])
 
   # NOTE: RCS02052024 Hold off on this for now until I reassign how the input will work
-  # if(dl=="Hamada" & missing(Tuse)){
-  #   Tuse <- 293.15
+  # if(dl=="Hamada" & missing(Suse)){
+  #   Suse <- 293.15
   # }
 
   # Check the damage input.  If it is singular then treat it as such.
@@ -686,7 +687,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
 
       timepsuedo<-exp((log(Dam_fail) - log(dlparams[2]))/dlparams[1])
       R2 <- summary(params)$r.squared
-      SSE <- sum((exp(fitted(params)) - Damdat)^2)
+      SSE <- sum((exp(fitted(params)) - log(Damdat))^2)
       return(list(dlparams,timepsuedo,R2,SSE))
     }
     damfit <- function(TimeDamfit,params){
@@ -701,7 +702,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     #     # theta[1] ~ a, theta[2] ~ b, theta[3] ~ a_0, theta[4] ~ b_0
     #
     #     Lvals<-log(Damdat)
-    #     Svals<-matrix(c(log(Lifedat),rep(1,length(S[,1])),log(S[,2]/Tuse[2]),((1/Tuse[1]) - (1/S[,1]))),nrow=length(unitnames),ncol=3,byrow=FALSE)
+    #     Svals<-matrix(c(log(Lifedat),rep(1,length(S[,1])),log(S[,2]/Suse[2]),((1/Suse[1]) - (1/S[,1]))),nrow=length(unitnames),ncol=3,byrow=FALSE)
     #     params  <- pinv(Svals)%*%Lvals
     #     dlparams <- c(params)
     #     dlparams[2]<-exp(dlparams[2])
@@ -896,7 +897,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
   }
 
   if(dl=="MitsuomAFArrhenius"){
-    # D = 1/(1 + b*((t*exp(E_a*11604.45*(1/Tuse - 1/Tacc)))^a))
+    # D = 1/(1 + b*((t*exp(E_a*11604.45*(1/Suse - 1/Tacc)))^a))
     # theta[1] ~ Ea, theta[2] ~ a, theta[3] ~ b (all need to be positive)
     # This is a case of Mitsuom where the time has been replaced by AF x accelerated time.  I will set this up
     # later so that AF can be an option for fitting to any of the governing degradation models.
@@ -921,15 +922,15 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
       # dlparams_out <- nlm(loglik_Mitsuom, theta <- dlparams0, hessian=TRUE)
       # dlparams <- dlparams_out$estimate[1:2]
       # # Then refit parameter a to find estimates of Ea and new a
-      # # D = 1/(1 + b*((t*exp(E_a/K*(1/Tuse - 1/Tacc)))^a))
+      # # D = 1/(1 + b*((t*exp(E_a/K*(1/Suse - 1/Tacc)))^a))
       # # theta[1] ~ Ea, theta[2] ~ a, theta[3] ~ b
-      # # t^a_old = (t*exp((E_a/K)*(1/Tuse - 1/Tacc)))^a_new
-      # # log(t^a_old) = a_new log(t) + a_new (E_a/K)*(1/Tuse - 1/Tacc)
+      # # t^a_old = (t*exp((E_a/K)*(1/Suse - 1/Tacc)))^a_new
+      # # log(t^a_old) = a_new log(t) + a_new (E_a/K)*(1/Suse - 1/Tacc)
       # params  <- lm(log(Lifedat^dlparams[1]) ~ poly(log(Lifedat), 1, raw=TRUE))
-      # dlparams <- c((summary(params)$coefficients[1,1]*K)/(summary(params)$coefficients[2,1]*((1/Tuse) - (1/Tempdat[1]))),summary(params)$coefficients[2,1],dlparams[2])
+      # dlparams <- c((summary(params)$coefficients[1,1]*K)/(summary(params)$coefficients[2,1]*((1/Suse) - (1/Tempdat[1]))),summary(params)$coefficients[2,1],dlparams[2])
 
       # Again try with matrix analysis.  All parameters need to be positive.
-      # dlparams <- pinv(cbind(rep(1,length(which(Damdat<1))),Lifedat[which(Damdat<1)],Kinv*((1/Tuse)-(1/Tempdat[which(Damdat<1)]))))*log(Damdat[which(Damdat<1)]^(-1) - 1)
+      # dlparams <- pinv(cbind(rep(1,length(which(Damdat<1))),Lifedat[which(Damdat<1)],Kinv*((1/Suse)-(1/Tempdat[which(Damdat<1)]))))*log(Damdat[which(Damdat<1)]^(-1) - 1)
       # dlparams0 <- dlparams
       # dlparams0[1] <- dlparams[3]/dlparams[2]
       # dlparams0[2] <- dlparams[2]
@@ -937,18 +938,18 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
       dlparams0 <- c(.1,.1,.1)
       # Set the MSE equation
       loglik_MitsuomAFArrhenius <- function(theta){
-        sum((Damdat - (1/(1 + exp(theta[3])*((Lifedat*exp((exp(theta[1])/K)*((1/Tuse) - (1/Tempdat[1]))))^exp(theta[2])))))^2)
+        sum((Damdat - (1/(1 + exp(theta[3])*((Lifedat*exp((exp(theta[1])/K)*((1/Suse) - (1/Tempdat[1]))))^exp(theta[2])))))^2)
       }
       dlparams_out <- nlm(loglik_MitsuomAFArrhenius, theta <- dlparams0, hessian=TRUE)
       dlparams <- exp(dlparams_out$estimate[1:3])
-      timepsuedo<-((((Dam_fail^(-1)) - 1)*exp(-(theta[1]/K)*((1/Tuse) - (1/Tempdat[1]))))/dlparams[3])^(1/dlparams[2])
-      Dammodel <- 1/(1 + dlparams[3]*((Lifedat*exp((dlparams[1]/K))*((1/Tuse) - (1/Tempdat[1])))^dlparams[2]))
+      timepsuedo<-((((Dam_fail^(-1)) - 1)*exp(-(theta[1]/K)*((1/Suse) - (1/Tempdat[1]))))/dlparams[3])^(1/dlparams[2])
+      Dammodel <- 1/(1 + dlparams[3]*((Lifedat*exp((dlparams[1]/K))*((1/Suse) - (1/Tempdat[1])))^dlparams[2]))
       R2 <- 1 - (sum((Damdat - Dammodel)^2)/sum((Damdat - mean(Dammodel))^2))
       SSE <- sum((Damdat - Dammodel)^2)
       return(list(dlparams,timepsuedo,R2,SSE))
     }
     damfit <- function(TimeDamfit,TempDamfit,params){
-      1/(1 + params[3]*((TimeDamfit*exp((params[1]/K)*((1/Tuse) - (1/TempDamfit[1]))))^params[2]))
+      1/(1 + params[3]*((TimeDamfit*exp((params[1]/K)*((1/Suse) - (1/TempDamfit[1]))))^params[2]))
     }
     # Writeup for the output text
     dl_txt <- dl
@@ -980,16 +981,16 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     dloutput <- function(Lifedat,Damdat,Tempdat,Dam_fail){
       # Root out the data that exceeds D=1 so we fit the data properly
       iDam<-which(Damdat<1)
-      params  <- pinv(matrix(c(rep(1,length(iDam)),log(Lifedat[iDam]),11605*((1/Tuse) - (1/Tempdat[iDam]))),nrow = length(iDam), ncol = 3, byrow = FALSE))%*%log((1/Damdat[iDam]) - 1)
+      params  <- pinv(matrix(c(rep(1,length(iDam)),log(Lifedat[iDam]),11605*((1/Suse) - (1/Tempdat[iDam]))),nrow = length(iDam), ncol = 3, byrow = FALSE))%*%log((1/Damdat[iDam]) - 1)
       dlparams <- c(exp(params[1]),params[2],params[3]/params[2])
-      timepsuedo<- exp((log((1/Dam_fail) - 1) - params[1] - params[3]*11605*((1/Tuse) - (1/Tempdat[iDam[1]])))/params[2])
-      Dest<-1/(1 + dlparams[1]*((Lifedat[iDam]*exp(dlparams[3]*11605*((1/Tuse) - (1/Tempdat[iDam]))))^dlparams[2]))
+      timepsuedo<- exp((log((1/Dam_fail) - 1) - params[1] - params[3]*11605*((1/Suse) - (1/Tempdat[iDam[1]])))/params[2])
+      Dest<-1/(1 + dlparams[1]*((Lifedat[iDam]*exp(dlparams[3]*11605*((1/Suse) - (1/Tempdat[iDam]))))^dlparams[2]))
       R2 <- 1 - sum((Damdat[iDam] - Dest)^2)/sum((Damdat[iDam] - mean(Damdat[iDam]))^2)
       SSE <- sum((Damdat[iDam] - Dest)^2)
       return(list(dlparams,timepsuedo,R2,SSE))
     }
     damfit <- function(TimeDamfit,TempDamfit,params){
-      1/(1 + params[1]*(TimeDamfit*exp(params[3]*11605*(1/Tuse - 1/TempDamfit)))^params[2])
+      1/(1 + params[1]*(TimeDamfit*exp(params[3]*11605*(1/Suse - 1/TempDamfit)))^params[2])
     }
     # Writeup for the output text
     dl_txt <- dl
@@ -1136,6 +1137,72 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     }
   }
 
+  if(dl=="PowerVarianceFit"){
+    # D = exp(b0)*(t^b1)
+    dloutput <- function(Lifedat,Damdat,Dam_fail){
+      # theta[1] ~ a, theta[2] ~ b to theta[1] ~ b0, theta[2] ~ b1
+      # If stressmodel is based on parameter, it is based on b
+
+      params  <- lm(log(Damdat) ~ poly(log(Lifedat), 1, raw=TRUE))
+      dlparams <- c(summary(params)$coefficients[1,1],summary(params)$coefficients[2,1]) # a and b to b0 = log(b) and b1 = a
+
+      timepsuedo<-exp((log(Dam_fail) - dlparams[1])/dlparams[2])
+      R2 <- summary(params)$r.squared
+      SSE <- sum((exp(fitted(params)) - log(Damdat))^2)
+      return(list(dlparams,timepsuedo,R2,SSE))
+    }
+    damfit <- function(TimeDamfit,params){
+      exp(params[1])*(TimeDamfit^params[2])
+    }
+
+    damfit1 <- function(TimeDamfit,params,S){
+      exp(stressparamfit(params[2:length(params)],S))*(TimeDamfit^params[1])
+    }
+    # if (is.null(modelstress) == FALSE && modelstress=="TempNonthermalAF"){
+    #   dloutput2 <- function(Lifedat,Damdat,Dam_fail){
+    #     # theta[1] ~ a, theta[2] ~ b, theta[3] ~ a_0, theta[4] ~ b_0
+    #
+    #     Lvals<-log(Damdat)
+    #     Svals<-matrix(c(log(Lifedat),rep(1,length(S[,1])),log(S[,2]/Suse[2]),((1/Suse[1]) - (1/S[,1]))),nrow=length(unitnames),ncol=3,byrow=FALSE)
+    #     params  <- pinv(Svals)%*%Lvals
+    #     dlparams <- c(params)
+    #     dlparams[2]<-exp(dlparams[2])
+    #     dlparams[3]<-dlparams[4]/dlparams[1]
+    #     dlparams[4]<-dlparams[3]/dlparams[1]
+    #
+    #     params  <- lm(log(Damdat) ~ poly(log(Lifedat), 1, raw=TRUE))
+    #     dlparams <- c(summary(params)$coefficients[2,1],exp(summary(params)$coefficients[1,1]))
+    #
+    #     timepsuedo<-exp((log(Dam_fail) - log(dlparams[2]))/dlparams[1])
+    #     R2 <- summary(params)$r.squared
+    #     return(list(dlparams,timepsuedo,R2))
+    #   }
+    # }
+    # Writeup for the output text
+    dl_txt <- dl
+    dlmodel_txt0<-"bl\U00AA"
+    if(is.null(modelstress) == FALSE){
+      if(modelstresstype == 1 || modelstresstype == 3){
+        dlparams_txt<-c("a","b")
+        paramref_txt<-"b(S) = "
+        paramref_txt2<-"a ~ NOR(\U03BC_a,\U03C3_a)"
+        params_txt2<-c("\U03BC_a","\U03C3_a")
+      }
+      if(modelstresstype == 2){
+        dlparams_txt<-c("a","b")
+        paramref_txt<-"a(S) = "
+        paramref_txt2<-"b ~ NOR(\U03BC_b,\U03C3_b)"
+        params_txt2<-c("\U03BC_b","\U03C3_b")
+      }
+      if(modelstresstype == 5){
+        dlparams_txt<-c("a","b")
+      }
+    } else{
+      dlparams_txt<-c("b0","b1")
+    }
+  }
+
+
   # if(dl=="KondoWei"){
   #   # r^3 = r_0^3 + (Dt/(A x pH)) exp(-E_a/kT)
   #   # theta[1] ~ A, theta[2] ~ E_a
@@ -1205,26 +1272,36 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
 
 
   # If parameter based stress model then recompute based on stress and parameter (RCS02082024)
+  if(modelstresstype == 1){
+    modelfit <- rep(0,length(data[,1])) # Setup model fit vector to compute error
+  }
+  # return(data[1,c(4:dim(data)[2])])
   if((modelstresstype == 1 && (dl=="Linear" || dl=="SquareRoot" || dl=="SquareRoot2" || dl=="Logarithmic" || dl=="LloydLipow")) || modelstresstype == 2){
-    # Parameter fit to "a"
+    # Parameter fit to "a" or a(S)
     if((dim(data)[2]-3)<2) {
       params_0 <- paramstress(tableout1[,1],stressvals)
     } else{
       params_0 <- paramstress(tableout1[,1],matrix(unlist(stressvals),nrow = length(unitnames), ncol = (dim(data)[2]-3), byrow = TRUE))
     }
     params_1 <- c(probplot.nor(cbind(tableout1[,2],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")$output[[1]]$`Parameter Estimates`)
+    for(i in 1:length(data[,1])){
+      modelfit[i] <- damfit1(data[i,1],c(tableout1[which(unitnames==data[i,3]),2],params_0[[1]]),data[i,c(4:dim(data)[2])])
+    }
   }
   if((modelstresstype == 1 && (dl=="Exponential" || dl=="Power" || dl=="Mitsuom")) || modelstresstype == 3){
-    # Parameter fit to "b"
+    # Parameter fit to "b" or b(S)
     if((dim(data)[2]-3)<2) {
       params_0 <- paramstress(tableout1[,2],stressvals)
     } else{
       params_0 <- paramstress(tableout1[,2],matrix(unlist(stressvals),nrow = length(unitnames), ncol = (dim(data)[2]-3), byrow = TRUE))
     }
     params_1 <- c(probplot.nor(cbind(tableout1[,1],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")$output[[1]]$`Parameter Estimates` )
+    for(i in 1:length(data[,1])){
+      modelfit[i] <- damfit1(data[i,1],c(tableout1[which(unitnames==data[i,3]),1],params_0[[1]]),data[i,c(4:dim(data)[2])])
+    }
   }
   # return(matrix(unlist(stressvals),nrow = length(unitnames), ncol = (dim(data)[2]-3), byrow = FALSE))
-  # return(tableout1[,1])
+  # return(unitnames)
   if(modelstresstype == 1 && (dl=="LinearD0" || dl=="SquareRootD0")){
     # Parameter fit to "a"
     if((dim(data)[2]-3)<2) {
@@ -1243,6 +1320,10 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     }
     params_1 <- c(probplot.nor(cbind(tableout1[,2],rep(1,length(unitnames)),rep(1,length(unitnames))),pp="Blom")$output[[1]]$`Parameter Estimates`)
   }
+  if(modelstresstype == 1){ # Compute the sigma error
+    sig_err <- sqrt((1/(length(data[,1])-1))*sum((data[,2] - modelfit)^2))
+  }
+  # return(sig_err)
 
   # return(tableout1[,1])
 
@@ -1267,7 +1348,7 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
   for(i in 1:length(unitnames)){
     # Establish time fit vector for the final plot up to the maximum time value in the data
     # 5/6/2024 - Time fit now adheres to the endurance limit as its stopping point
-    if(dl=="Power" || dl=="Logarithmic" || dl=="LloydLipow" || dl=="CrackProp1"){
+    if(dl=="Power" || dl=="Logarithmic" || dl=="LloydLipow" || dl=="CrackProp1" || dl=="PowerVarianceFit"){
       # timefit <- linspace(0.01,tableout1[,3][i],1000000)
       timefit <- c(linspace(0.01,max(data[which(data[,3]==unitnames[i]),1]),1000),linspace(max(data[which(data[,3]==unitnames[i]),1]),tableout1[,3][i],1000))
     }
@@ -1357,26 +1438,33 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
 
   # return(df2)
 
-  # plotout<-ggplot() +
-  #   geom_point(data=df1, aes(timedat,damdat, colour=group, shape=group), size = 2.9) +
-  #   # geom_point(data=df, aes(Nrunoff,Srunoff), colour = 'green4', shape=17, size = 1.9) +
-  #   geom_path(data=df2, aes(timefitvec,damfitvec, linetype = group), colour = "black", linewidth = 0.5) +
-  #   scale_shape_manual(values=shape_legend[1:length(unitnames)]) +
-  #   scale_color_manual(values=col_legend[1:length(unitnames)])+
-  #   # scale_x_continuous(trans = 'log10') +
-  #   # scale_y_continuous(trans = 'log10') +
-  #   # annotation_logticks() +
-  #   xlab(col_names_data[1]) +
-  #   ylab(col_names_data[2])
-  # plotout2<-plotout + geom_path(data=df3, aes(timefitvec,damfitvec), linetype = "dashed", colour = "red", linewidth = 0.9)
-
-  # FOR TEXTBOOK
   plotout<-ggplot() +
-    geom_point(data=df1, aes(timedat,damdat, shape=group), colour="black") +
-    geom_path(data=df2, aes(timefitvec,damfitvec, linetype = group), colour = "black", linewidth = 0.4) +
+    geom_point(data=df1, aes(timedat,damdat, colour=group, shape=group), size = 2.9) +
+    # geom_point(data=df, aes(Nrunoff,Srunoff), colour = 'green4', shape=17, size = 1.9) +
+    geom_path(data=df2, aes(timefitvec,damfitvec, linetype = group), colour = "black", linewidth = 0.5) +
+    scale_shape_manual(values=shape_legend[1:length(unitnames)]) +
+    scale_color_manual(values=col_legend[1:length(unitnames)])+
+    # scale_x_continuous(trans = 'log10') +
+    # scale_y_continuous(trans = 'log10') +
+    # annotation_logticks() +
+    theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
+    scale_x_continuous(expand=c(0, 0),limits = c(0, max(data[,1]))) +
+    scale_y_continuous(expand=c(0, 0)) +
     xlab(col_names_data[1]) +
     ylab(col_names_data[2])
-  plotout2<-plotout + geom_path(data=df3, aes(timefitvec,damfitvec), linetype = "dashed", colour = "black", linewidth = 0.4)
+  plotout2<-plotout + geom_path(data=df3, aes(timefitvec,damfitvec), linetype = "dashed", colour = "red", linewidth = 0.9)
+
+  # FOR TEXTBOOK
+  # plotout<-ggplot() +
+  #   geom_point(data=df1, aes(timedat,damdat, shape=group), colour="black") +
+  #   geom_path(data=df2, aes(timefitvec,damfitvec, linetype = group), colour = "black", linewidth = 0.4) +
+  #   theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
+  #   scale_x_continuous(expand=c(0, 0)) +
+  #   scale_y_continuous(expand=c(0, 0)) +
+  #   xlab(col_names_data[1]) +
+  #   ylab(col_names_data[2])
+  # plotout2<-plotout + geom_path(data=df3, aes(timefitvec,damfitvec), linetype = "dashed", colour = "black", linewidth = 0.4) +
+  #
 
   # return(list(modelstresstype,tableout1,plotout2))
   # Produce some output text that summarizes the results
@@ -1385,17 +1473,17 @@ degradationlife.LSQest <- function(data,dl,dist="Lognormal",pp="Blom",D0,modelst
     print(matrix(tableout, nrow = length(unitnames), ncol = length(tableout)/length(unitnames), byrow = TRUE,dimnames = list(unitnames,c(dlparams_txt,"Pseudo-Failure Times","R\U00B2","SSE"))))
     cat("\n")
 
-    return(list(tableout1,tableout2,plotout,plotout2))
+    return(list(degradation.life.parameters.by.unit = tableout1,pseudo.time.to.failure.by.stress = tableout2,best.fit.lines = plotout,best.fit.lines.with.endurance.limit = plotout2))
   }
   # return(list(dl_txt,ps_txt,dlmodel_txt0,paramref_txt,param_txt2,paramref_txt2))
   if(modelstresstype == 1 || modelstresstype == 2 || modelstresstype == 3){
-    cat(c("Least-Squares estimates for the ",dl_txt,"-",ps_txt," Degradation-Life-Stress model.\n\nD(l,S) = ",dlmodel_txt0," where ",paramref_txt,param_txt2," and ",paramref_txt2,"\n\n"),sep = "")
+    cat(c("Least-Squares estimates for the ",dl_txt,"-",ps_txt," Degradation-Stress-Life model.\n\nD(l,S) = ",dlmodel_txt0," where ",paramref_txt,param_txt2," and ",paramref_txt2,"\n\n"),sep = "")
     print(matrix(tableout, nrow = length(unitnames), ncol = length(tableout)/length(unitnames), byrow = TRUE,dimnames = list(unitnames,c(dlparams_txt,"Pseudo-Failure Times","R\U00B2","SSE"))))
     cat("\n")
     print(matrix(c(params_0[[1]],params_1,params_0[[2]]), nrow = length(params_0[[1]])+3, ncol = 1,byrow = FALSE,dimnames = list(c(params_txt,params_txt2,"param-stress SSE"),"EsT")))
     cat("\n")
 
-    return(list(tableout1,c(params_0[[1]],params_1),tableout2,plotout,plotout2))
+    return(list(degradation.life.parameters.by.unit = tableout1,degradation.stress.life.parameters = c(params_0[[1]],params_1),pseudo.time.to.failure.by.stress = tableout2,best.fit.lines = plotout,best.fit.lines.with.endurance.limit = plotout2))
   }
 
 }

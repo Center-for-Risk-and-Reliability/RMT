@@ -798,42 +798,427 @@ lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,
   # Build or compile Stan code to C++
   # return(list(stanlscode,stanlsfile))
 
-  # lsmod <- stan_model(model_code = stanlscode, verbose = TRUE)
-  lsmod <- cmdstan_model(stanlsfile)
-  # return(lsmod)
-  # fit <- sampling(lsmod, data = datablock, iter = nsamples, warmup = burnin, init = pt_est)
-  fit <- lsmod$sample(data = datablock, init = init_pt_est, chains = nchains, iter_warmup = burnin, iter_sampling = nsamples)
+  # Set up confidence limit text for output table
+  conflim_txt<-c(paste(c("Lower ",100*conf.level,"%"),collapse = ""),paste(c("Upper ",100*conf.level,"%"),collapse = ""))
+  # ==================================================================================================
+  # NOTE RCS01102026 - The following block works under cmdstanr which is not functioning at the moment
+  # ==================================================================================================
+  # lsmod <- cmdstan_model(stanlsfile)
+  # fit <- lsmod$sample(data = datablock, init = init_pt_est, chains = nchains, iter_warmup = burnin, iter_sampling = nsamples)
+  # ==================================================================================================
+  # PATCH RCS01102026 - The following block works under rstan which IS functioning at the moment
+  # ==================================================================================================
+  lsmod <- stan_model(model_code = stanlscode, verbose = TRUE)
+  fit <- sampling(lsmod, data = datablock, iter = nsamples, warmup = burnin, init = pt_est)
   # }
   # return(fit)
   # Print results.  I need to get this as an output
-  # stats <- print(fit, pars = paramsvec, probs=c((1-confid)/2,.5,1-(1-confid)/2))
-  # dataout <- fit@.MISC[["summary"]][["msd"]]
-  conflim_txt<-c(paste(c("Lower ",100*conf.level,"%"),collapse = ""),paste(c("Upper ",100*conf.level,"%"),collapse = ""))
-  stats <- fit$summary(variables = paramsvec0)
-  # dataout <- fit$draws(format = "df")
-  confidbounds <- mcmc_intervals_data(fit$draws(variables = paramsvec0),prob_outer = confid)
-  outputtable <- matrix(c(stats[[2]],stats[[4]],confidbounds[[5]],stats[[3]],confidbounds[[9]],stats[[8]]), nrow = length(paramsvec0), ncol = 6, byrow = FALSE,dimnames = list(paramsvec0,c("Mean","Standard Deviation",conflim_txt[1],"Median",conflim_txt[2],"R\U005E")))
+  # ==================================================================================================
+  # NOTE RCS01102026 - The following block works under cmdstanr which is not functioning at the moment
+  # ==================================================================================================
+  # stats <- fit$summary(variables = paramsvec0)
+  # confidbounds <- mcmc_intervals_data(fit$draws(variables = paramsvec0),prob_outer = confid)
+  # outputtable <- matrix(c(stats[[2]],stats[[4]],confidbounds[[5]],stats[[3]],confidbounds[[9]],stats[[8]]), nrow = length(paramsvec0), ncol = 6, byrow = FALSE,dimnames = list(paramsvec0,c("Mean","Standard Deviation",conflim_txt[1],"Median",conflim_txt[2],"R\U005E")))
+  # ==================================================================================================
+  # PATCH RCS01102026 - The following block works under rstan which IS functioning at the moment
+  # ==================================================================================================
+  stats.mean.sd <- summary(fit)$summary[,c(1,3)]
+  stats.Rhat <- rhat(fit)
+  confidbounds <- mcmc_intervals_data(data.frame(extract(fit, paramsvec0)),prob_outer = confid)
+  outputtable <- matrix(c(unname(stats.mean.sd)[1:length(paramsvec0),1],unname(stats.mean.sd)[1:length(paramsvec0),2],confidbounds[[5]],confidbounds[[7]],confidbounds[[9]],unname(stats.Rhat)[1:length(paramsvec0)]), nrow = length(paramsvec0), ncol = 6, byrow = FALSE,dimnames = list(paramsvec0,c("Mean","Standard Deviation",conflim_txt[1],"Median",conflim_txt[2],"R\U005E")))
 
-
+  # return(fit)
   # Trace the Markov Chains for each parameter
-  # plot1_MCtrace <- traceplot(fit, pars = paramsvec, inc_warmup = TRUE, nrow = 3)
-  # plot1_MCtrace <- mcmc_trace(as.matrix(fit),pars=paramsvec, facet_args = list(nrow = length(paramsvec), labeller = label_parsed))
-  # plot2_hist <- stan_hist(fit)
-  # plot3_density <- stan_dens(fit)
-  plot1_MCtrace <- mcmc_trace(fit$draws(paramsvec0))
-  plot2_hist <- mcmc_hist(fit$draws(paramsvec0))
-  plot3_density <- mcmc_dens(fit$draws(paramsvec0))
-  plot4_densityoverlay <- mcmc_dens_overlay(fit$draws(paramsvec0))
-  plot5_scatterplot <- mcmc_pairs(fit$draws(paramsvec0))
+  plot1_MCtrace <- mcmc_trace(fit,paramsvec0) +
+    theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4))
+  plot2_hist <- mcmc_hist(fit,paramsvec0) +
+    theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4))
+
+  # NEW Post Bayes analysis plotting of posterior (12/12/25)
+  if (dist=="Weibull"){
+    posterior_beta <- density(extract(fit,c("beta"))$beta)
+    if (ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Eyring" || ls=="Eyring2" ||
+        ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="Logarithmic"){ # Parameters a and b
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_beta$x,posterior_a$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_beta$x)+length(posterior_a$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_beta$y,posterior_a$y,posterior_b$y),
+                                 distlabel = c(rep("β",length(posterior_beta$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="Arrhenius") {
+      posterior_Ea <- density(extract(fit,c("Ea"))$Ea)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_beta$x,posterior_Ea$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_beta$x)+length(posterior_Ea$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_beta$y,posterior_Ea$y,posterior_b$y),
+                                 distlabel = c(rep("β",length(posterior_beta$x)),rep("Ea",length(posterior_Ea$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="TempHumidity"){
+      posterior_A <- density(extract(fit,c("A"))$A)
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_beta$x,posterior_A$x,posterior_a$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_beta$x)+length(posterior_A$x)+length(posterior_a$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_beta$y,posterior_A$y,posterior_a$y,posterior_b$y),
+                                 distlabel = c(rep("β",length(posterior_beta$x)),rep("A",length(posterior_A$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="TempNonthermal"){
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      posterior_c <- density(extract(fit,c("c"))$c)
+      df_posterior <- data.frame(x = c(posterior_beta$x,posterior_a$x,posterior_b$x,posterior_c$x),
+                                 ymin = rep(0,(length(posterior_beta$x)+length(posterior_a$x)+length(posterior_b$x)+length(posterior_c$x))),
+                                 ymax = c(posterior_beta$y,posterior_a$y,posterior_b$y,posterior_c$y),
+                                 distlabel = c(rep("β",length(posterior_beta$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x)),rep("c",length(posterior_c$x))))
+    }
+    if (ls=="Eyring3"){
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      posterior_c <- density(extract(fit,c("c"))$c)
+      posterior_d <- density(extract(fit,c("d"))$d)
+      df_posterior <- data.frame(x = c(posterior_beta$x,posterior_a$x,posterior_b$x,posterior_c$x,posterior_d$x),
+                                 ymin = rep(0,(length(posterior_beta$x)+length(posterior_a$x)+length(posterior_b$x)+length(posterior_c$x)+length(posterior_d$x))),
+                                 ymax = c(posterior_beta$y,posterior_a$y,posterior_b$y,posterior_c$y,posterior_d$y),
+                                 distlabel = c(rep("β",length(posterior_beta$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x)),rep("c",length(posterior_c$x)),rep("d",length(posterior_d$x))))
+    }
+    if (ls=="Eyring4"){
+      posterior_A <- density(extract(fit,c("A"))$A)
+      posterior_Ea <- density(extract(fit,c("Ea"))$Ea)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_beta$x,posterior_A$x,posterior_Ea$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_beta$x)+length(posterior_A$x)+length(posterior_Ea$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_beta$y,posterior_A$y,posterior_Ea$y,posterior_b$y),
+                                 distlabel = c(rep("β",length(posterior_beta$x)),rep("A",length(posterior_A$x)),rep("Ea",length(posterior_Ea$x)),rep("b",length(posterior_b$x))))
+    }
+
+    # Density plot for ALT parameter posterior
+    plot3_density <- ggplot() + geom_ribbon(data = df_posterior, aes(x=x, ymin = ymin, ymax = ymax), fill = "red" ,alpha = 0.5) +
+      theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
+      facet_wrap(~distlabel, dir="v", scales = "free") +
+      scale_x_continuous(expand=c(0, 0)) +
+      scale_y_continuous(expand=c(0, 0)) +
+      xlab(" ") +
+      ylab("density")
+  }
+  if (dist=="3PWeibull") {
+    posterior_beta <- density(extract(fit,c("beta"))$beta)
+    posterior_gamma <- density(extract(fit,c("gamma"))$gamma)
+    if (ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Eyring" || ls=="Eyring2" ||
+        ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="Logarithmic"){ # Parameters a and b
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_beta$x,posterior_gamma$x,posterior_a$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_beta$x)+length(posterior_gamma$x)+length(posterior_a$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_beta$y,posterior_gamma$y,posterior_a$y,posterior_b$y),
+                                 distlabel = c(rep("β",length(posterior_beta$x)),rep("γ",length(posterior_gamma$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="Arrhenius") {
+      posterior_Ea <- density(extract(fit,c("Ea"))$Ea)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_beta$x,posterior_gamma$x,posterior_Ea$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_beta$x)+length(posterior_gamma$x)+length(posterior_Ea$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_beta$y,posterior_gamma$y,posterior_Ea$y,posterior_b$y),
+                                 distlabel = c(rep("β",length(posterior_beta$x)),rep("γ",length(posterior_gamma$x)),rep("Ea",length(posterior_Ea$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="TempHumidity"){
+      posterior_A <- density(extract(fit,c("A"))$A)
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_beta$x,posterior_gamma$x,posterior_A$x,posterior_a$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_beta$x)+length(posterior_gamma$x)+length(posterior_A$x)+length(posterior_a$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_beta$y,posterior_gamma$y,posterior_A$y,posterior_a$y,posterior_b$y),
+                                 distlabel = c(rep("β",length(posterior_beta$x)),rep("γ",length(posterior_gamma$x)),rep("A",length(posterior_A$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="TempNonthermal"){
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      posterior_c <- density(extract(fit,c("c"))$c)
+      df_posterior <- data.frame(x = c(posterior_beta$x,posterior_gamma$x,posterior_a$x,posterior_b$x,posterior_c$x),
+                                 ymin = rep(0,(length(posterior_beta$x)+length(posterior_gamma$x)+length(posterior_a$x)+length(posterior_b$x)+length(posterior_c$x))),
+                                 ymax = c(posterior_beta$y,posterior_gamma$y,posterior_a$y,posterior_b$y,posterior_c$y),
+                                 distlabel = c(rep("β",length(posterior_beta$x)),rep("γ",length(posterior_gamma$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x)),rep("c",length(posterior_c$x))))
+    }
+    if (ls=="Eyring3"){
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      posterior_c <- density(extract(fit,c("c"))$c)
+      posterior_d <- density(extract(fit,c("d"))$d)
+      df_posterior <- data.frame(x = c(posterior_beta$x,posterior_gamma$x,posterior_a$x,posterior_b$x,posterior_c$x,posterior_d$x),
+                                 ymin = rep(0,(length(posterior_beta$x)+length(posterior_gamma$x)+length(posterior_a$x)+length(posterior_b$x)+length(posterior_c$x)+length(posterior_d$x))),
+                                 ymax = c(posterior_beta$y,posterior_gamma$y,posterior_a$y,posterior_b$y,posterior_c$y,posterior_d$y),
+                                 distlabel = c(rep("β",length(posterior_beta$x)),rep("γ",length(posterior_gamma$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x)),rep("c",length(posterior_c$x)),rep("d",length(posterior_d$x))))
+    }
+    if (ls=="Eyring4"){
+      posterior_A <- density(extract(fit,c("A"))$A)
+      posterior_Ea <- density(extract(fit,c("Ea"))$Ea)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_beta$x,posterior_gamma$x,posterior_A$x,posterior_Ea$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_beta$x)+length(posterior_gamma$x)+length(posterior_A$x)+length(posterior_Ea$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_beta$y,posterior_gamma$y,posterior_A$y,posterior_Ea$y,posterior_b$y),
+                                 distlabel = c(rep("β",length(posterior_beta$x)),rep("γ",length(posterior_gamma$x)),rep("A",length(posterior_A$x)),rep("Ea",length(posterior_Ea$x)),rep("b",length(posterior_b$x))))
+    }
+    # Density plot for Exponential rate parameter posterior
+    plot3_density <- ggplot() + geom_ribbon(data = df_posterior, aes(x=x, ymin = ymin, ymax = ymax), fill = "red" ,alpha = 0.5) +
+      theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
+      facet_wrap(~distlabel, dir="v", scales = "free") +
+      scale_x_continuous(expand=c(0, 0)) +
+      scale_y_continuous(expand=c(0, 0)) +
+      xlab(" ") +
+      ylab("density")
+  }
+  if (dist=="Lognormal") {
+    posterior_sigma_t <- density(extract(fit,c("sigma_t"))$sigma_t)
+    if (ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Eyring" || ls=="Eyring2" ||
+        ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="Logarithmic"){ # Parameters a and b
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_sigma_t$x,posterior_a$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_sigma_t$x)+length(posterior_a$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_sigma_t$y,posterior_a$y,posterior_b$y),
+                                 distlabel = c(rep("σ_t",length(posterior_sigma_t$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="Arrhenius") {
+      posterior_Ea <- density(extract(fit,c("Ea"))$Ea)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_sigma_t$x,posterior_Ea$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_sigma_t$x)+length(posterior_Ea$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_sigma_t$y,posterior_Ea$y,posterior_b$y),
+                                 distlabel = c(rep("σ_t",length(posterior_sigma_t$x)),rep("Ea",length(posterior_Ea$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="TempHumidity"){
+      posterior_A <- density(extract(fit,c("A"))$A)
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_sigma_t$x,posterior_A$x,posterior_a$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_sigma_t$x)+length(posterior_A$x)+length(posterior_a$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_sigma_t$y,posterior_A$y,posterior_a$y,posterior_b$y),
+                                 distlabel = c(rep("σ_t",length(posterior_sigma_t$x)),rep("A",length(posterior_A$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="TempNonthermal"){
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      posterior_c <- density(extract(fit,c("c"))$c)
+      df_posterior <- data.frame(x = c(posterior_sigma_t$x,posterior_a$x,posterior_b$x,posterior_c$x),
+                                 ymin = rep(0,(length(posterior_sigma_t$x)+length(posterior_a$x)+length(posterior_b$x)+length(posterior_c$x))),
+                                 ymax = c(posterior_sigma_t$y,posterior_a$y,posterior_b$y,posterior_c$y),
+                                 distlabel = c(rep("σ_t",length(posterior_sigma_t$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x)),rep("c",length(posterior_c$x))))
+    }
+    if (ls=="Eyring3"){
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      posterior_c <- density(extract(fit,c("c"))$c)
+      posterior_d <- density(extract(fit,c("d"))$d)
+      df_posterior <- data.frame(x = c(posterior_sigma_t$x,posterior_a$x,posterior_b$x,posterior_c$x,posterior_d$x),
+                                 ymin = rep(0,(length(posterior_sigma_t$x)+length(posterior_a$x)+length(posterior_b$x)+length(posterior_c$x)+length(posterior_d$x))),
+                                 ymax = c(posterior_sigma_t$y,posterior_a$y,posterior_b$y,posterior_c$y,posterior_d$y),
+                                 distlabel = c(rep("σ_t",length(posterior_sigma_t$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x)),rep("c",length(posterior_c$x)),rep("d",length(posterior_d$x))))
+    }
+    if (ls=="Eyring4"){
+      posterior_A <- density(extract(fit,c("A"))$A)
+      posterior_Ea <- density(extract(fit,c("Ea"))$Ea)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_sigma_t$x,posterior_A$x,posterior_Ea$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_sigma_t$x)+length(posterior_A$x)+length(posterior_Ea$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_sigma_t$y,posterior_A$y,posterior_Ea$y,posterior_b$y),
+                                 distlabel = c(rep("σ_t",length(posterior_sigma_t$x)),rep("A",length(posterior_A$x)),rep("Ea",length(posterior_Ea$x)),rep("b",length(posterior_b$x))))
+    }
+
+    # Density plot for ALT parameter posterior
+    plot3_density <- ggplot() + geom_ribbon(data = df_posterior, aes(x=x, ymin = ymin, ymax = ymax), fill = "red" ,alpha = 0.5) +
+      theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
+      facet_wrap(~distlabel, dir="v", scales = "free") +
+      scale_x_continuous(expand=c(0, 0)) +
+      scale_y_continuous(expand=c(0, 0)) +
+      xlab(" ") +
+      ylab("density")
+  }
+  if (dist=="Normal") {
+    posterior_sigma <- density(extract(fit,c("sigma"))$sigma)
+    if (ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Eyring" || ls=="Eyring2" ||
+        ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="Logarithmic"){ # Parameters a and b
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_sigma$x,posterior_a$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_sigma$x)+length(posterior_a$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_sigma$y,posterior_a$y,posterior_b$y),
+                                 distlabel = c(rep("σ",length(posterior_sigma$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="Arrhenius") {
+      posterior_Ea <- density(extract(fit,c("Ea"))$Ea)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_sigma$x,posterior_Ea$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_sigma$x)+length(posterior_Ea$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_sigma$y,posterior_Ea$y,posterior_b$y),
+                                 distlabel = c(rep("σ",length(posterior_sigma$x)),rep("Ea",length(posterior_Ea$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="TempHumidity"){
+      posterior_A <- density(extract(fit,c("A"))$A)
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_sigma$x,posterior_A$x,posterior_a$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_sigma$x)+length(posterior_A$x)+length(posterior_a$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_sigma$y,posterior_A$y,posterior_a$y,posterior_b$y),
+                                 distlabel = c(rep("σ",length(posterior_sigma$x)),rep("A",length(posterior_A$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="TempNonthermal"){
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      posterior_c <- density(extract(fit,c("c"))$c)
+      df_posterior <- data.frame(x = c(posterior_sigma$x,posterior_a$x,posterior_b$x,posterior_c$x),
+                                 ymin = rep(0,(length(posterior_sigma$x)+length(posterior_a$x)+length(posterior_b$x)+length(posterior_c$x))),
+                                 ymax = c(posterior_sigma$y,posterior_a$y,posterior_b$y,posterior_c$y),
+                                 distlabel = c(rep("σ",length(posterior_sigma$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x)),rep("c",length(posterior_c$x))))
+    }
+    if (ls=="Eyring3"){
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      posterior_c <- density(extract(fit,c("c"))$c)
+      posterior_d <- density(extract(fit,c("d"))$d)
+      df_posterior <- data.frame(x = c(posterior_sigma$x,posterior_a$x,posterior_b$x,posterior_c$x,posterior_d$x),
+                                 ymin = rep(0,(length(posterior_sigma$x)+length(posterior_a$x)+length(posterior_b$x)+length(posterior_c$x)+length(posterior_d$x))),
+                                 ymax = c(posterior_sigma$y,posterior_a$y,posterior_b$y,posterior_c$y,posterior_d$y),
+                                 distlabel = c(rep("σ",length(posterior_sigma$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x)),rep("c",length(posterior_c$x)),rep("d",length(posterior_d$x))))
+    }
+    if (ls=="Eyring4"){
+      posterior_A <- density(extract(fit,c("A"))$A)
+      posterior_Ea <- density(extract(fit,c("Ea"))$Ea)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_sigma$x,posterior_A$x,posterior_Ea$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_sigma$x)+length(posterior_A$x)+length(posterior_Ea$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_sigma$y,posterior_A$y,posterior_Ea$y,posterior_b$y),
+                                 distlabel = c(rep("σ",length(posterior_sigma$x)),rep("A",length(posterior_A$x)),rep("Ea",length(posterior_Ea$x)),rep("b",length(posterior_b$x))))
+    }
+
+    # Density plot for ALT parameter posterior
+    plot3_density <- ggplot() + geom_ribbon(data = df_posterior, aes(x=x, ymin = ymin, ymax = ymax), fill = "red" ,alpha = 0.5) +
+      theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
+      facet_wrap(~distlabel, dir="v", scales = "free") +
+      scale_x_continuous(expand=c(0, 0)) +
+      scale_y_continuous(expand=c(0, 0)) +
+      xlab(" ") +
+      ylab("density")
+  }
+  if (dist=="Exponential") {
+    if (ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Eyring" || ls=="Eyring2" ||
+        ls=="Power" || ls=="InversePower" || ls=="InversePower2" || ls=="Logarithmic"){ # Parameters a and b
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_a$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_a$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_a$y,posterior_b$y),
+                                 distlabel = c(rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="Arrhenius") {
+      posterior_Ea <- density(extract(fit,c("Ea"))$Ea)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_Ea$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_Ea$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_Ea$y,posterior_b$y),
+                                 distlabel = c(rep("Ea",length(posterior_Ea$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="TempHumidity"){
+      posterior_A <- density(extract(fit,c("A"))$A)
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_A$x,posterior_a$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_A$x)+length(posterior_a$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_A$y,posterior_a$y,posterior_b$y),
+                                 distlabel = c(rep("A",length(posterior_A$x)),rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x))))
+    }
+    if (ls=="TempNonthermal"){
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      posterior_c <- density(extract(fit,c("c"))$c)
+      df_posterior <- data.frame(x = c(posterior_a$x,posterior_b$x,posterior_c$x),
+                                 ymin = rep(0,(length(posterior_a$x)+length(posterior_b$x)+length(posterior_c$x))),
+                                 ymax = c(posterior_a$y,posterior_b$y,posterior_c$y),
+                                 distlabel = c(rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x)),rep("c",length(posterior_c$x))))
+    }
+    if (ls=="Eyring3"){
+      posterior_a <- density(extract(fit,c("a"))$a)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      posterior_c <- density(extract(fit,c("c"))$c)
+      posterior_d <- density(extract(fit,c("d"))$d)
+      df_posterior <- data.frame(x = c(posterior_a$x,posterior_b$x,posterior_c$x,posterior_d$x),
+                                 ymin = rep(0,(length(posterior_a$x)+length(posterior_b$x)+length(posterior_c$x)+length(posterior_d$x))),
+                                 ymax = c(posterior_a$y,posterior_b$y,posterior_c$y,posterior_d$y),
+                                 distlabel = c(rep("a",length(posterior_a$x)),rep("b",length(posterior_b$x)),rep("c",length(posterior_c$x)),rep("d",length(posterior_d$x))))
+    }
+    if (ls=="Eyring4"){
+      posterior_A <- density(extract(fit,c("A"))$A)
+      posterior_Ea <- density(extract(fit,c("Ea"))$Ea)
+      posterior_b <- density(extract(fit,c("b"))$b)
+      df_posterior <- data.frame(x = c(posterior_A$x,posterior_Ea$x,posterior_b$x),
+                                 ymin = rep(0,(length(posterior_A$x)+length(posterior_Ea$x)+length(posterior_b$x))),
+                                 ymax = c(posterior_A$y,posterior_Ea$y,posterior_b$y),
+                                 distlabel = c(rep("A",length(posterior_A$x)),rep("Ea",length(posterior_Ea$x)),rep("b",length(posterior_b$x))))
+    }
+
+    # Density plot for ALT parameter posterior
+    plot3_density <- ggplot() + geom_ribbon(data = df_posterior_lambda, aes(x=x, ymin = ymin, ymax = ymax), fill = "red" ,alpha = 0.5) +
+      theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
+      scale_x_continuous(expand=c(0, 0)) +
+      scale_y_continuous(expand=c(0, 0)) +
+      xlab("λ") +
+      ylab("density")
+  }
+
+
+# plot4_densityoverlay <- mcmc_dens_overlay(fit,paramsvec0) +
+  #   theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4))
+  # plot5_scatterplot <- mcmc_pairs(fit,paramsvec0) +
+  #   theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4))
 
   # Produce some output text that summarizes the results
   cat(c("Posterior estimates for Bayesian Analysis.\n\n"),sep = "")
   print(outputtable)
   cat(c("\n"),sep = "")
+  # return(list(fit))
 
+  if(is.null(SUSE)==TRUE && is.null(SACC)==TRUE){
+    return(list(posterior.fit=fit,post.stats=stats.mean.sd,MC.trace=plot1_MCtrace,post.histogram=plot2_hist,post.density=plot3_density,stanlscode))
+  }
+  if(is.null(SUSE)==FALSE && is.null(SACC)==TRUE){ # Include plot of use life posterior
+    posterior_Uselife <- density(extract(fit,c("Uselife"))$Uselife)
+    df_posterior_Uselife <- data.frame(x = posterior_Uselife$x,
+                               ymin = rep(0,length(posterior_Uselife$x)),
+                               ymax = posterior_Uselife$y,
+                               distlabel = c(rep("Use Level Life",length(posterior_Uselife$x))))
+    plot3A_USelife.density <- ggplot() + geom_ribbon(data = df_posterior_Uselife, aes(x=x, ymin = ymin, ymax = ymax), fill = "red" ,alpha = 0.5) +
+      theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
+      scale_x_continuous(expand=c(0, 0)) +
+      scale_y_continuous(expand=c(0, 0)) +
+      xlab("Use Life") +
+      ylab("density")
+    return(list(posterior.fit=fit,post.stats=stats.mean.sd,MC.trace=plot1_MCtrace,post.histogram=plot2_hist,post.density=plot3_density,post.Uselife.density=plot3A_USelife.density,stanlscode))
+  }
+  if(is.null(SUSE)==FALSE && is.null(SACC)==FALSE){ # Include plot of use life and acceleration factor posterior
+    posterior_Uselife <- density(extract(fit,c("Uselife"))$Uselife)
+    posterior_AF <- density(extract(fit,c("AFatSACC "))$AFatSACC )
+    df_posterior_Uselife <- data.frame(x = posterior_Uselife$x,
+                                       ymin = rep(0,length(posterior_Uselife$x)),
+                                       ymax = posterior_Uselife$y,
+                                       distlabel = c(rep("Use Level Life",length(posterior_Uselife$x))))
+    df_posterior_AF <- data.frame(x = posterior_AF$x,
+                                       ymin = rep(0,length(posterior_AF)),
+                                       ymax = posterior_Uselife$y,
+                                       distlabel = c(rep("AF",length(posterior_AF$x))))
+    plot3A_USelife.density <- ggplot() + geom_ribbon(data = df_posterior_Uselife, aes(x=x, ymin = ymin, ymax = ymax), fill = "red" ,alpha = 0.5) +
+      theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
+      scale_x_continuous(expand=c(0, 0)) +
+      scale_y_continuous(expand=c(0, 0)) +
+      xlab("Use Life") +
+      ylab("density")
+    plot3B_AF.density <- ggplot() + geom_ribbon(data = df_posterior_AF, aes(x=x, ymin = ymin, ymax = ymax), fill = "red" ,alpha = 0.5) +
+      theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
+      scale_x_continuous(expand=c(0, 0)) +
+      scale_y_continuous(expand=c(0, 0)) +
+      xlab("AF") +
+      ylab("density")
+    return(list(posterior.fit=fit,post.stats=stats.mean.sd,MC.trace=plot1_MCtrace,post.histogram=plot2_hist,post.density=plot3_density,post.Uselife.density=plot3A_USelife.density,post.AF.density=plot3B_AF.density,stanlscode))
+  }
 
-  return(list(fit,plot1_MCtrace,plot2_hist,plot3_density))
   # NOTE: Comment return above and uncomment return below if you want to view the scatterplot between posteriors.
   # This may however increase processing time.
-  # return(list(fit,plot1_MCtrace,plot2_hist,plot3_density,plot4_densityoverlay,plot5_scatterplot))
 }

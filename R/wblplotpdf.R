@@ -17,6 +17,9 @@ plot.pdf.wbl <- function(xi, rc = NULL, pp = "Blom", confid = 0.95, sided = "two
   df <- data.frame(X = xrange, YPDF = ypdf, data = rep("Fitted",1000))
   plotout<-ggplot() +
     geom_line(data=df, aes(X,YPDF, colour = data), colour = 'blue', size = 0.9, linetype = "dashed") +
+    theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
+    scale_x_continuous(expand=c(0, 0)) +
+    scale_y_continuous(expand=c(0, 0)) +
     xlab(xlabel1) +
     ylab("Probability Density")
   return(list(wbloutput = params,pdfplot = plotout))

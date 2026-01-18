@@ -1,10 +1,10 @@
 # Life-Stress Relationship Plot Generator (LSQ Life-Stress)
 # Developed by Dr. Reuel Smith, 2021-2025
 
-lifestress.relationplot.LSQ <- function(data,ls,dist,params,S=NULL,L=NULL,distparams=NULL,
-                                          Smin=NULL,Smax=NULL,Suse=NULL,therm=1,confid=0.95,
-                                          Llab=NULL,Slab=NULL,Slab2=NULL,confid_int = NULL,predic_int = NULL,
-                                          stressunit1 = NULL, stressunit2 = NULL) {
+lifestress.relationplot.LSQ.2 <- function(data,ls,dist,params,S=NULL,L=NULL,distparams=NULL,
+                                        Smin=NULL,Smax=NULL,Suse=NULL,therm=1,confid=0.95,
+                                        Llab=NULL,Slab=NULL,Slab2=NULL,confid_int = NULL,predic_int = NULL,
+                                        stressunit1 = NULL, stressunit2 = NULL) {
   # Minimum inputs: Original data and stresses, life-stress model, life distribution, life parameters (alpha, mu, mu_t, etc.)
   # Optional inputs: Use stress, min and max stress, confidence, labels
   # Output: Relationship plot

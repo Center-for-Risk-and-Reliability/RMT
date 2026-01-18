@@ -33,6 +33,9 @@ plot.C.hazard.wbl <- function(xi, rc = NULL, pp = "Blom", confid = 0.95, sided =
   df2 <- data.frame(Xpts = x_R[,1], Ypts = x_R[,5], nonparametric_data = rep("Failure Data",length(x_R[,1])))
   plotout<-ggplot() +
     geom_line(data=df, aes(X,YCHaz), colour = 'blue', size = 0.9, linetype = "dashed") +
+    theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
+    scale_x_continuous(expand=c(0, 0)) +
+    scale_y_continuous(expand=c(0, 0)) +
     xlab(xlabel1) +
     ylab("Cumulative Hazard")
   plotout <- plotout + geom_ribbon(data=df, aes(ymin=YCHazlow, ymax=YCHazhigh, x=X), alpha=0.5, fill = "blue")

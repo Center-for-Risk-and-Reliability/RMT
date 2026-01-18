@@ -1,10 +1,12 @@
 # Maximum Likelihood Life-Stress Estimator
 # Developed by Dr. Reuel Smith, 2021-2024
 
-lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,confid=0.95,
-                              sided="twosided",pp="Blom",xlabel1="X",param2=NULL,
+lifestress.MLEest <- function(data,ls,dist,Suse=NULL,confid=0.95,
+                              sided="twosided",pp="Blom",xlabel1="X",Llab=NULL,Slab=NULL,SLab2=NULL,param2=NULL,
                               stressunit1 = NULL, stressunit2 = NULL){
   # (NOTE -11/13/2023 RS) Add Exponential2 model that uses inverse stress as input
+  # UPDATE (12/17/2025 RCS) Simplified lifestress.MLEest so that user only enters data table and the tool divides data into
+  # TTF, SF, Tc, and Sc itself along with obtaining the LSQest
 
   #Load pracma library for erf
   library(pracma)
@@ -21,6 +23,17 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
   }
   # Check to see if confidence exists
   conf.level <- confid
+
+  # Break up data into TTF, SF, Tc, and Sc (if Tc and Sc exist)
+  data.segments <- sort.xircstressdata(data)
+  TTF <- data.segments[[1]]   # Time to failure data
+  Tc <- data.segments[[2]]    # censored time data (if exists)
+  SF <- data.segments[[3]]    # Stress at failure data
+  Sc <- data.segments[[4]]    # Stress at censored time
+
+  output.1 <- lifestress.LSQest(data,ls,dist = dist,pp=pp,xlabel1=xlabel1,Llab=Llab,Suse=Suse,Slab=Slab,stressunit1 = stressunit1)[c(1,3)] # Compute least squares estimate LSQest and pull stress levels
+  LSQest <- output.1[[2]]     # Least squares estimate to compute MLE estimate
+  S <- output.1[[1]]          # Unit stresses to compute life L based on MLE
 
   # Setup positivity check vector for parameters
   positivity_v<-rep(0,length(LSQest))
@@ -1008,39 +1021,6 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
     params_txt<-c("A","b","E_a")
   }
 
-  if (ls=="EyringHW4") {
-    # lsparams[1] - parameter alp_0, lsparams[2] - parameter alp_1, lsparams[3] - M
-
-    lifeF <- function(theta) {
-      exp(theta[ishift+1])*exp(theta[ishift+2]/SF)*(SF^-theta[ishift+3])
-    }
-    loglifeF <- function(theta) {
-      theta[ishift+1] + (theta[ishift+2]/SF) - theta[ishift+3]*log(SF)
-    }
-    if(is.null(Tc)==FALSE){
-      lifeC <- function(theta) {
-        exp(theta[ishift+1])*exp(theta[ishift+2]/Sc)*(Sc^-theta[ishift+3])
-      }
-      loglifeC <- function(theta) {
-        theta[ishift+1] + (theta[ishift+2]/Sc) - theta[ishift+3]*log(Sc)
-      }
-    }
-    if(is.null(Suse) == FALSE){
-      lifeUSE <- function(theta) {
-        exp(theta[ishift+1])*exp(theta[ishift+2]/Suse)*(Suse^-theta[ishift+3])
-      }
-      lifeUSEVAR <- function(theta,VARCOV) {
-        (log(Suse)^2)*(lifeUSE(theta)^2)*VARCOV[ishift+3,ishift+3] +
-          (1/Suse^2)*VARCOV[ishift+2,ishift+2] +
-          (lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+1] +
-          2*(1/Suse)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+2] -
-          2*log(Suse)*(lifeUSE(theta)^2)*VARCOV[ishift+1,ishift+3] -
-          2*(1/Suse)*log(Suse)*(lifeUSE(theta)^2)*VARCOV[ishift+2,ishift+3]
-      }
-    }
-    ls_txt<-ls
-    params_txt<-c("\U03B1\U2080","\U03B1\U2080","m")
-  }
 
   # UPDATE (10/22/2024) - Form data matrix for MLE probability plot
   if(is.null(Tc) == TRUE){
@@ -1424,19 +1404,6 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
       uselifelim <- uselife + crit2 * sqrt(uselife_VAR)
     }
   }
-
-  # Produce some output text that summarizes the results
-  cat(c("Maximum-Likelihood estimates for the ",ls_txt,"-",dist_txt," Life-Stress model.\n\n"),sep = "")
-  if(is.null(Suse) == TRUE){
-    print(matrix(unlist(fulllimset), nrow = length(unlist(fulllimset))/length(LSQest), ncol = length(LSQest), byrow = FALSE,dimnames = list(c("Life-Stress Parameters Mean",conflim_txt),params_txt)))
-  }
-  if(is.null(Suse) == FALSE){
-    # Add column for use life mean and confidence bounds
-    fulllimset2<-fulllimset
-    fulllimset2[[length(LSQest)+1]] <- c(uselife,uselifelim)
-    print(matrix(unlist(fulllimset2), nrow = length(unlist(fulllimset))/length(LSQest), ncol = (length(LSQest)+1), byrow = FALSE,dimnames = list(c("Life-Stress Parameters Mean",conflim_txt),c(params_txt,"Use Life"))))
-  }
-
   # Recompute necessary output
   if(dist=="Weibull" || dist=="3PWeibull" || dist=="Lognormal" || dist=="Normal" || dist=="2PExponential"){
     theta.hat[1] <- exp(theta.hat[1])
@@ -1463,10 +1430,47 @@ lifestress.MLEest <- function(LSQest,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,Suse=NULL,co
     theta.hat[ishift+2] <- exp(theta.hat[ishift+2])
     theta.hat[ishift+3] <- exp(theta.hat[ishift+3])
   }
+
+  # Calculate
+  # Set all distribution parameters for each stress level as equal
+  if(ls!="Exponential"){
+    L <- lifestress.select(ls)[[1]](theta.hat[2:length(theta.hat)],S)
+    distparams <- rep(theta.hat[1],length(S))
+  } else{
+    L <- lifestress.select(ls)[[1]](theta.hat,S)
+    distparams <- NULL
+  }
+  # return(list(S,L,distparams))
+
+  if(ls=="Linear" || ls=="Exponential" || ls=="Exponential2" || ls=="Arrhenius" || ls=="Eyring" || ls=="Eyring2" || ls=="Power" || ls=="PowerwithBias" || ls=="InversePower" || ls=="InversePower2" || ls=="InversePower2" || ls=="Logarithmic"){
+    if(is.null(Suse)==TRUE){
+      relplotoutput <- lifestress.relationplot.LSQ.2(data,ls,dist,theta.hat,S,L,distparams=distparams,stressunit1 = stressunit1)
+    }
+    if(is.null(Suse)==FALSE){
+      relplotoutput <- lifestress.relationplot.LSQ.2(data,ls,dist,theta.hat,S,L,distparams=distparams,Suse = Suse,stressunit1 = stressunit1)
+    }
+    if(is.null(Llab)==FALSE && is.null(Slab)==FALSE){
+      relplotoutput <- lifestress.relationplot.LSQ.2(data,ls,dist,theta.hat,S,L,distparams=distparams,Suse = Suse,Llab = Llab,Slab = Slab,stressunit1 = stressunit1)
+    }
+  }
+
+  # Produce some output text that summarizes the results
+  cat(c("Maximum-Likelihood estimates for the ",ls_txt,"-",dist_txt," Life-Stress model.\n\n"),sep = "")
   if(is.null(Suse) == TRUE){
-    return(list(theta.hat,inv.fish,conflim,loglik.hat,likeli.hat,AIC,BIC,plotoutput=plotoutput))
+    print(matrix(unlist(fulllimset), nrow = length(unlist(fulllimset))/length(LSQest), ncol = length(LSQest), byrow = FALSE,dimnames = list(c("Life-Stress Parameters Mean",conflim_txt),params_txt)))
   }
   if(is.null(Suse) == FALSE){
-    return(list(theta.hat,inv.fish,uselife,conflim,uselifelim,loglik.hat,likeli.hat,AIC,BIC,plotoutput=plotoutput))
+    # Add column for use life mean and confidence bounds
+    fulllimset2<-fulllimset
+    fulllimset2[[length(LSQest)+1]] <- c(uselife,uselifelim)
+    print(matrix(unlist(fulllimset2), nrow = length(unlist(fulllimset))/length(LSQest), ncol = (length(LSQest)+1), byrow = FALSE,dimnames = list(c("Life-Stress Parameters Mean",conflim_txt),c(params_txt,"Use Life"))))
+  }
+
+
+  if(is.null(Suse) == TRUE){
+    return(list(MLE.point.estimate = theta.hat,var.cov.matrix = inv.fish,param.CI = conflim,loglik = loglik.hat,ikelihood = likeli.hat,AIC = AIC,BIC = BIC,plotoutput=plotoutput,relplotoutput=relplotoutput$relationplot))
+  }
+  if(is.null(Suse) == FALSE){
+    return(list(MLE.point.estimate = theta.hat,var.cov.matrix = inv.fish,use.life = uselife,param.CI = conflim,use.life.CI = uselifelim,loglik = loglik.hat,likelihood = likeli.hat,AIC = AIC,BIC = BIC,plotoutput=plotoutput,relplotoutput=relplotoutput$relationplot))
   }
 }

@@ -253,9 +253,23 @@ SN.diagram <- function(input_type,dat,stressunits=1,options=NULL,confid = 0.95){
     logS <- log(S_)
     logN <- log(N_)
     # Compute A and b for S_a = A N^b
-    params <- lm(logS ~ poly(logN, 1, raw=TRUE))
-    A <- exp(summary(params)$coefficients[1,1])
-    b <- summary(params)$coefficients[2,1]
+    if(min(N_) > 1000){ # All data to fall in the main S-N curve region of 1000 to 1,000,000
+      params <- lm(logS ~ poly(logN, 1, raw=TRUE))
+      A <- exp(summary(params)$coefficients[1,1])
+      b <- summary(params)$coefficients[2,1]
+    } else{ # IF all or most data falls within the 1 to 1000 region, then we need to compute S1, S1000, and Se to get A and b
+      # Will redress this to account for mixed data before RAMS 2026
+      params <- lm(logS ~ poly(logN, 1, raw=TRUE))
+      A.1000 <- exp(summary(params)$coefficients[1,1])
+      b.1000 <- summary(params)$coefficients[2,1]
+      S1 <- A.1000*(1^b.1000)
+      S1000 <- A.1000*(1000^b.1000)
+      Su <-S1000/0.9
+      Se <- 0.5*Su
+      params <- lm(log(c(S1000,Se)) ~ poly(log(c(1000,10^6)), 1, raw=TRUE))
+      A <- exp(summary(params)$coefficients[1,1])
+      b <- summary(params)$coefficients[2,1]
+    }
   }
 
 
@@ -325,9 +339,17 @@ SN.diagram <- function(input_type,dat,stressunits=1,options=NULL,confid = 0.95){
       }
   }
 
-  N_Se <- (Se/A)^(1/b)
-  Ncurve <- c(linspace(1000,N_Se,100),max(runoff_N))
-  Scurve <-c(A*((linspace(1000,N_Se,100))^b),Se)
+  if(min(N_) > 1000){ # All data to fall in the main S-N curve region of 1000 to 1,000,000
+    N_Se <- (Se/A)^(1/b)
+    Ncurve <- c(linspace(1000,N_Se,100),max(runoff_N))
+    Scurve <-c(A*((linspace(1000,N_Se,100))^b),Se)
+  } else{ # IF all or most data falls within the 1 to 1000 region, then we need to compute S1, S1000, and Se to get A and b
+    # Will redress this to account for mixed data before RAMS 2026
+    N_Se <- (Se/A)^(1/b)
+    Ncurve <- c(linspace(1,1000,100),linspace(1000,N_Se,100),max(runoff_N))
+    Scurve <-c(A.1000*((linspace(1,1000,100))^b.1000),A*((linspace(1000,N_Se,100))^b),Se)
+  }
+
 
   if(input_type==1){
     # Establish the stress and life trace if given
@@ -370,19 +392,29 @@ SN.diagram <- function(input_type,dat,stressunits=1,options=NULL,confid = 0.95){
   #             Nline = c(rep(NA, length(S_) + length(runoff_N)), Ncurve),
   #             data_points = c(rep("failed", length(S_)), rep("survived", length(runoff_N)), rep(NA, length(Ncurve))),
   #             datapt_or_curvefit = c(rep(NA, length(S_) + length(runoff_N)), rep("curvefit", length(Ncurve)))))
-
-  if(length(S_)>2){
+  # return(S_)
+  if(length(S_)>2 && is.null(confid) == FALSE){
     # Compute upper and lower bounds
     res_logS <- logS - (log(A) + b*logN)
     logCI_S <- quantile(res_logS, confid)
-    Scurvelow <- exp(c(log(A) + b*log((linspace(1000,N_Se,100))) - logCI_S,log(A) + b*log(N_Se) - logCI_S))
-    Scurvehigh <- exp(c(log(A) + b*log((linspace(1000,N_Se,100))) + logCI_S,log(A) + b*log(N_Se) + logCI_S))
 
+
+    if(min(N_) > 1000){ # All data to fall in the main S-N curve region of 1000 to 1,000,000
+      Scurvelow <- exp(c(log(A) + b*log((linspace(1000,N_Se,100))) - logCI_S,log(A) + b*log(N_Se) - logCI_S))
+      Scurvehigh <- exp(c(log(A) + b*log((linspace(1000,N_Se,100))) + logCI_S,log(A) + b*log(N_Se) + logCI_S))
+    } else{ # IF all or most data falls within the 1 to 1000 region, then we need to compute S1, S1000, and Se to get A and b
+      # Will redress this to account for mixed data before RAMS 2026
+      Scurvelow <- exp(c(log(A.1000) + b.1000*log((linspace(1,1000,100))) - logCI_S,
+                         log(A) + b*log((linspace(1000,N_Se,100))) - logCI_S,log(A) + b*log(N_Se) - logCI_S))
+      Scurvehigh <- exp(c(log(A.1000) + b.1000*log((linspace(1,1000,100))) + logCI_S,
+                          log(A) + b*log((linspace(1000,N_Se,100))) + logCI_S,log(A) + b*log(N_Se) + logCI_S))
+    }
     Se_bounds <- sort(exp(log(A) + b*log(N_Se) + logCI_S*c(-1,1)))
+    # return(S_trace)
 
     # Establish the stress and life trace if given
-    if(isFALSE(missing(options))){
-      if(length(options$Strace)==1){
+    if(is.null(options) == FALSE){
+      if((length(options$Strace)==1 || S_trace > 0)){
         N_Sar1_bounds <- sort(exp((log(S_trace) - log(A) + logCI_S*c(-1,1))/b))
       }
       if(length(options$Ntrace)==1){
@@ -445,9 +477,10 @@ SN.diagram <- function(input_type,dat,stressunits=1,options=NULL,confid = 0.95){
   plotout<-ggplot() +
     geom_point(data=df1, aes(N,S), colour = 'red', size = 1.9) +
     geom_point(data=df2, aes(Nrunoff,Srunoff), colour = 'green4', shape=17, size = 1.9) +
-    geom_line(data=df3, aes(Nline,Sline), colour = "black", size = 0.9) +
-    scale_x_continuous(trans = 'log10') +
-    scale_y_continuous(trans = 'log10') +
+    geom_line(data=df3, aes(Nline,Sline), colour = "black", linewidth = 0.9) +
+    theme(panel.background = element_rect(fill = NA),panel.grid = element_line(colour = "grey80"),axis.line = element_line(arrow = arrow(length = unit(0.05, "inches")),linewidth = .4)) +
+    scale_x_continuous(expand=c(0, 0),trans = 'log10') +
+    scale_y_continuous(expand=c(0, 0),trans = 'log10') +
     annotation_logticks() +
     xlab(Xlab) +
     ylab(Ylab)
@@ -455,10 +488,12 @@ SN.diagram <- function(input_type,dat,stressunits=1,options=NULL,confid = 0.95){
   # Plot boundary line if data is greater than 2
   if(length(S_)>2){
     plotout<-plotout + geom_ribbon(data=df3, aes(ymin = Slinelower,ymax = Slineupper,x=Nline), alpha=0.25,fill = "red")
+    # return(plotout)
   }
   # Plot stress trace if provided
   if(length(Ncurve_trace1)>0){
-    plotout<-plotout + geom_line(data=df4, aes(Ntraceline1,Straceline1), colour = "red", size = 0.9, linetype = "dashed")
+    # plotout<-plotout + geom_line(data=df4, aes(Ntraceline1,Straceline1), colour = "red", size = 0.9, linetype = "dashed")
+    plotout<-plotout + geom_line(data=df4, aes(Ntraceline1,Straceline1), colour = "black", size = 0.4, linetype = "dashed")
   }
   # Plot cycle trace if provided
   if(length(Ncurve_trace2)>0){
@@ -472,13 +507,15 @@ SN.diagram <- function(input_type,dat,stressunits=1,options=NULL,confid = 0.95){
   if(is.na(dat)[1]==TRUE && length(options$A)==1 && length(options$b)==1){
     cat(c("The given S-N curve is S = ",A," x N_f^",b,".\n"),sep = "")
   }
-  if((length(runoff_S)>=2 && length(S_)==2)|| (length(options$Su)==1 && length(options$Se)<1)){
+  if((length(runoff_S)>=2 && length(S_)==2) || (length(options$Su)==1 && length(options$Se)<1)){
     cat(c("The estimate for endurance limit is S_e = ",Se," ",stressunits,".\n\n"),sep = "")
   }
   if((length(runoff_S)>=2 && length(S_) > 2)|| (length(options$Su)==1 && length(options$Se)<1)){
     cat(c("The estimate for endurance limit is S_e = ",Se," ",stressunits," (",100*confid,"%: ",min(Se_bounds)," ",stressunits,", ",max(Se_bounds)," ",stressunits,").\n\n"),sep = "")
   }
-  if(isFALSE(missing(options))){
+  # return((S_trace))
+
+  if(is.null(options)==FALSE){ # Case where there are options entered as input and not nULL
     if(length(options$Se)==1 && length(S_)==2){
       cat(c("The given endurance limit is S_e = ",Se," ",stressunits,".\n\n"),sep = "")
     }
@@ -486,22 +523,25 @@ SN.diagram <- function(input_type,dat,stressunits=1,options=NULL,confid = 0.95){
       cat(c("The given endurance limit is S_e = ",Se," ",stressunits," (",100*confid,"%: ",min(Se_bounds)," ",stressunits,", ",max(Se_bounds)," ",stressunits,").\n\n"),sep = "")
     }
 
-    if((length(options$Strace)==1 && options$Strace > Se && length(S_)<=2) || (input_type==2 || input_type==3)){
+    if(((length(options$Strace)==1 || S_trace > 0) && (options$Strace > Se || S_trace > Se) && length(S_)<=2) || (input_type==2 || input_type==3)){
       cat(c("The life estimate at ",S_trace," ",stressunits," is ",N_Sar1," cycles.\n"),sep = "")
     }
-    if((length(options$Strace)==1 && options$Strace > Se && length(S_)>2) || (input_type==2 || input_type==3)){
+    if(((length(options$Strace)==1 || S_trace > 0) && (options$Strace > Se || S_trace > Se) && length(S_)>2)){
       cat(c("The life estimate at ",S_trace," ",stressunits," is ",N_Sar1," cycles (",100*confid,"%: ",min(N_Sar1_bounds)," cycles, ",max(N_Sar1_bounds)," cycles).\n"),sep = "")
     }
-    if((length(options$Strace)==1 && options$Strace <= Se)){
-      cat(c("Enter a trace stress greater than the endurance limit S_e = ",Se," ",stressunits,".\n"),sep = "")
-    }
+
+    # if(((length(options$Strace)==1 || S_trace > 0) && (options$Strace <= Se || S_trace <= Se))){
+    #   cat(c("Enter a trace stress greater than the endurance limit S_e = ",Se," ",stressunits,".\n"),sep = "")
+    # }
     if(length(options$Ntrace)==1 && length(S_)<=2){
       cat(c("The alternating stress estimate at ",N_trace," cycles is ",Sar1," ",stressunits,".\n\n"),sep = "")
     }
+    # return((S_trace))
     if(length(options$Ntrace)==1 && length(S_)>2){
       cat(c("The alternating stress estimate at ",N_trace," cycles is ",Sar1," ",stressunits," (",100*confid,"%: ",min(Sar1_bounds)," ",stressunits,", ",max(Sar1_bounds)," ",stressunits,").\n\n"),sep = "")
     }
   }
+  # return(S_trace)
 
 
   # RETURN: S-N diagram, A, b, Se, and Su only
