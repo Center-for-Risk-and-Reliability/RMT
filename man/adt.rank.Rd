@@ -42,6 +42,10 @@ This script identifies which of the following degradation-life models is a the b
   \deqn{D = (a + b L)^2} or \deqn{D^{1/2} = a + b L}
   \emph{Parameter order} - c(a,b)
 
+  \item \strong{Square-Root v.2} (Enter as "SquareRoot2")
+  \deqn{D = a + b (L^{1/2})}
+  \emph{Parameter order} - c(a,b)
+
   \item \strong{Power} (Enter as "Power")
   \deqn{D = b L^a} \emph{Parameter order} - c(a,b)
 
@@ -72,15 +76,9 @@ Outputs a printed summary of the degradation ranking by model.  The list output 
 Modarres, M., Amiri, M., Jackson, C.  (2017)  Probabilistic Physics of Failure Approach to Reliability: Modeling, Accelerated Testing, Prognosis and Reliability Assessment.  Center for Risk and Reliability
 }
 \author{
-Dr. Reuel Smith (2021-2022)
+Dr. Reuel Smith (2021-2026)
 }
 \note{
-There is another model, the \strong{Hamada model} is a Mitsuom form model that is specifically reserved for temperature based degradation where,
-
-\strong{Hamada} (Enter as "Hamada")
-  \deqn{D(L,T) = \frac{1}{1 + \beta_1 (L \exp[\beta_3 11605(\frac{1}{T_{use}} - \frac{1}{T})])^{\beta_2}}} \emph{Parameter order} - c(\eqn{\beta_1},\eqn{\beta_2},\eqn{\beta_3})
-
-  Hamada may be used with \code{\link{adt.full.LSQ}}, \code{\link{adt.full.MLE}}, \code{\link{adt.full.addME.MLE}}, \code{\link{adt.full.multME.MLE}}, and \code{\link{adt.full.BAYES}} on the condition that temperature at degrradation \eqn{T} and use temperature \eqn{T_{use}} are entered in Kelvin.  The option for ranking this model will be available for a future release.
 
 }
 
