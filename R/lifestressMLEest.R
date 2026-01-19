@@ -1,5 +1,5 @@
 # Maximum Likelihood Life-Stress Estimator
-# Developed by Dr. Reuel Smith, 2021-2024
+# Developed by Dr. Reuel Smith, 2021-2026
 
 lifestress.MLEest <- function(data,ls,dist,Suse=NULL,confid=0.95,
                               sided="twosided",pp="Blom",xlabel1="X",Llab=NULL,Slab=NULL,SLab2=NULL,param2=NULL,

@@ -1,5 +1,5 @@
 # Least-Squares Life-Stress Estimator
-# Developed by Dr. Reuel Smith, 2021-2025
+# Developed by Dr. Reuel Smith, 2021-2026
 
 lifestress.LSQest <- function(data,ls,dist,pp="Blom",xlabel1="X",
                               Suse=NULL,Llab=NULL,Slab=NULL,Slab2=NULL,param2 = NULL,therm=1,CDFrangesetting = 1,

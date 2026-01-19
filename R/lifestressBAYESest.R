@@ -1,5 +1,5 @@
 # Bayesian Life-Stress Estimator
-# Developed by Dr. Reuel Smith, 2021-2025
+# Developed by Dr. Reuel Smith, 2021-2026
 
 lifestress.BAYESest <- function(pt_est,ls,dist,TTF,SF,Tc=NULL,Sc=NULL,SUSE=NULL,SACC=NULL,confid=0.95,priors,nsamples=20000,burnin=10000,nchains=4,param2=NULL){
   #Load pracma library for erf
