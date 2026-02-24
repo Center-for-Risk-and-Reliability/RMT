@@ -1,5 +1,5 @@
-# CHAPTER 5 PROBLEM 2
-# Gabriel and Reuel Smith
+# CHAPTER 4 PROBLEM 1
+# Gabriel Cruz and Reuel Smith
 # =================================================
 # Part a)
 data_ALT_PROBLEM_1 <- cbind(c(300,340,345,349,361,362,363,369,374,379,380,390,
