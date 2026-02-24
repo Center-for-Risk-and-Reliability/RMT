@@ -1,5 +1,6 @@
-# Short Script for Chapter 5 Problem 6
+# CHAPTER 5 PROBLEM 6
 # Reuel Smith
+# =================================================
 
 library(nls.multstart)
 P2MLE <- adt.full.MLE(data641FinalP2,"CrackProp2","Lognormal",0.034663947,0.95,"twosided")
